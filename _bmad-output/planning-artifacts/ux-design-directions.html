@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KanbanFlow — Design Direction + Color Themes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Light - Warm Amber */
+      --bg: #FFFBF5;
+      --surface: #FAF5EF;
+      --card: #FFFFFF;
+      --border: #E7E0D6;
+      --text: #1C1917;
+      --text-secondary: #78716C;
+      --primary: #D97706;
+      --primary-hover: #B45309;
+      --primary-light: #FEF3C7;
+      --primary-light-text: #92400E;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --error: #F43F5E;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+      --shadow-lg: 0 12px 24px rgba(0,0,0,0.15);
+      --sidebar-bg: #FFFFFF;
+      --sidebar-hover: #FAF5EF;
+      --sidebar-active: #FEF3C7;
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    /* Teal theme */
+    .theme-teal {
+      --primary: #0D9488;
+      --primary-hover: #0F766E;
+      --primary-light: #CCFBF1;
+      --primary-light-text: #115E59;
+      --bg: #F8FAFB;
+      --surface: #F1F5F9;
+      --border: #E2E8F0;
+      --sidebar-bg: #FFFFFF;
+      --sidebar-hover: #F1F5F9;
+      --sidebar-active: #CCFBF1;
+    }
+
+    /* Dark overrides */
+    .dark {
+      --bg: #0C0A09;
+      --surface: #1C1917;
+      --card: #292524;
+      --border: #44403C;
+      --text: #FAFAF9;
+      --text-secondary: #A8A29E;
+      --primary-light: #451A03;
+      --primary-light-text: #FCD34D;
+      --sidebar-bg: #1C1917;
+      --sidebar-hover: #292524;
+      --sidebar-active: #451A03;
+    }
+    .dark.theme-teal {
+      --bg: #0F172A;
+      --surface: #1E293B;
+      --card: #334155;
+      --border: #475569;
+      --primary-light: #134E4A;
+      --primary-light-text: #5EEAD4;
+      --sidebar-bg: #1E293B;
+      --sidebar-hover: #334155;
+      --sidebar-active: #134E4A;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); transition: all 0.3s ease; }
+
+    /* Top bar */
+    .topbar { position: sticky; top: 0; z-index: 100; background: var(--card); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .topbar-title { font-size: 14px; font-weight: 600; }
+    .topbar-controls { display: flex; gap: 12px; align-items: center; }
+    .theme-switcher { display: flex; gap: 4px; background: var(--surface); padding: 4px; border-radius: 8px; }
+    .theme-btn { padding: 6px 14px; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.15s; }
+    .theme-btn.active { background: var(--card); color: var(--text); box-shadow: var(--shadow-sm); }
+    .mode-toggle { padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; background: var(--card); color: var(--text); }
+    .mode-toggle:hover { background: var(--surface); }
+
+    /* Main layout */
+    .app { display: flex; height: calc(100vh - 49px); }
+
+    /* Sidebar */
+    .sidebar { width: 240px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: all 0.3s ease; overflow: hidden; flex-shrink: 0; }
+    .sidebar.collapsed { width: 0; border-right: none; }
+    .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; min-height: 56px; }
+    .sidebar-header span { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .sidebar-toggle { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--text-secondary); flex-shrink: 0; }
+    .sidebar-toggle:hover { background: var(--surface); }
+    .sidebar-content { padding: 12px; overflow-y: auto; flex: 1; }
+    .sidebar-section { margin-bottom: 20px; }
+    .sidebar-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 8px; padding: 0 8px; }
+    .sidebar-item { font-size: 13px; padding: 8px 10px; border-radius: 6px; cursor: pointer; margin-bottom: 2px; display: flex; align-items: center; gap: 10px; color: var(--text); transition: all 0.1s; white-space: nowrap; }
+    .sidebar-item:hover { background: var(--sidebar-hover); }
+    .sidebar-item.active { background: var(--sidebar-active); color: var(--primary-light-text); font-weight: 500; }
+    .sidebar-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sidebar-divider { height: 1px; background: var(--border); margin: 12px 8px; }
+
+    /* Collapsed sidebar toggle */
+    .sidebar-expand { position: fixed; left: 12px; top: 64px; z-index: 50; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 16px; color: var(--text-secondary); box-shadow: var(--shadow-sm); }
+    .sidebar-expand:hover { background: var(--surface); }
+    .sidebar.collapsed + .sidebar-expand { display: flex; }
+
+    /* Board area */
+    .board-area { flex: 1; padding: 24px 32px; overflow: auto; }
+    .board-header { margin-bottom: 32px; }
+    .board-title { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+    .board-desc { color: var(--text-secondary); font-size: 14px; }
+
+    /* Columns */
+    .columns { display: flex; gap: 24px; padding: 8px 0; }
+    .column { min-width: 320px; max-width: 320px; }
+    .column-header { margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+    .column-title { font-size: 15px; font-weight: 500; color: var(--text-secondary); }
+    .column-count { font-size: 12px; color: var(--text-secondary); background: var(--border); padding: 1px 8px; border-radius: 10px; }
+
+    /* Cards */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 12px; box-shadow: var(--shadow-sm); cursor: grab; transition: all 0.2s ease; position: relative; }
+    .card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .card.dragging { box-shadow: var(--shadow-lg); opacity: 0.9; transform: rotate(2deg) scale(1.02); }
+    .card-title { font-size: 15px; font-weight: 500; margin-bottom: 10px; line-height: 1.4; }
+    .card-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5; }
+    .card-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    /* Labels */
+    .label { font-size: 12px; padding: 3px 10px; border-radius: 6px; font-weight: 500; }
+    .label-red { background: #FEE2E2; color: #DC2626; }
+    .label-orange { background: #FFEDD5; color: #EA580C; }
+    .label-yellow { background: #FEF9C3; color: #A16207; }
+    .label-green { background: #D1FAE5; color: #059669; }
+    .label-blue { background: #DBEAFE; color: #2563EB; }
+    .label-purple { background: #EDE9FE; color: #7C3AED; }
+    .dark .label-red { background: #450A0A; color: #FCA5A5; }
+    .dark .label-orange { background: #431407; color: #FDBA74; }
+    .dark .label-yellow { background: #422006; color: #FDE047; }
+    .dark .label-green { background: #052E16; color: #6EE7B7; }
+    .dark .label-blue { background: #172554; color: #93C5FD; }
+    .dark .label-purple { background: #2E1065; color: #C4B5FD; }
+
+    /* Progress */
+    .progress-section { margin-top: 14px; }
+    .progress-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+    .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--success); border-radius: 3px; transition: width 0.3s ease; }
+
+    /* Due date */
+    .due-date { font-size: 12px; color: var(--text-secondary); }
+
+    /* Add card button */
+    .add-card { width: 100%; text-align: left; background: none; border: 1px dashed var(--border); color: var(--text-secondary); font-size: 14px; padding: 14px; cursor: pointer; border-radius: var(--radius-lg); transition: all 0.15s; }
+    .add-card:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+    /* Done column cards */
+    .column-done .card { opacity: 0.65; }
+    .column-done .card:hover { opacity: 0.85; }
+
+    /* Color swatch in theme switcher */
+    .swatch { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 4px; vertical-align: middle; }
+    .swatch-amber { background: #D97706; }
+    .swatch-teal { background: #0D9488; }
+
+    /* Demo note */
+    .demo-note { background: var(--primary-light); color: var(--primary-light-text); padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; font-size: 13px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <!-- Top bar with theme controls -->
+  <div class="topbar">
+    <div class="topbar-title">KanbanFlow — Design Direction Preview</div>
+    <div class="topbar-controls">
+      <div class="theme-switcher">
+        <button class="theme-btn active" onclick="setTheme('amber')" id="btn-amber"><span class="swatch swatch-amber"></span>Warm Amber</button>
+        <button class="theme-btn" onclick="setTheme('teal')" id="btn-teal"><span class="swatch swatch-teal"></span>Soft Teal</button>
+      </div>
+      <button class="mode-toggle" onclick="toggleDark()">☀️ / 🌙</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <!-- Sidebar (collapsible) -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span>Navigation</span>
+        <button class="sidebar-toggle" onclick="toggleSidebar()">◀</button>
+      </div>
+      <div class="sidebar-content">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Projects</div>
+          <div class="sidebar-item active">
+            <span class="sidebar-dot" style="background: var(--primary)"></span>
+            Website Redesign
+          </div>
+          <div class="sidebar-item">
+            <span class="sidebar-dot" style="background: #10B981"></span>
+            Mobile App
+          </div>
+          <div class="sidebar-item">
+            <span class="sidebar-dot" style="background: #6366F1"></span>
+            Marketing
+          </div>
+          <div class="sidebar-item">
+            <span class="sidebar-dot" style="background: #EC4899"></span>
+            Personal
+          </div>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Boards</div>
+          <div class="sidebar-item active" style="padding-left: 20px;">
+            <span style="font-size: 11px;">📋</span> Sprint 1
+          </div>
+          <div class="sidebar-item" style="padding-left: 20px;">
+            <span style="font-size: 11px;">📋</span> Backlog
+          </div>
+          <div class="sidebar-item" style="padding-left: 20px;">
+            <span style="font-size: 11px;">📋</span> Ideas
+          </div>
+          <div class="sidebar-item" style="padding-left: 20px;">
+            <span style="font-size: 11px;">📋</span> Archive
+          </div>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Quick Actions</div>
+          <div class="sidebar-item">
+            <span style="font-size: 11px;">⚙️</span> Settings
+          </div>
+          <div class="sidebar-item">
+            <span style="font-size: 11px;">🌙</span> Dark Mode
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="sidebar-expand" onclick="toggleSidebar()">▶</button>
+
+    <!-- Board -->
+    <div class="board-area">
+      <div class="demo-note">
+        <strong>Try it:</strong> Switch color themes above. Toggle dark mode. Click the arrow to collapse/expand the sidebar. Cards have hover effects — give them a try.
+      </div>
+      <div class="board-header">
+        <div class="board-title">Website Redesign</div>
+        <div class="board-desc">Sprint 1 — A complete overhaul of the marketing site</div>
+      </div>
+      <div class="columns">
+        <!-- To Do -->
+        <div class="column">
+          <div class="column-header">
+            <span class="column-title">To Do</span>
+            <span class="column-count">4</span>
+          </div>
+          <div class="card">
+            <div class="card-title">Design homepage wireframe</div>
+            <div class="card-desc">Create low-fidelity wireframes for the new homepage. Include hero section, feature grid, and CTA areas.</div>
+            <div class="card-meta">
+              <span class="label label-red">High Priority</span>
+              <span class="label label-purple">Design</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Set up CI/CD pipeline</div>
+            <div class="card-desc">Configure GitHub Actions for automated testing and deployment to staging.</div>
+            <div class="card-meta">
+              <span class="label label-blue">DevOps</span>
+              <span class="due-date">📅 Mar 25</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Write API documentation</div>
+            <div class="card-desc">Document all REST endpoints with request/response examples.</div>
+            <div class="card-meta">
+              <span class="label label-green">Docs</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Setup monitoring alerts</div>
+            <div class="card-meta">
+              <span class="label label-blue">DevOps</span>
+              <span class="due-date">📅 Mar 28</span>
+            </div>
+          </div>
+          <button class="add-card">+ Add a card</button>
+        </div>
+
+        <!-- In Progress -->
+        <div class="column">
+          <div class="column-header">
+            <span class="column-title">In Progress</span>
+            <span class="column-count">3</span>
+          </div>
+          <div class="card">
+            <div class="card-title">Implement authentication system</div>
+            <div class="card-desc">JWT-based auth with refresh tokens. Registration, login, and password reset flows.</div>
+            <div class="card-meta">
+              <span class="label label-orange">Backend</span>
+              <span class="due-date">📅 Mar 22</span>
+            </div>
+            <div class="progress-section">
+              <div class="progress-label">3 of 5 tasks complete</div>
+              <div class="progress-bar"><div class="progress-fill" style="width: 60%"></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Build component library</div>
+            <div class="card-desc">Reusable UI components: buttons, inputs, modals, cards with consistent styling.</div>
+            <div class="card-meta">
+              <span class="label label-purple">Design</span>
+              <span class="label label-blue">Frontend</span>
+            </div>
+            <div class="progress-section">
+              <div class="progress-label">2 of 6 tasks complete</div>
+              <div class="progress-bar"><div class="progress-fill" style="width: 33%"></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Database schema design</div>
+            <div class="card-meta">
+              <span class="label label-orange">Backend</span>
+            </div>
+            <div class="progress-section">
+              <div class="progress-label">4 of 5 tasks complete</div>
+              <div class="progress-bar"><div class="progress-fill" style="width: 80%"></div></div>
+            </div>
+          </div>
+          <button class="add-card">+ Add a card</button>
+        </div>
+
+        <!-- Done -->
+        <div class="column column-done">
+          <div class="column-header">
+            <span class="column-title">Done</span>
+            <span class="column-count">2</span>
+          </div>
+          <div class="card">
+            <div class="card-title">Project kickoff meeting</div>
+            <div class="card-desc">Aligned on vision, scope, and timeline. Everyone knows their role.</div>
+            <div class="card-meta">
+              <span class="label label-green">Completed</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Define tech stack</div>
+            <div class="card-desc">React/Vite frontend, NestJS backend, MySQL database. Documented decisions.</div>
+            <div class="card-meta">
+              <span class="label label-green">Completed</span>
+            </div>
+          </div>
+          <button class="add-card">+ Add a card</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setTheme(theme) {
+      document.body.classList.remove('theme-teal');
+      if (theme === 'teal') document.body.classList.add('theme-teal');
+      document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-' + theme).classList.add('active');
+      // Update sidebar dots
+      document.querySelector('.sidebar-item.active .sidebar-dot').style.background = theme === 'amber' ? '#D97706' : '#0D9488';
+    }
+
+    function toggleDark() {
+      document.body.classList.toggle('dark');
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+    }
+  </script>
+</body>
+</html>
