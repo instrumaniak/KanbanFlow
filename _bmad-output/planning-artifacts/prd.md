@@ -2,7 +2,7 @@
 stepsCompleted: ["step-01-init", "step-02-discovery", "step-02b-vision", "step-02c-executive-summary", "step-03-success", "step-04-journeys", "step-05-domain", "step-06-innovation", "step-07-project-type", "step-08-scoping", "step-09-functional", "step-10-nonfunctional", "step-11-polish"]
 inputDocuments: []
 workflowType: 'prd'
-project_name: trello-clone
+project_name: KanbanFlow
 author: Raziur
 date: 2026-03-19
 classification:
@@ -37,7 +37,7 @@ success:
     - All CRUD operations complete reliably
 ---
 
-# Product Requirements Document - trello-clone
+# Product Requirements Document - KanbanFlow
 
 **Author:** Raziur
 **Date:** 2026-03-19

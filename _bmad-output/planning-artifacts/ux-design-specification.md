@@ -3,12 +3,12 @@ stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
 inputDocuments:
   - prd.md
 workflowType: 'ux-design'
-project_name: trello-clone
+project_name: KanbanFlow
 author: Raziur
 date: 2026-03-19
 ---
 
-# UX Design Specification trello-clone
+# UX Design Specification KanbanFlow
 
 **Author:** Raziur
 **Date:** 2026-03-19

@@ -8,7 +8,7 @@ inputDocuments:
   - "_bmad-output/planning-artifacts/prd.md"
   - "_bmad-output/planning-artifacts/ux-design-specification.md"
 workflowType: 'architecture'
-project_name: 'trello-clone'
+project_name: 'KanbanFlow'
 user_name: 'Raziur'
 date: '2026-03-19'
 ---
@@ -440,7 +440,7 @@ export function BoardView({ boardId }: BoardViewProps) {
 ### Complete Project Directory Structure
 
 ```
-trello-clone/
+KanbanFlow/
 ├── .prettierrc                    # Shared Prettier config
 ├── .gitignore                     # Git ignore rules
 ├── README.md                      # Project documentation
