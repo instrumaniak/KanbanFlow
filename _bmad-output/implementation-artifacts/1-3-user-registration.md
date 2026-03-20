@@ -1,6 +1,6 @@
 # Story 1.3: User Registration
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -26,69 +26,69 @@ so that I can create an account and start using KanbanFlow.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create Users service and module (AC: 1, 2, 5)
-  - [ ] Create `backend/src/users/users.module.ts`
-  - [ ] Create `backend/src/users/users.service.ts` with `findByEmail()` and `create()` methods
-  - [ ] Create `backend/src/users/users.controller.ts` (stub — auth routes live in AuthController)
-  - [ ] Export `UsersModule` for use by `AuthModule`
-  - [ ] This module MUST exist before AuthModule imports it
-- [ ] Task 2: Create Auth backend module (AC: 1, 2, 3, 4)
-  - [ ] Create `backend/src/auth/auth.module.ts` — imports `UsersModule`
-  - [ ] Create `backend/src/auth/auth.service.ts` with `register()` method
-  - [ ] Create `backend/src/auth/auth.controller.ts` with `POST /api/auth/register` endpoint
-  - [ ] Create `backend/src/auth/dto/register.dto.ts` with email format + password rules validation
-  - [ ] Install `bcrypt` and `@types/bcrypt` for password hashing
-- [ ] Task 3: Implement registration logic (AC: 1, 2, 3, 5)
-  - [ ] Check for duplicate email via `UsersService.findByEmail()` — throw `ConflictException` with "Email already registered"
-  - [ ] Hash password with bcrypt (salt rounds: 10) before storing
-  - [ ] Create user in database via `UsersService.create()`
-  - [ ] `register()` method sets the session cookie directly (auto-login) — NOT a separate login call
-  - [ ] Return `{ data: { id, email, role }, message: "Registration successful" }`
-- [ ] Task 4: Implement session management (AC: 3, 4)
-  - [ ] Install `cookie-parser` and `express-session` with `@types/express-session`
-  - [ ] Configure cookie-based session in `app.module.ts` or `main.ts`
-  - [ ] Cookie options: `httpOnly: true`, `sameSite: 'lax'`, `secure: process.env.NODE_ENV === 'production'`, `maxAge: 86400000` (24h)
-  - [ ] Session stores: `{ userId: number, email: string, role: string }`
-  - [ ] On successful registration, set session with user data and return user object
-  - [ ] Create `GET /api/auth/me` endpoint — reads session, returns user or 401
-- [ ] Task 5: Implement registration toggle check (AC: 6)
-  - [ ] Use in-memory boolean `registrationEnabled` in AuthService (MVP: resets on restart, acceptable for single-user self-hosted)
-  - [ ] Check flag before processing registration — throw `ForbiddenException` with "Registration is currently closed"
-  - [ ] Admin toggle endpoint added in Story 6.3 (do NOT build admin toggle here)
-- [ ] Task 6: Create frontend auth feature (AC: 1, 4, 7)
-  - [ ] Create `frontend/src/features/auth/register-form.tsx`
+- [x] Task 1: Create Users service and module (AC: 1, 2, 5)
+  - [x] Create `backend/src/users/users.module.ts`
+  - [x] Create `backend/src/users/users.service.ts` with `findByEmail()` and `create()` methods
+  - [x] Create `backend/src/users/users.controller.ts` (stub — auth routes live in AuthController)
+  - [x] Export `UsersModule` for use by `AuthModule`
+  - [x] This module MUST exist before AuthModule imports it
+- [x] Task 2: Create Auth backend module (AC: 1, 2, 3, 4)
+  - [x] Create `backend/src/auth/auth.module.ts` — imports `UsersModule`
+  - [x] Create `backend/src/auth/auth.service.ts` with `register()` method
+  - [x] Create `backend/src/auth/auth.controller.ts` with `POST /api/auth/register` endpoint
+  - [x] Create `backend/src/auth/dto/register.dto.ts` with email format + password rules validation
+  - [x] Install `bcrypt` and `@types/bcrypt` for password hashing
+- [x] Task 3: Implement registration logic (AC: 1, 2, 3, 5)
+  - [x] Check for duplicate email via `UsersService.findByEmail()` — throw `ConflictException` with "Email already registered"
+  - [x] Hash password with bcrypt (salt rounds: 10) before storing
+  - [x] Create user in database via `UsersService.create()`
+  - [x] `register()` method sets the session cookie directly (auto-login) — NOT a separate login call
+  - [x] Return `{ data: { id, email, role }, message: "Registration successful" }`
+- [x] Task 4: Implement session management (AC: 3, 4)
+  - [x] Install `cookie-parser` and `express-session` with `@types/express-session`
+  - [x] Configure cookie-based session in `app.module.ts` or `main.ts`
+  - [x] Cookie options: `httpOnly: true`, `sameSite: 'lax'`, `secure: process.env.NODE_ENV === 'production'`, `maxAge: 86400000` (24h)
+  - [x] Session stores: `{ userId: number, email: string, role: string }`
+  - [x] On successful registration, set session with user data and return user object
+  - [x] Create `GET /api/auth/me` endpoint — reads session, returns user or 401
+- [x] Task 5: Implement registration toggle check (AC: 6)
+  - [x] Use in-memory boolean `registrationEnabled` in AuthService (MVP: resets on restart, acceptable for single-user self-hosted)
+  - [x] Check flag before processing registration — throw `ForbiddenException` with "Registration is currently closed"
+  - [x] Admin toggle endpoint added in Story 6.3 (do NOT build admin toggle here)
+- [x] Task 6: Create frontend auth feature (AC: 1, 4, 7)
+  - [x] Create `frontend/src/features/auth/register-form.tsx`
     - Email field: shadcn `Input` with `type="email"` + email format validation
     - Password field: shadcn `Input` with `type="password"` + strength validation (min 8, 1 number/special)
     - Confirm password field: shadcn `Input` with `type="password"` + match validation
     - Submit button: shadcn `Button` with loading spinner state
     - Validation errors: inline `<p>` below each field with `text-destructive` class
-  - [ ] Create `frontend/src/features/auth/auth-provider.tsx` — React context for auth state
-  - [ ] Create `frontend/src/features/auth/use-auth.ts` — `useAuth()` hook returns `{ user, isLoading, register, logout }`
-  - [ ] Create `frontend/src/features/auth/auth.api.ts` — API calls via React Query mutations
+  - [x] Create `frontend/src/features/auth/auth-provider.tsx` — React context for auth state
+  - [x] Create `frontend/src/features/auth/use-auth.ts` — `useAuth()` hook returns `{ user, isLoading, register, logout }`
+  - [x] Create `frontend/src/features/auth/auth.api.ts` — API calls via React Query mutations
     - `registerApi(data)` → `POST /api/auth/register`
     - `meApi()` → `GET /api/auth/me`
     - `logoutApi()` → `POST /api/auth/logout`
-  - [ ] On success, redirect to `/projects` using React Router `useNavigate()`
-  - [ ] On error, display toast via shadcn `useToast()` with server error message
-- [ ] Task 7: Wire up routing and API proxy (AC: 4)
-  - [ ] Configure Vite proxy in `frontend/vite.config.ts` to forward `/api/*` to `http://localhost:3000`
-  - [ ] Add `/register` route in `App.tsx` — renders `RegisterForm`
-  - [ ] Add `/login` route stub in `App.tsx` — renders placeholder (full impl in Story 1.4)
-  - [ ] Add `/forgot-password` route stub in `App.tsx` — renders placeholder
-- [ ] Task 8: Add rate limiting to auth endpoints (AC: all)
-  - [ ] Install `@nestjs/throttler` if not already installed
-  - [ ] Configure `ThrottlerModule.forRoot()` in `app.module.ts` — default: 10 req/min
-  - [ ] Apply `@Throttle({ default: { limit: 5, ttl: 60000 } })` to registration endpoint
-- [ ] Task 9: Add Swagger decorators to auth endpoints (AC: all)
-  - [ ] Add `@ApiTags('auth')` to AuthController
-  - [ ] Add `@ApiOperation({ summary: 'Register new user' })` + `@ApiResponse()` to register endpoint
-  - [ ] Add `@ApiOperation({ summary: 'Get current user' })` + `@ApiResponse()` to `/api/auth/me`
-  - [ ] Use same Swagger decorator pattern as any existing controllers from story 1.2
-- [ ] Task 10: Write tests (AC: all)
-  - [ ] Create `backend/src/auth/auth.service.spec.ts` — test: registration success, duplicate email throws ConflictException, password is hashed (not plain text), session is set
-  - [ ] Create `backend/src/auth/auth.controller.spec.ts` — test: register endpoint returns correct response, validation errors return 400
-  - [ ] Create `backend/src/users/users.service.spec.ts` — test: findByEmail returns user, create persists to DB
-  - [ ] Create `frontend/src/features/auth/register-form.test.tsx` — test: renders form, shows validation errors for weak password, shows validation errors for invalid email, submits on valid input
+  - [x] On success, redirect to `/projects` using React Router `useNavigate()`
+  - [x] On error, display toast via shadcn `useToast()` with server error message
+- [x] Task 7: Wire up routing and API proxy (AC: 4)
+  - [x] Configure Vite proxy in `frontend/vite.config.ts` to forward `/api/*` to `http://localhost:3000`
+  - [x] Add `/register` route in `App.tsx` — renders `RegisterForm`
+  - [x] Add `/login` route stub in `App.tsx` — renders placeholder (full impl in Story 1.4)
+  - [x] Add `/forgot-password` route stub in `App.tsx` — renders placeholder
+- [x] Task 8: Add rate limiting to auth endpoints (AC: all)
+  - [x] Install `@nestjs/throttler` if not already installed
+  - [x] Configure `ThrottlerModule.forRoot()` in `app.module.ts` — default: 10 req/min
+  - [x] Apply `@Throttle({ default: { limit: 5, ttl: 60000 } })` to registration endpoint
+- [x] Task 9: Add Swagger decorators to auth endpoints (AC: all)
+  - [x] Add `@ApiTags('auth')` to AuthController
+  - [x] Add `@ApiOperation({ summary: 'Register new user' })` + `@ApiResponse()` to register endpoint
+  - [x] Add `@ApiOperation({ summary: 'Get current user' })` + `@ApiResponse()` to `/api/auth/me`
+  - [x] Use same Swagger decorator pattern as any existing controllers from story 1.2
+- [x] Task 10: Write tests (AC: all)
+  - [x] Create `backend/src/auth/auth.service.spec.ts` — test: registration success, duplicate email throws ConflictException, password is hashed (not plain text), session is set
+  - [x] Create `backend/src/auth/auth.controller.spec.ts` — test: register endpoint returns correct response, validation errors return 400
+  - [x] Create `backend/src/users/users.service.spec.ts` — test: findByEmail returns user, create persists to DB
+  - [x] Create `frontend/src/features/auth/register-form.test.tsx` — test: renders form, shows validation errors for weak password, shows validation errors for invalid email, submits on valid input
 
 ## Dev Notes
 
@@ -355,9 +355,50 @@ frontend/src/features/auth/
 
 ### Agent Model Used
 
+Amelia (Developer Agent) - Senior Software Engineer
 
 ### Debug Log References
 
+- All tests passing: backend (19 tests), frontend (3 tests)
+- Installed packages: bcrypt, @types/bcrypt, cookie-parser, express-session, @types/cookie-parser, @types/express-session, @nestjs/throttler, @nestjs/swagger, @tanstack/react-query, react-router-dom
+- Added vitest config and test-setup.ts for frontend testing
+
 ### Completion Notes List
 
+- Implemented full auth registration flow: backend (NestJS) + frontend (React)
+- Created Users module with findByEmail, findById, create methods
+- Created Auth module with register, me endpoints
+- Session management via express-session middleware in AppModule
+- Registration toggle using in-memory flag (MVP approach)
+- Rate limiting via @nestjs/throttler (5 req/min on register endpoint)
+- Swagger decorators on all auth endpoints
+- Frontend: RegisterForm with inline validation, auth-provider context, useAuth hook
+- Tests: 19 backend tests (Jest), 3 frontend tests (Vitest)
+
 ### File List
+
+**Backend:**
+- `backend/src/users/users.module.ts` (new)
+- `backend/src/users/users.service.ts` (new)
+- `backend/src/users/users.controller.ts` (new)
+- `backend/src/users/dto/create-user.dto.ts` (new)
+- `backend/src/users/users.service.spec.ts` (new)
+- `backend/src/auth/auth.module.ts` (new)
+- `backend/src/auth/auth.service.ts` (new)
+- `backend/src/auth/auth.controller.ts` (new)
+- `backend/src/auth/dto/register.dto.ts` (new)
+- `backend/src/auth/auth.service.spec.ts` (new)
+- `backend/src/auth/auth.controller.spec.ts` (new)
+- `backend/src/app.module.ts` (modified - added AuthModule, UsersModule, ThrottlerModule, session middleware)
+
+**Frontend:**
+- `frontend/src/features/auth/register-form.tsx` (new)
+- `frontend/src/features/auth/register-form.test.tsx` (new)
+- `frontend/src/features/auth/auth-provider.tsx` (new)
+- `frontend/src/features/auth/use-auth.ts` (new)
+- `frontend/src/features/auth/auth.api.ts` (new)
+- `frontend/src/components/ui/input.tsx` (new)
+- `frontend/src/components/ui/use-toast.tsx` (new)
+- `frontend/src/App.tsx` (modified - added routing, AuthProvider, QueryClientProvider)
+- `frontend/vitest.config.ts` (new)
+- `frontend/src/test-setup.ts` (new)
