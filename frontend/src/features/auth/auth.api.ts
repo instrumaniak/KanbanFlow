@@ -28,8 +28,13 @@ export async function registerApi(data: RegisterRequest): Promise<ApiResponse<Us
   });
 
   if (!response.ok) {
-    const error: ApiError = await response.json();
-    const message = Array.isArray(error.message) ? error.message.join(', ') : error.message;
+    let message = 'Request failed';
+    try {
+      const error: ApiError = await response.json();
+      message = Array.isArray(error.message) ? error.message.join(', ') : error.message;
+    } catch {
+      message = response.statusText || 'Request failed';
+    }
     throw new Error(message);
   }
 
@@ -39,8 +44,13 @@ export async function registerApi(data: RegisterRequest): Promise<ApiResponse<Us
 export async function meApi(): Promise<ApiResponse<UserResponse>> {
   const response = await fetch('/api/auth/me');
   if (!response.ok) {
-    const error: ApiError = await response.json();
-    const message = Array.isArray(error.message) ? error.message.join(', ') : error.message;
+    let message = 'Request failed';
+    try {
+      const error: ApiError = await response.json();
+      message = Array.isArray(error.message) ? error.message.join(', ') : error.message;
+    } catch {
+      message = response.statusText || 'Request failed';
+    }
     throw new Error(message);
   }
   return response.json();
@@ -49,8 +59,13 @@ export async function meApi(): Promise<ApiResponse<UserResponse>> {
 export async function logoutApi(): Promise<void> {
   const response = await fetch('/api/auth/logout', { method: 'POST' });
   if (!response.ok) {
-    const error: ApiError = await response.json();
-    const message = Array.isArray(error.message) ? error.message.join(', ') : error.message;
+    let message = 'Request failed';
+    try {
+      const error: ApiError = await response.json();
+      message = Array.isArray(error.message) ? error.message.join(', ') : error.message;
+    } catch {
+      message = response.statusText || 'Request failed';
+    }
     throw new Error(message);
   }
 }

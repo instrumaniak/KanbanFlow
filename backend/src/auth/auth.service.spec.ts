@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, ForbiddenException } from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
@@ -15,12 +16,14 @@ describe('AuthService', () => {
     create: jest.fn(),
   };
 
+  const originalEnv = process.env;
+
   beforeEach(async () => {
+    jest.resetModules();
+    process.env = { ...originalEnv, REGISTRATION_ENABLED: 'true' };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AuthService,
-        { provide: UsersService, useValue: mockUsersService },
-      ],
+      providers: [AuthService, { provide: UsersService, useValue: mockUsersService }],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
@@ -28,10 +31,11 @@ describe('AuthService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    process.env = originalEnv;
   });
 
   describe('register', () => {
-    const registerDto = { email: 'test@example.com', password: 'Password123' };
+    const registerDto = { email: 'Test@Example.COM', password: 'Password123' };
     const mockUser = { id: 1, email: 'test@example.com', role: 'user' };
     const mockSession: Record<string, unknown> = {};
 
@@ -51,26 +55,47 @@ describe('AuthService', () => {
       expect(mockSession.role).toBe('user');
     });
 
-    it('should throw ConflictException when email already exists', async () => {
-      mockUsersService.findByEmail.mockResolvedValue(mockUser);
+    it('should normalize email to lowercase before storage', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+      mockUsersService.create.mockResolvedValue(mockUser);
 
-      await expect(service.register(registerDto, mockSession)).rejects.toThrow(
-        ConflictException,
-      );
-      await expect(service.register(registerDto, mockSession)).rejects.toThrow(
-        'Email already registered',
+      await service.register(registerDto, mockSession);
+
+      expect(mockUsersService.findByEmail).toHaveBeenCalledWith('test@example.com');
+      expect(mockUsersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'test@example.com' }),
       );
     });
 
-    it('should throw ForbiddenException when registration is disabled', async () => {
-      // Access private field to disable registration
+    it('should throw ConflictException with period when email already exists', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(mockUser);
+
+      await expect(service.register(registerDto, mockSession)).rejects.toThrow(ConflictException);
+      await expect(service.register(registerDto, mockSession)).rejects.toThrow(
+        'Email already registered.',
+      );
+    });
+
+    it('should handle DB duplicate entry race condition', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+      const dupError = new QueryFailedError('INSERT', [], new Error('Duplicate'));
+      (dupError as unknown as { code: string }).code = 'ER_DUP_ENTRY';
+      mockUsersService.create.mockRejectedValue(dupError);
+
+      await expect(service.register(registerDto, mockSession)).rejects.toThrow(ConflictException);
+      await expect(service.register(registerDto, mockSession)).rejects.toThrow(
+        'Email already registered.',
+      );
+    });
+
+    it('should throw ForbiddenException with period when registration is disabled', async () => {
       (service as unknown as { registrationEnabled: boolean }).registrationEnabled = false;
 
+      await expect(service.register(registerDto, mockSession)).rejects.toThrow(ForbiddenException);
       await expect(service.register(registerDto, mockSession)).rejects.toThrow(
-        ForbiddenException,
-      );
-      await expect(service.register(registerDto, mockSession)).rejects.toThrow(
-        'Registration is currently closed',
+        'Registration is currently closed.',
       );
     });
 

@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RegisterForm } from './register-form';
 import { AuthProvider } from './auth-provider';
 import { ToastProvider } from '@/components/ui/use-toast';
+
+vi.mock('./auth.api', () => ({
+  registerApi: vi.fn(),
+  meApi: vi.fn().mockRejectedValue(new Error('Not authenticated')),
+  logoutApi: vi.fn(),
+}));
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -60,5 +66,82 @@ describe('RegisterForm', () => {
     expect(emailInput).toHaveValue('test@example.com');
     expect(passwordInput).toHaveValue('Password123');
     expect(confirmInput).toHaveValue('Password123');
+  });
+
+  it('shows validation errors for empty fields on submit', async () => {
+    render(<RegisterForm />, { wrapper: createWrapper() });
+
+    fireEvent.submit(screen.getByRole('form'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Email is required')).toBeInTheDocument();
+      expect(screen.getByText('Password is required')).toBeInTheDocument();
+      expect(screen.getByText('Please confirm your password')).toBeInTheDocument();
+    });
+  });
+
+  it('shows validation error for invalid email on submit', async () => {
+    render(<RegisterForm />, { wrapper: createWrapper() });
+
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'invalid' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'Password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'Password123' } });
+    fireEvent.submit(screen.getByRole('form'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Please enter a valid email')).toBeInTheDocument();
+    });
+  });
+
+  it('shows validation error for weak password on submit', async () => {
+    render(<RegisterForm />, { wrapper: createWrapper() });
+
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'short' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'short' } });
+    fireEvent.submit(screen.getByRole('form'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Password must be at least 8 characters')).toBeInTheDocument();
+    });
+  });
+
+  it('shows validation error for password without number or special char', async () => {
+    render(<RegisterForm />, { wrapper: createWrapper() });
+
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'longpassword' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'longpassword' } });
+    fireEvent.submit(screen.getByRole('form'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Password must contain at least 1 number or special character')).toBeInTheDocument();
+    });
+  });
+
+  it('shows validation error for mismatched passwords on submit', async () => {
+    render(<RegisterForm />, { wrapper: createWrapper() });
+
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'Password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'Different456' } });
+    fireEvent.submit(screen.getByRole('form'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
+    });
+  });
+
+  it('renders validation errors with text-destructive class', async () => {
+    render(<RegisterForm />, { wrapper: createWrapper() });
+
+    fireEvent.submit(screen.getByRole('form'));
+
+    await waitFor(() => {
+      const errorElements = screen.getAllByText(/is required/i);
+      errorElements.forEach((el) => {
+        expect(el.className).toContain('text-destructive');
+      });
+    });
   });
 });

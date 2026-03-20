@@ -1,34 +1,55 @@
-import { Injectable, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  ForbiddenException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { QueryFailedError } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
-  private registrationEnabled = true;
+  private registrationEnabled: boolean;
 
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) {
+    this.registrationEnabled = process.env.REGISTRATION_ENABLED !== 'false';
+  }
 
   async register(
     registerDto: RegisterDto,
     session: Record<string, unknown>,
   ): Promise<{ id: number; email: string; role: string }> {
     if (!this.registrationEnabled) {
-      throw new ForbiddenException('Registration is currently closed');
+      throw new ForbiddenException('Registration is currently closed.');
     }
 
-    const existingUser = await this.usersService.findByEmail(registerDto.email);
+    const email = registerDto.email.toLowerCase().trim();
+
+    const existingUser = await this.usersService.findByEmail(email);
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException('Email already registered.');
     }
 
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(registerDto.password, saltRounds);
 
-    const user = await this.usersService.create({
-      email: registerDto.email,
-      password: hashedPassword,
-    });
+    let user;
+    try {
+      user = await this.usersService.create({
+        email,
+        password: hashedPassword,
+      });
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error as { code?: string }).code === 'ER_DUP_ENTRY'
+      ) {
+        throw new ConflictException('Email already registered.');
+      }
+      throw new InternalServerErrorException();
+    }
 
     session.userId = user.id;
     session.email = user.email;

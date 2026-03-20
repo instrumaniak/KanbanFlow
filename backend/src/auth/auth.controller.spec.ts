@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
@@ -59,30 +60,37 @@ describe('AuthController', () => {
   });
 
   describe('me', () => {
-    it('should return user data when session exists', async () => {
+    it('should return user data when session exists', () => {
       const mockSession: Record<string, unknown> = {
         userId: 1,
         email: 'test@example.com',
         role: 'user',
       };
 
-      const result = await controller.me(mockSession);
+      const result = controller.me(mockSession);
 
       expect(result).toEqual({
         data: { id: 1, email: 'test@example.com', role: 'user' },
       });
     });
 
-    it('should return 401 when session is missing', async () => {
+    it('should throw UnauthorizedException when session is missing', () => {
       const mockSession: Record<string, unknown> = {};
 
-      const result = await controller.me(mockSession);
+      expect(() => controller.me(mockSession)).toThrow(UnauthorizedException);
+    });
+  });
 
-      expect(result).toEqual({
-        statusCode: 401,
-        message: 'Unauthorized',
-        error: 'Unauthorized',
-      });
+  describe('logout', () => {
+    it('should destroy session on logout', async () => {
+      const destroyFn = jest.fn((cb: (err: null) => void) => cb(null));
+      const mockSession: Record<string, unknown> = {
+        destroy: destroyFn as unknown as (cb: (err: Error | null) => void) => void,
+      };
+
+      await controller.logout(mockSession);
+
+      expect(destroyFn).toHaveBeenCalled();
     });
   });
 });

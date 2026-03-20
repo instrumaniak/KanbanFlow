@@ -9,7 +9,7 @@ import configuration from './config/configuration';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import * as cookieParser from 'cookie-parser';
-import * as session from 'express-session';
+import session from 'express-session';
 
 @Module({
   imports: [
@@ -52,17 +52,25 @@ export class AppModule implements NestModule {
       .apply(
         cookieParser.default(),
         session({
-          secret: process.env.SESSION_SECRET || 'kanbanflow-dev-secret',
+          secret: this.getSessionSecret(),
           resave: false,
           saveUninitialized: false,
           cookie: {
             httpOnly: true,
             sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production',
+            secure: process.env.NODE_ENV !== 'development',
             maxAge: 86400000,
           },
         }),
       )
       .forRoutes('*');
+  }
+
+  private getSessionSecret(): string {
+    const secret = process.env.SESSION_SECRET;
+    if (!secret && process.env.NODE_ENV === 'production') {
+      throw new Error('SESSION_SECRET environment variable is required in production.');
+    }
+    return secret || 'kanbanflow-dev-secret';
   }
 }

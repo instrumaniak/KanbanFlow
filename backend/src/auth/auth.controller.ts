@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Body, Session, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Session,
+  HttpCode,
+  HttpStatus,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -15,12 +24,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Register new user' })
   @ApiResponse({ status: 201, description: 'Registration successful' })
   @ApiResponse({ status: 400, description: 'Validation error' })
-  @ApiResponse({ status: 409, description: 'Email already registered' })
-  @ApiResponse({ status: 403, description: 'Registration is currently closed' })
-  async register(
-    @Body() registerDto: RegisterDto,
-    @Session() session: Record<string, unknown>,
-  ) {
+  @ApiResponse({ status: 409, description: 'Email already registered.' })
+  @ApiResponse({ status: 403, description: 'Registration is currently closed.' })
+  async register(@Body() registerDto: RegisterDto, @Session() session: Record<string, unknown>) {
     const user = await this.authService.register(registerDto, session);
     return {
       data: user,
@@ -32,9 +38,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: 200, description: 'Returns current user' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async me(@Session() session: Record<string, unknown>) {
+  me(@Session() session: Record<string, unknown>) {
     if (!session.userId || !session.email || !session.role) {
-      return { statusCode: 401, message: 'Unauthorized', error: 'Unauthorized' };
+      throw new UnauthorizedException();
     }
     return {
       data: {
@@ -43,5 +49,20 @@ export class AuthController {
         role: session.role,
       },
     };
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Logout current user' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  async logout(@Session() session: Record<string, unknown>) {
+    return new Promise<void>((resolve, reject) => {
+      const destroy = (session as { destroy?: (cb: (err: Error | null) => void) => void }).destroy;
+      if (!destroy) return resolve();
+      destroy((err: Error | null) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
   }
 }

@@ -18,7 +18,7 @@ export function RegisterForm() {
 
   const validateEmail = (value: string): string | undefined => {
     if (!value) return 'Email is required';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email';
+    if (!/^[^\s@]+@[^\s@]+$/.test(value)) return 'Please enter a valid email';
     return undefined;
   };
 
@@ -78,7 +78,7 @@ export function RegisterForm() {
           <h1 className="text-2xl font-bold">Create an Account</h1>
           <p className="text-muted-foreground">Enter your details to register</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form role="form" onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
               Email
