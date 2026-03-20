@@ -1,6 +1,6 @@
 # Story 1.2: Database Schema Setup
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -22,50 +22,50 @@ so that the application can persist user and project data.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Install backend dependencies (AC: 1, 2)
-  - [ ] Install `@nestjs/config` for ConfigModule
-  - [ ] Install `@nestjs/typeorm` and `typeorm` for ORM
-  - [ ] Install `mysql2` driver for MySQL connectivity
-  - [ ] Install `class-validator` and `class-transformer` for .env validation
-  - [ ] Install `dotenv` for data-source.ts standalone loading
-- [ ] Task 2: Modify `.env` file with database configuration (AC: 1)
-  - [ ] Add DB vars to existing `backend/.env`: DB_HOST=localhost, DB_PORT=3306, DB_USERNAME=root, DB_PASSWORD=password, DB_NAME=kanbanflow_dev
-  - [ ] Add NODE_ENV=development
-  - [ ] Create `backend/.env.example` with placeholder values for documentation (never commit real .env)
-- [ ] Task 3: Create configuration module (AC: 1)
-  - [ ] Create `backend/src/config/configuration.ts` using `registerAs('database', ...)`
-  - [ ] Validate config with class-validator decorators (IsString, IsNumber, IsOptional)
-  - [ ] Export typed config interface
-- [ ] Task 4: Create TypeORM data-source for CLI (AC: 3)
-  - [ ] Create `backend/src/data-source.ts` as standalone DataSource
-  - [ ] Use `dotenv/config` import to load .env (NOT ConfigService — runs outside NestJS)
-  - [ ] Read DB values via `process.env.DB_HOST` etc.
-  - [ ] Set `synchronize: false`, `migrationsRun: false`
-  - [ ] Point entities to `dist/**/*.entity.js` and migrations to `dist/migrations/*.js`
-- [ ] Task 5: Configure TypeORM in app.module.ts (AC: 2)
-  - [ ] Add `ConfigModule.forRoot({ isGlobal: true, validate })` where `validate` uses class-validator (see Dev Notes)
-  - [ ] Add `TypeOrmModule.forRootAsync()` with inject ConfigService
-  - [ ] Configure: type mysql, entities auto-load, migrations path, synchronize false
-- [ ] Task 6: Create User entity (AC: 5)
-  - [ ] Create `backend/src/users/entities/user.entity.ts`
-  - [ ] Columns: id (PK auto-increment), email (unique, max 255), password (min 8 chars stored as bcrypt hash), role (default 'user'), created_at, updated_at
-  - [ ] Add OneToMany relation to Project
-- [ ] Task 7: Create Project entity (AC: 6)
-  - [ ] Create `backend/src/projects/entities/project.entity.ts`
-  - [ ] Columns: id (PK auto-increment), name, user_id (FK integer), created_at, updated_at
-  - [ ] Add ManyToOne relation to User with onDelete CASCADE
-- [ ] Task 8: Generate and run initial migration (AC: 4, 7)
-  - [ ] Run `npm run build` to compile entities
-  - [ ] Run `npm run migration:generate -- src/migrations/1710825600000-CreateUsersProjects`
-  - [ ] Review generated migration SQL
-  - [ ] Run `npm run migration:run`
-  - [ ] Verify with `npm run migration:show`
-- [ ] Task 9: Add migration scripts to package.json (AC: 7)
-  - [ ] Add `typeorm`, `migration:generate`, `migration:create`, `migration:run`, `migration:revert`, `migration:show`, `db:sync` scripts
-  - [ ] Run `npm run migration:show` to verify scripts work (should show "No migrations" or pending)
-- [ ] Task 10: Create unit test stubs
-  - [ ] Create `backend/src/users/entities/user.entity.spec.ts` with placeholder test for User entity
-  - [ ] Create `backend/src/projects/entities/project.entity.spec.ts` with placeholder test for Project entity
+- [x] Task 1: Install backend dependencies (AC: 1, 2)
+  - [x] Install `@nestjs/config` for ConfigModule
+  - [x] Install `@nestjs/typeorm` and `typeorm` for ORM
+  - [x] Install `mysql2` driver for MySQL connectivity
+  - [x] Install `class-validator` and `class-transformer` for .env validation
+  - [x] Install `dotenv` for data-source.ts standalone loading
+- [x] Task 2: Modify `.env` file with database configuration (AC: 1)
+  - [x] Add DB vars to existing `backend/.env`: DB_HOST=localhost, DB_PORT=3306, DB_USERNAME=root, DB_PASSWORD=password, DB_NAME=kanbanflow_dev
+  - [x] Add NODE_ENV=development
+  - [x] Create `backend/.env.example` with placeholder values for documentation (never commit real .env)
+- [x] Task 3: Create configuration module (AC: 1)
+  - [x] Create `backend/src/config/configuration.ts` using `registerAs('database', ...)`
+  - [x] Validate config with class-validator decorators (IsString, IsNumber, IsOptional)
+  - [x] Export typed config interface
+- [x] Task 4: Create TypeORM data-source for CLI (AC: 3)
+  - [x] Create `backend/src/data-source.ts` as standalone DataSource
+  - [x] Use `dotenv/config` import to load .env (NOT ConfigService — runs outside NestJS)
+  - [x] Read DB values via `process.env.DB_HOST` etc.
+  - [x] Set `synchronize: false`, `migrationsRun: false`
+  - [x] Point entities to `dist/**/*.entity.js` and migrations to `dist/migrations/*.js`
+- [x] Task 5: Configure TypeORM in app.module.ts (AC: 2)
+  - [x] Add `ConfigModule.forRoot({ isGlobal: true, validate })` where `validate` uses class-validator (see Dev Notes)
+  - [x] Add `TypeOrmModule.forRootAsync()` with inject ConfigService
+  - [x] Configure: type mysql, entities auto-load, migrations path, synchronize false
+- [x] Task 6: Create User entity (AC: 5)
+  - [x] Create `backend/src/users/entities/user.entity.ts`
+  - [x] Columns: id (PK auto-increment), email (unique, max 255), password (min 8 chars stored as bcrypt hash), role (default 'user'), created_at, updated_at
+  - [x] Add OneToMany relation to Project
+- [x] Task 7: Create Project entity (AC: 6)
+  - [x] Create `backend/src/projects/entities/project.entity.ts`
+  - [x] Columns: id (PK auto-increment), name, user_id (FK integer), created_at, updated_at
+  - [x] Add ManyToOne relation to User with onDelete CASCADE
+- [x] Task 8: Generate and run initial migration (AC: 4, 7)
+  - [x] Run `npm run build` to compile entities
+  - [x] Run `npm run migration:generate -- src/migrations/CreateUsersProjects`
+  - [x] Review generated migration SQL — creates `users`, `projects` tables + FK constraint
+  - [x] Run `npm run migration:run` — executed successfully
+  - [x] Verify with `npm run migration:show` — shows `[X] 1 CreateUsersProjects1773977509530`
+- [x] Task 9: Add migration scripts to package.json (AC: 7)
+  - [x] Add `typeorm`, `migration:generate`, `migration:create`, `migration:run`, `migration:revert`, `migration:show`, `db:sync` scripts
+  - [x] Run `npm run migration:show` to verify scripts work — shows `[X] 1 CreateUsersProjects1773977509530`
+- [x] Task 10: Create unit test stubs
+  - [x] Create `backend/src/users/entities/user.entity.spec.ts` with placeholder test for User entity
+  - [x] Create `backend/src/projects/entities/project.entity.spec.ts` with placeholder test for Project entity
 
 ## Dev Notes
 
@@ -398,10 +398,38 @@ backend/
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Amelia (Dev Agent) — opencode/mimo-v2-pro-free
 
 ### Debug Log References
 
+- Build failed initially due to TypeScript strict mode (`strictPropertyInitialization`). Fixed by adding `!` definite assignment assertions to all entity properties and `EnvironmentVariables` class properties in `env.validation.ts`.
+- `data-source.ts` originally used `dist/**/*.entity.js` / `dist/migrations/*.js` paths. Changed to `__dirname + '/**/*.entity{.ts,.js}'` / `__dirname + '/migrations/*{.ts,.js}'` so CLI works via `ts-node`.
+- First migration generation used filename `1710825600000-CreateUsersProjects` which produced invalid TS class name starting with a number. Regenerated as `CreateUsersProjects` — valid class name.
+
 ### Completion Notes List
 
+- All 10 tasks implemented and verified
+- `npm run build` passes (0 errors)
+- `npm test` passes (3/3 tests)
+- All 7 ACs satisfied — `npm run migration:run` executes successfully, tables verified in MySQL
+- Migration generated via TypeORM CLI, not manual
+- Used `!` (non-null assertion) on entity fields for strict TS compatibility — standard TypeORM pattern
+
+### Change Log
+
+- 2026-03-20: Initial implementation — all tasks complete (Amelia)
+
 ### File List
+
+- `backend/.env` (created)
+- `backend/.env.example` (created)
+- `backend/package.json` (modified — added migration scripts + dependencies)
+- `backend/src/app.module.ts` (modified — added ConfigModule + TypeOrmModule)
+- `backend/src/config/configuration.ts` (created)
+- `backend/src/config/env.validation.ts` (created)
+- `backend/src/data-source.ts` (created)
+- `backend/src/migrations/1773977509530-CreateUsersProjects.ts` (generated via CLI)
+- `backend/src/users/entities/user.entity.ts` (created)
+- `backend/src/users/entities/user.entity.spec.ts` (created)
+- `backend/src/projects/entities/project.entity.ts` (created)
+- `backend/src/projects/entities/project.entity.spec.ts` (created)
