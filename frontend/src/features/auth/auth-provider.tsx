@@ -1,6 +1,6 @@
 import { createContext, useContext, useCallback, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { registerApi, meApi, logoutApi } from './auth.api';
+import { registerApi, loginApi, meApi, logoutApi } from './auth.api';
 
 interface User {
   id: number;
@@ -12,6 +12,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   register: (data: { email: string; password: string }) => Promise<void>;
+  login: (data: { email: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -34,6 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const loginMutation = useMutation({
+    mutationFn: loginApi,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+    },
+  });
+
   const logoutMutation = useMutation({
     mutationFn: logoutApi,
     onSuccess: async () => {
@@ -48,6 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [registerMutation],
   );
 
+  const login = useCallback(
+    async (data: { email: string; password: string }) => {
+      await loginMutation.mutateAsync(data);
+    },
+    [loginMutation],
+  );
+
   const logout = useCallback(async () => {
     await logoutMutation.mutateAsync();
   }, [logoutMutation]);
@@ -58,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: userResponse?.data ?? null,
         isLoading,
         register,
+        login,
         logout,
       }}
     >

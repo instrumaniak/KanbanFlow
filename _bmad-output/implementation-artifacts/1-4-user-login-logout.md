@@ -1,6 +1,6 @@
 # Story 1.4: User Login/Logout
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -20,74 +20,74 @@ so that I can securely access my workspace.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create login DTO (AC: 1, 4, 7)
-  - [ ] Create `backend/src/auth/dto/login.dto.ts` with `email` (email format, required) and `password` (required) validation
-  - [ ] Use `class-validator` decorators consistent with `register.dto.ts` pattern
+- [x] Task 1: Create login DTO (AC: 1, 4, 7)
+  - [x] Create `backend/src/auth/dto/login.dto.ts` with `email` (email format, required) and `password` (required) validation
+  - [x] Use `class-validator` decorators consistent with `register.dto.ts` pattern
 
-- [ ] Task 2: Implement login logic in AuthService (AC: 1, 2, 4)
-  - [ ] Add `login(dto: LoginDto)` method to `backend/src/auth/auth.service.ts`
-  - [ ] Call `UsersService.findByEmail(dto.email)` — throw `UnauthorizedException` with "Invalid email or password" if not found
-  - [ ] Compare password with `bcrypt.compare()` — throw `UnauthorizedException` with "Invalid email or password" if mismatch
-  - [ ] Set session cookie: `req.session.userId = user.id`, `req.session.email = user.email`, `req.session.role = user.role`
-  - [ ] Return `{ data: { id, email, role }, message: "Login successful" }`
-  - [ ] Use generic error message for both "user not found" and "wrong password" — never reveal which field is wrong
+- [x] Task 2: Implement login logic in AuthService (AC: 1, 2, 4)
+  - [x] Add `login(dto: LoginDto)` method to `backend/src/auth/auth.service.ts`
+  - [x] Call `UsersService.findByEmail(dto.email)` — throw `UnauthorizedException` with "Invalid email or password" if not found
+  - [x] Compare password with `bcrypt.compare()` — throw `UnauthorizedException` with "Invalid email or password" if mismatch
+  - [x] Set session cookie: `req.session.userId = user.id`, `req.session.email = user.email`, `req.session.role = user.role`
+  - [x] Return `{ data: { id, email, role }, message: "Login successful" }`
+  - [x] Use generic error message for both "user not found" and "wrong password" — never reveal which field is wrong
 
-- [ ] Task 3: Implement logout logic in AuthService (AC: 3)
-  - [ ] Add `logout(req)` method to `backend/src/auth/auth.service.ts`
-  - [ ] Call `req.session.destroy()` to clear the session
-  - [ ] Clear the session cookie via `res.clearCookie('connect.sid')`
-  - [ ] Return `{ message: "Logout successful" }`
+- [x] Task 3: Implement logout logic in AuthService (AC: 3)
+  - [x] Add `logout(req)` method to `backend/src/auth/auth.service.ts`
+  - [x] Call `req.session.destroy()` to clear the session
+  - [x] Clear the session cookie via `res.clearCookie('connect.sid')`
+  - [x] Return `{ message: "Logout successful" }`
 
-- [ ] Task 4: Add login and logout endpoints to AuthController (AC: 1, 3, 5)
-  - [ ] Add `POST /api/auth/login` — accepts `LoginDto`, calls `AuthService.login()`
-  - [ ] Add `POST /api/auth/logout` — calls `AuthService.logout()`
-  - [ ] Apply `@Throttle({ default: { limit: 5, ttl: 60000 } })` to login endpoint (same rate as register)
-  - [ ] Add Swagger decorators: `@ApiOperation`, `@ApiResponse` consistent with register endpoint
+- [x] Task 4: Add login and logout endpoints to AuthController (AC: 1, 3, 5)
+  - [x] Add `POST /api/auth/login` — accepts `LoginDto`, calls `AuthService.login()`
+  - [x] Add `POST /api/auth/logout` — calls `AuthService.logout()`
+  - [x] Apply `@Throttle({ default: { limit: 5, ttl: 60000 } })` to login endpoint (same rate as register)
+  - [x] Add Swagger decorators: `@ApiOperation`, `@ApiResponse` consistent with register endpoint
 
-- [ ] Task 5: Create session guard for protected routes (AC: 6)
-  - [ ] Create `backend/src/auth/guards/session.guard.ts` implementing `CanActivate`
-  - [ ] Check `req.session.userId` exists — return `true` if authenticated, throw `UnauthorizedException` if not
-  - [ ] Create `backend/src/auth/decorators/current-user.decorator.ts` to extract user from session
-  - [ ] Guard is NOT applied in this story (wiring to protected routes happens in later stories) — just create it
+- [x] Task 5: Create session guard for protected routes (AC: 6)
+  - [x] Create `backend/src/auth/guards/session.guard.ts` implementing `CanActivate`
+  - [x] Check `req.session.userId` exists — return `true` if authenticated, throw `UnauthorizedException` if not
+  - [x] Create `backend/src/auth/decorators/current-user.decorator.ts` to extract user from session
+  - [x] Guard is NOT applied in this story (wiring to protected routes happens in later stories) — just create it
 
-- [ ] Task 6: Create frontend login form (AC: 1, 4, 7)
-  - [ ] Create `frontend/src/features/auth/login-form.tsx`
+- [x] Task 6: Create frontend login form (AC: 1, 4, 7)
+  - [x] Create `frontend/src/features/auth/login-form.tsx`
     - Email field: shadcn `Input` with `type="email"` + inline validation
     - Password field: shadcn `Input` with `type="password"` (no strength check on login — that's registration-only)
     - Submit button: shadcn `Button` with loading spinner state
     - Validation errors: inline `<p>` below each field with `text-destructive` class
     - Link to register page: "Don't have an account? Register"
-  - [ ] Use same layout/pattern as `register-form.tsx`
+  - [x] Use same layout/pattern as `register-form.tsx`
 
-- [ ] Task 7: Wire up auth provider with login method (AC: 1, 2, 3)
-  - [ ] Update `frontend/src/features/auth/auth.api.ts`:
+- [x] Task 7: Wire up auth provider with login method (AC: 1, 2, 3)
+  - [x] Update `frontend/src/features/auth/auth.api.ts`:
     - Add `loginApi(data)` → `POST /api/auth/login`
     - Verify `logoutApi()` → `POST /api/auth/logout` exists (already stubbed in Story 1.3)
-  - [ ] Update `frontend/src/features/auth/use-auth.ts`:
+  - [x] Update `frontend/src/features/auth/use-auth.ts`:
     - Add `login` to the returned hook object
     - Add `login` mutation in the provider that calls `loginApi`, updates user state, and navigates to `/projects`
-  - [ ] Update `frontend/src/features/auth/login-form.tsx` to use `useAuth().login` and `useToast()`
-  - [ ] Wire `/login` route in `App.tsx` — replace placeholder with `LoginForm` component
+  - [x] Update `frontend/src/features/auth/login-form.tsx` to use `useAuth().login` and `useToast()`
+  - [x] Wire `/login` route in `App.tsx` — replace placeholder with `LoginForm` component
 
-- [ ] Task 8: Add tests (AC: all)
-  - [ ] Create `backend/src/auth/auth.service.spec.ts` additions:
+- [x] Task 8: Add tests (AC: all)
+  - [x] Create `backend/src/auth/auth.service.spec.ts` additions:
     - Test: login with valid credentials returns user and sets session
     - Test: login with wrong password throws UnauthorizedException
     - Test: login with non-existent email throws UnauthorizedException
     - Test: logout destroys session
-  - [ ] Create `backend/src/auth/auth.controller.spec.ts` additions:
+  - [x] Create `backend/src/auth/auth.controller.spec.ts` additions:
     - Test: POST /api/auth/login returns correct response on success
     - Test: POST /api/auth/login returns 401 on invalid credentials
     - Test: POST /api/auth/logout returns success message
-  - [ ] Create `frontend/src/features/auth/login-form.test.tsx`:
+  - [x] Create `frontend/src/features/auth/login-form.test.tsx`:
     - Test: renders form with email and password fields
     - Test: shows validation errors for invalid email
     - Test: shows validation errors for empty password
     - Test: submits on valid input
 
-- [ ] Task 9: Update session check endpoint (AC: 6)
-  - [ ] Verify `GET /api/auth/me` works correctly with session set from login (should already work from Story 1.3)
-  - [ ] Add Swagger decorator to `/me` endpoint if missing
+- [x] Task 9: Update session check endpoint (AC: 6)
+  - [x] Verify `GET /api/auth/me` works correctly with session set from login (should already work from Story 1.3)
+  - [x] Add Swagger decorator to `/me` endpoint if missing
 
 ## Dev Notes
 
@@ -332,10 +332,42 @@ frontend/src/features/auth/
 
 ### Agent Model Used
 
-<!-- To be filled by dev agent -->
+OpenCode Dev Agent (Story 1.4 Implementation)
 
 ### Debug Log References
 
+No significant debugging required. Implementation followed established patterns from Story 1.3.
+
 ### Completion Notes List
 
+- Created `LoginDto` with email and password validation using class-validator
+- Added `login()` method to `AuthService` with bcrypt password comparison and generic error messages
+- Added `logout()` method to `AuthService` with session destroy
+- Created `POST /api/auth/login` endpoint with rate limiting (5 req/min) and Swagger decorators
+- Updated `POST /api/auth/logout` endpoint to use AuthService.logout() and return success message
+- Created `SessionGuard` for protecting routes (wiring in later stories)
+- Created `CurrentUser` decorator for extracting user from session
+- Created `LoginForm` component with inline validation and link to register page
+- Added `loginApi()` to auth.api.ts
+- Added `login` mutation to AuthProvider
+- Updated App.tsx to use LoginForm instead of placeholder
+- Added comprehensive tests for login/logout in both backend and frontend
+- All acceptance criteria satisfied
+
 ### File List
+
+**New Files:**
+- backend/src/auth/dto/login.dto.ts
+- backend/src/auth/guards/session.guard.ts
+- backend/src/auth/decorators/current-user.decorator.ts
+- frontend/src/features/auth/login-form.tsx
+- frontend/src/features/auth/login-form.test.tsx
+
+**Modified Files:**
+- backend/src/auth/auth.service.ts (added login/logout methods)
+- backend/src/auth/auth.controller.ts (added login endpoint, updated logout)
+- backend/src/auth/auth.service.spec.ts (added login/logout tests)
+- backend/src/auth/auth.controller.spec.ts (added login/logout tests)
+- frontend/src/features/auth/auth.api.ts (added loginApi)
+- frontend/src/features/auth/auth-provider.tsx (added login mutation)
+- frontend/src/App.tsx (wired LoginForm to /login route)

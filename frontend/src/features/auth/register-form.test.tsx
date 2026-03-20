@@ -8,6 +8,7 @@ import { ToastProvider } from '@/components/ui/use-toast';
 
 vi.mock('./auth.api', () => ({
   registerApi: vi.fn(),
+  loginApi: vi.fn(),
   meApi: vi.fn().mockRejectedValue(new Error('Not authenticated')),
   logoutApi: vi.fn(),
 }));

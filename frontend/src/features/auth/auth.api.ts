@@ -3,6 +3,11 @@ interface RegisterRequest {
   password: string;
 }
 
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+
 interface UserResponse {
   id: number;
   email: string;
@@ -22,6 +27,27 @@ interface ApiError {
 
 export async function registerApi(data: RegisterRequest): Promise<ApiResponse<UserResponse>> {
   const response = await fetch('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    let message = 'Request failed';
+    try {
+      const error: ApiError = await response.json();
+      message = Array.isArray(error.message) ? error.message.join(', ') : error.message;
+    } catch {
+      message = response.statusText || 'Request failed';
+    }
+    throw new Error(message);
+  }
+
+  return response.json();
+}
+
+export async function loginApi(data: LoginRequest): Promise<ApiResponse<UserResponse>> {
+  const response = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),

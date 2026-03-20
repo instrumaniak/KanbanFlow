@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, ForbiddenException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -143,6 +143,73 @@ describe('AuthService', () => {
       const result = await service.getCurrentUser(999);
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('login', () => {
+    const loginDto = { email: 'Test@Example.COM', password: 'Password123' };
+    const mockUser = { id: 1, email: 'test@example.com', password: 'hashedPassword', role: 'user' };
+    const mockSession: Record<string, unknown> = {};
+
+    it('should login user with valid credentials and set session', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      const result = await service.login(loginDto, mockSession);
+
+      expect(result).toEqual({ id: 1, email: 'test@example.com', role: 'user' });
+      expect(mockUsersService.findByEmail).toHaveBeenCalledWith('test@example.com');
+      expect(bcrypt.compare).toHaveBeenCalledWith('Password123', 'hashedPassword');
+      expect(mockSession.userId).toBe(1);
+      expect(mockSession.email).toBe('test@example.com');
+      expect(mockSession.role).toBe('user');
+    });
+
+    it('should normalize email to lowercase before lookup', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      await service.login(loginDto, mockSession);
+
+      expect(mockUsersService.findByEmail).toHaveBeenCalledWith('test@example.com');
+    });
+
+    it('should throw UnauthorizedException with generic message when user not found', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+
+      await expect(service.login(loginDto, mockSession)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto, mockSession)).rejects.toThrow(
+        'Invalid email or password',
+      );
+    });
+
+    it('should throw UnauthorizedException with generic message when password is wrong', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await expect(service.login(loginDto, mockSession)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto, mockSession)).rejects.toThrow(
+        'Invalid email or password',
+      );
+    });
+  });
+
+  describe('logout', () => {
+    it('should destroy session on logout', async () => {
+      const destroyFn = jest.fn((cb: (err: null) => void) => cb(null));
+      const mockSession: Record<string, unknown> = {
+        destroy: destroyFn as unknown as (cb: (err: Error | null) => void) => void,
+      };
+
+      await service.logout(mockSession);
+
+      expect(destroyFn).toHaveBeenCalled();
+    });
+
+    it('should handle missing destroy method gracefully', async () => {
+      const mockSession: Record<string, unknown> = {};
+
+      await expect(service.logout(mockSession)).resolves.toBeUndefined();
     });
   });
 });

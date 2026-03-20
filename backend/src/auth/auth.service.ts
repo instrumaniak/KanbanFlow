@@ -3,11 +3,13 @@ import {
   ConflictException,
   ForbiddenException,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { QueryFailedError } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -66,5 +68,41 @@ export class AuthService {
       return null;
     }
     return { id: user.id, email: user.email, role: user.role };
+  }
+
+  async login(
+    loginDto: LoginDto,
+    session: Record<string, unknown>,
+  ): Promise<{ id: number; email: string; role: string }> {
+    const email = loginDto.email.toLowerCase().trim();
+
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    const passwordValid = await bcrypt.compare(loginDto.password, user.password);
+    if (!passwordValid) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    session.userId = user.id;
+    session.email = user.email;
+    session.role = user.role;
+
+    return { id: user.id, email: user.email, role: user.role };
+  }
+
+  async logout(session: Record<string, unknown>): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      const destroy = session as {
+        destroy?: (cb: (err: Error | null) => void) => void;
+      };
+      if (!destroy.destroy) return resolve();
+      destroy.destroy((err: Error | null) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
   }
 }

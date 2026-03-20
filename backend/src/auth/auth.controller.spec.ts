@@ -8,6 +8,8 @@ describe('AuthController', () => {
 
   const mockAuthService = {
     register: jest.fn(),
+    login: jest.fn(),
+    logout: jest.fn(),
     getCurrentUser: jest.fn(),
   };
 
@@ -59,6 +61,48 @@ describe('AuthController', () => {
     });
   });
 
+  describe('login', () => {
+    it('should return login success response', async () => {
+      const loginDto = { email: 'test@example.com', password: 'Password123' };
+      const mockUser = { id: 1, email: 'test@example.com', role: 'user' };
+      const mockSession: Record<string, unknown> = {};
+
+      mockAuthService.login.mockResolvedValue(mockUser);
+
+      const result = await controller.login(loginDto, mockSession);
+
+      expect(result).toEqual({
+        data: mockUser,
+        message: 'Login successful',
+      });
+      expect(mockAuthService.login).toHaveBeenCalledWith(loginDto, mockSession);
+    });
+
+    it('should return 401 for invalid credentials', async () => {
+      const loginDto = { email: 'test@example.com', password: 'wrongpassword' };
+      const mockSession: Record<string, unknown> = {};
+
+      mockAuthService.login.mockRejectedValue(
+        new UnauthorizedException('Invalid email or password'),
+      );
+
+      await expect(controller.login(loginDto, mockSession)).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('logout', () => {
+    it('should call authService.logout and return success message', async () => {
+      const mockSession: Record<string, unknown> = {};
+
+      mockAuthService.logout.mockResolvedValue(undefined);
+
+      const result = await controller.logout(mockSession);
+
+      expect(result).toEqual({ message: 'Logout successful' });
+      expect(mockAuthService.logout).toHaveBeenCalledWith(mockSession);
+    });
+  });
+
   describe('me', () => {
     it('should return user data when session exists', () => {
       const mockSession: Record<string, unknown> = {
@@ -78,19 +122,6 @@ describe('AuthController', () => {
       const mockSession: Record<string, unknown> = {};
 
       expect(() => controller.me(mockSession)).toThrow(UnauthorizedException);
-    });
-  });
-
-  describe('logout', () => {
-    it('should destroy session on logout', async () => {
-      const destroyFn = jest.fn((cb: (err: null) => void) => cb(null));
-      const mockSession: Record<string, unknown> = {
-        destroy: destroyFn as unknown as (cb: (err: Error | null) => void) => void,
-      };
-
-      await controller.logout(mockSession);
-
-      expect(destroyFn).toHaveBeenCalled();
     });
   });
 });

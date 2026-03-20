@@ -12,6 +12,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 @ApiTags('auth')
 @Controller('api/auth')
@@ -34,6 +35,31 @@ export class AuthController {
     };
   }
 
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Login user' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Invalid email or password' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
+  async login(@Body() loginDto: LoginDto, @Session() session: Record<string, unknown>) {
+    const user = await this.authService.login(loginDto, session);
+    return {
+      data: user,
+      message: 'Login successful',
+    };
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Logout current user' })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
+  async logout(@Session() session: Record<string, unknown>) {
+    await this.authService.logout(session);
+    return { message: 'Logout successful' };
+  }
+
   @Get('me')
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: 200, description: 'Returns current user' })
@@ -49,20 +75,5 @@ export class AuthController {
         role: session.role,
       },
     };
-  }
-
-  @Post('logout')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Logout current user' })
-  @ApiResponse({ status: 200, description: 'Logged out successfully' })
-  async logout(@Session() session: Record<string, unknown>) {
-    return new Promise<void>((resolve, reject) => {
-      const destroy = (session as { destroy?: (cb: (err: Error | null) => void) => void }).destroy;
-      if (!destroy) return resolve();
-      destroy((err: Error | null) => {
-        if (err) return reject(err);
-        resolve();
-      });
-    });
   }
 }
