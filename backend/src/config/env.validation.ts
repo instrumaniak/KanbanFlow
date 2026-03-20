@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { IsString, IsNumber, IsOptional, validateSync } from 'class-validator';
+import { IsString, IsNumber, IsOptional, MinLength, validateSync } from 'class-validator';
 
 class EnvironmentVariables {
   @IsString()
@@ -12,6 +12,7 @@ class EnvironmentVariables {
   DB_USERNAME!: string;
 
   @IsString()
+  @MinLength(1)
   DB_PASSWORD!: string;
 
   @IsString()
@@ -19,7 +20,7 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
-  NODE_ENV!: string;
+  NODE_ENV?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

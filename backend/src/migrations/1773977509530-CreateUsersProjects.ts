@@ -20,7 +20,7 @@ export class CreateUsersProjects1773977509530 implements MigrationInterface {
       `ALTER TABLE \`projects\` DROP FOREIGN KEY \`FK_bd55b203eb9f92b0c8390380010\``,
     );
     await queryRunner.query(`DROP INDEX \`IDX_97672ac88f789774dd47f7c8be\` ON \`users\``);
-    await queryRunner.query(`DROP TABLE \`users\``);
     await queryRunner.query(`DROP TABLE \`projects\``);
+    await queryRunner.query(`DROP TABLE \`users\``);
   }
 }

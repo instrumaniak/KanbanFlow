@@ -14,7 +14,7 @@ export class Project {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ length: 255 })
   name!: string;
 
   @Column()
