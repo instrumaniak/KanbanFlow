@@ -94,12 +94,14 @@ export class AuthService {
   }
 
   async logout(session: Record<string, unknown>): Promise<void> {
+    const destroy = session as {
+      destroy?: (cb: (err: Error | null) => void) => void;
+    };
+    if (!destroy.destroy) {
+      throw new InternalServerErrorException('Session destroy unavailable');
+    }
     await new Promise<void>((resolve, reject) => {
-      const destroy = session as {
-        destroy?: (cb: (err: Error | null) => void) => void;
-      };
-      if (!destroy.destroy) return resolve();
-      destroy.destroy((err: Error | null) => {
+      destroy.destroy!((err: Error | null) => {
         if (err) return reject(err);
         resolve();
       });

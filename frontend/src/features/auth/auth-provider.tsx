@@ -37,8 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: loginApi,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+    onSuccess: (data) => {
+      queryClient.setQueryData(['auth', 'me'], data);
     },
   });
 

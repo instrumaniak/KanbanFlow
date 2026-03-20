@@ -47,11 +47,16 @@ export async function registerApi(data: RegisterRequest): Promise<ApiResponse<Us
 }
 
 export async function loginApi(data: LoginRequest): Promise<ApiResponse<UserResponse>> {
-  const response = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
+  let response: Response;
+  try {
+    response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
 
   if (!response.ok) {
     let message = 'Request failed';

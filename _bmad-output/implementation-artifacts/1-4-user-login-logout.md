@@ -1,6 +1,6 @@
 # Story 1.4: User Login/Logout
 
-Status: review
+Status: done
 
 ## Story
 
@@ -362,12 +362,13 @@ No significant debugging required. Implementation followed established patterns 
 - backend/src/auth/decorators/current-user.decorator.ts
 - frontend/src/features/auth/login-form.tsx
 - frontend/src/features/auth/login-form.test.tsx
+- frontend/src/components/ui/dropdown-menu.tsx
 
 **Modified Files:**
 - backend/src/auth/auth.service.ts (added login/logout methods)
-- backend/src/auth/auth.controller.ts (added login endpoint, updated logout)
+- backend/src/auth/auth.controller.ts (added login endpoint, updated logout with clearCookie + throttle)
 - backend/src/auth/auth.service.spec.ts (added login/logout tests)
 - backend/src/auth/auth.controller.spec.ts (added login/logout tests)
-- frontend/src/features/auth/auth.api.ts (added loginApi)
-- frontend/src/features/auth/auth-provider.tsx (added login mutation)
-- frontend/src/App.tsx (wired LoginForm to /login route)
+- frontend/src/features/auth/auth.api.ts (added loginApi with network error handling)
+- frontend/src/features/auth/auth-provider.tsx (added login mutation, optimistic user data)
+- frontend/src/App.tsx (wired LoginForm, user dropdown, / redirect)

@@ -91,15 +91,27 @@ describe('AuthController', () => {
   });
 
   describe('logout', () => {
-    it('should call authService.logout and return success message', async () => {
+    it('should call authService.logout, clear cookie, and return success message', async () => {
       const mockSession: Record<string, unknown> = {};
+      const mockRes = { clearCookie: jest.fn() };
 
       mockAuthService.logout.mockResolvedValue(undefined);
 
-      const result = await controller.logout(mockSession);
+      const result = await controller.logout(mockSession, mockRes as never);
 
       expect(result).toEqual({ message: 'Logout successful' });
       expect(mockAuthService.logout).toHaveBeenCalledWith(mockSession);
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('connect.sid');
+    });
+
+    it('should propagate error when session destroy fails', async () => {
+      const mockSession: Record<string, unknown> = {};
+      const mockRes = { clearCookie: jest.fn() };
+
+      mockAuthService.logout.mockRejectedValue(new Error('Session error'));
+
+      await expect(controller.logout(mockSession, mockRes as never)).rejects.toThrow('Session error');
+      expect(mockRes.clearCookie).not.toHaveBeenCalled();
     });
   });
 

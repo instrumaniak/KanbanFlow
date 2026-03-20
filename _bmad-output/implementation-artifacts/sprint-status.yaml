@@ -47,7 +47,7 @@ development_status:
   1-1-project-initialization: done
   1-2-database-schema-setup: done
   1-3-user-registration: done
-  1-4-user-login-logout: review
+  1-4-user-login-logout: done
   1-5-design-system-foundation: backlog
   1-6-app-shell-navigation: backlog
   1-7-project-crud: backlog

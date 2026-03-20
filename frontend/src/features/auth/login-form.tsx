@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 export function LoginForm() {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
 
   const [email, setEmail] = useState('');
@@ -16,13 +16,13 @@ export function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateEmail = (value: string): string | undefined => {
-    if (!value) return 'Email is required';
-    if (!/^[^\s@]+@[^\s@]+$/.test(value)) return 'Please enter a valid email';
+    if (!value.trim()) return 'Email is required';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email';
     return undefined;
   };
 
   const validatePassword = (value: string): string | undefined => {
-    if (!value) return 'Password is required';
+    if (!value.trim()) return 'Password is required';
     return undefined;
   };
 
@@ -94,7 +94,7 @@ export function LoginForm() {
             />
             {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
           </div>
-          <Button type="submit" className="w-full" disabled={isSubmitting || isLoading}>
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>

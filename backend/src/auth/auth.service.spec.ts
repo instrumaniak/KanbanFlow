@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -206,10 +211,10 @@ describe('AuthService', () => {
       expect(destroyFn).toHaveBeenCalled();
     });
 
-    it('should handle missing destroy method gracefully', async () => {
+    it('should throw InternalServerErrorException when destroy is unavailable', async () => {
       const mockSession: Record<string, unknown> = {};
 
-      await expect(service.logout(mockSession)).resolves.toBeUndefined();
+      await expect(service.logout(mockSession)).rejects.toThrow(InternalServerErrorException);
     });
   });
 });
