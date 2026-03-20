@@ -45,7 +45,7 @@ development_status:
   # Epic 1: User Onboarding & Project Setup
   epic-1: in-progress
   1-1-project-initialization: done
-  1-2-database-schema-setup: review
+  1-2-database-schema-setup: done
   1-3-user-registration: backlog
   1-4-user-login-logout: backlog
   1-5-design-system-foundation: backlog
