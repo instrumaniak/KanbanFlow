@@ -1,6 +1,6 @@
 # Story 1.1: Project Initialization
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -22,27 +22,27 @@ so that the project has a solid foundation with modern tooling for building Kanb
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Initialize frontend with Vite + React + TypeScript (AC: 1, 2)
-  - [ ] Run `npm create vite@latest frontend -- --template react-ts`
-  - [ ] Run `npm install` in frontend directory
-  - [ ] Initialize shadcn/ui with `npx shadcn@latest init -t vite`
-  - [ ] Verify Tailwind CSS v4 is configured via `@tailwindcss/vite`
-  - [ ] Verify `components.json` exists for shadcn/ui config
-- [ ] Task 2: Initialize backend with NestJS + TypeScript (AC: 1, 3)
-  - [ ] Run `npx @nestjs/cli new backend --package-manager npm`
-  - [ ] Verify `nest-cli.json`, `tsconfig.json`, `tsconfig.build.json` exist
-  - [ ] Verify NestJS module structure in `src/`
-- [ ] Task 3: Configure shared tooling at monorepo root (AC: 4)
-  - [ ] Create `.prettierrc` with: `semi: true, singleQuote: true, trailingComma: "all", printWidth: 100, tabWidth: 2, arrowParens: "always"`
-  - [ ] Verify `.prettierrc` applies to both frontend and backend
-- [ ] Task 4: Verify project configuration files (AC: 5, 6, 7)
-  - [ ] Confirm `frontend/package.json` has React, Vite, Tailwind, shadcn/ui dependencies
-  - [ ] Confirm `backend/package.json` has NestJS dependencies
-  - [ ] Create/update `.gitignore` covering: `node_modules/`, `dist/`, `.env`, `.env.local`, `*.log`
-- [ ] Task 5: Verify TypeScript strict mode (AC: 2, 3)
-  - [ ] Confirm `frontend/tsconfig.json` has `strict: true`
-  - [ ] Confirm `backend/tsconfig.json` has `strict: true`
-  - [ ] Verify separate tsconfig for frontend (Vite) and backend (NestJS)
+- [x] Task 1: Initialize frontend with Vite + React + TypeScript (AC: 1, 2)
+  - [x] Run `npm create vite@latest frontend -- --template react-ts`
+  - [x] Run `npm install` in frontend directory
+  - [x] Initialize shadcn/ui with `npx shadcn@latest init -t vite`
+  - [x] Verify Tailwind CSS v4 is configured via `@tailwindcss/vite`
+  - [x] Verify `components.json` exists for shadcn/ui config
+- [x] Task 2: Initialize backend with NestJS + TypeScript (AC: 1, 3)
+  - [x] Run `npx @nestjs/cli new backend --package-manager npm`
+  - [x] Verify `nest-cli.json`, `tsconfig.json`, `tsconfig.build.json` exist
+  - [x] Verify NestJS module structure in `src/`
+- [x] Task 3: Configure shared tooling at monorepo root (AC: 4)
+  - [x] Create `.prettierrc` with: `semi: true, singleQuote: true, trailingComma: "all", printWidth: 100, tabWidth: 2, arrowParens: "always"`
+  - [x] Verify `.prettierrc` applies to both frontend and backend
+- [x] Task 4: Verify project configuration files (AC: 5, 6, 7)
+  - [x] Confirm `frontend/package.json` has React, Vite, Tailwind, shadcn/ui dependencies
+  - [x] Confirm `backend/package.json` has NestJS dependencies
+  - [x] Create/update `.gitignore` covering: `node_modules/`, `dist/`, `.env`, `.env.local`, `*.log`
+- [x] Task 5: Verify TypeScript strict mode (AC: 2, 3)
+  - [x] Confirm `frontend/tsconfig.json` has `strict: true`
+  - [x] Confirm `backend/tsconfig.json` has `strict: true`
+  - [x] Verify separate tsconfig for frontend (Vite) and backend (NestJS)
 
 ## Dev Notes
 
@@ -160,4 +160,27 @@ KanbanFlow/
 
 ### Completion Notes List
 
+- Frontend initialized with Vite + React + TypeScript template
+- shadcn/ui initialized with Radix Nova preset and Tailwind CSS v4 via @tailwindcss/vite
+- Backend initialized with NestJS CLI
+- Root .prettierrc created with project standards, backend local .prettierrc removed
+- Root .gitignore created with node_modules, dist, .env patterns
+- TypeScript strict mode enabled in both frontend (tsconfig.app.json) and backend (tsconfig.json)
+- Import alias @/* configured in frontend for shadcn/ui components
+- All typechecks pass, backend tests pass
+
 ### File List
+
+- .gitignore (created)
+- .prettierrc (created)
+- frontend/ (entire directory - scaffolded by Vite + shadcn)
+  - frontend/vite.config.ts (modified - added Tailwind CSS plugin and path alias)
+  - frontend/tsconfig.json (modified - added baseUrl and paths)
+  - frontend/tsconfig.app.json (modified - added baseUrl and paths)
+  - frontend/src/index.css (modified - added @import "tailwindcss")
+  - frontend/components.json (created by shadcn init)
+  - frontend/src/components/ui/button.tsx (created by shadcn init)
+  - frontend/src/lib/utils.ts (created by shadcn init)
+- backend/ (entire directory - scaffolded by NestJS CLI)
+  - backend/tsconfig.json (modified - enabled strict: true)
+  - backend/.prettierrc (deleted - using root config)
