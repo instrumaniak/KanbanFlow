@@ -28,26 +28,27 @@ so that the application can persist user and project data.
   - [ ] Install `mysql2` driver for MySQL connectivity
   - [ ] Install `class-validator` and `class-transformer` for .env validation
   - [ ] Install `dotenv` for data-source.ts standalone loading
-- [ ] Task 2: Create `.env` file with database configuration (AC: 1)
-  - [ ] Create `backend/.env` with DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME
-  - [ ] Create `backend/.env.example` with placeholder values for documentation
+- [ ] Task 2: Modify `.env` file with database configuration (AC: 1)
+  - [ ] Add DB vars to existing `backend/.env`: DB_HOST=localhost, DB_PORT=3306, DB_USERNAME=root, DB_PASSWORD=password, DB_NAME=kanbanflow_dev
   - [ ] Add NODE_ENV=development
+  - [ ] Create `backend/.env.example` with placeholder values for documentation (never commit real .env)
 - [ ] Task 3: Create configuration module (AC: 1)
   - [ ] Create `backend/src/config/configuration.ts` using `registerAs('database', ...)`
   - [ ] Validate config with class-validator decorators (IsString, IsNumber, IsOptional)
   - [ ] Export typed config interface
 - [ ] Task 4: Create TypeORM data-source for CLI (AC: 3)
   - [ ] Create `backend/src/data-source.ts` as standalone DataSource
-  - [ ] Load .env with dotenv, read config with ConfigService
+  - [ ] Use `dotenv/config` import to load .env (NOT ConfigService — runs outside NestJS)
+  - [ ] Read DB values via `process.env.DB_HOST` etc.
   - [ ] Set `synchronize: false`, `migrationsRun: false`
   - [ ] Point entities to `dist/**/*.entity.js` and migrations to `dist/migrations/*.js`
 - [ ] Task 5: Configure TypeORM in app.module.ts (AC: 2)
-  - [ ] Add `ConfigModule.forRoot()` with validation
+  - [ ] Add `ConfigModule.forRoot({ isGlobal: true, validate })` where `validate` uses class-validator (see Dev Notes)
   - [ ] Add `TypeOrmModule.forRootAsync()` with inject ConfigService
   - [ ] Configure: type mysql, entities auto-load, migrations path, synchronize false
 - [ ] Task 6: Create User entity (AC: 5)
   - [ ] Create `backend/src/users/entities/user.entity.ts`
-  - [ ] Columns: id (PK auto-increment), email (unique), password, role (default 'user'), created_at, updated_at
+  - [ ] Columns: id (PK auto-increment), email (unique, max 255), password (min 8 chars stored as bcrypt hash), role (default 'user'), created_at, updated_at
   - [ ] Add OneToMany relation to Project
 - [ ] Task 7: Create Project entity (AC: 6)
   - [ ] Create `backend/src/projects/entities/project.entity.ts`
@@ -60,8 +61,11 @@ so that the application can persist user and project data.
   - [ ] Run `npm run migration:run`
   - [ ] Verify with `npm run migration:show`
 - [ ] Task 9: Add migration scripts to package.json (AC: 7)
-  - [ ] Add `typeorm` script
-  - [ ] Add `migration:generate`, `migration:create`, `migration:run`, `migration:revert`, `migration:show`, `db:sync` scripts
+  - [ ] Add `typeorm`, `migration:generate`, `migration:create`, `migration:run`, `migration:revert`, `migration:show`, `db:sync` scripts
+  - [ ] Run `npm run migration:show` to verify scripts work (should show "No migrations" or pending)
+- [ ] Task 10: Create unit test stubs
+  - [ ] Create `backend/src/users/entities/user.entity.spec.ts` with placeholder test for User entity
+  - [ ] Create `backend/src/projects/entities/project.entity.spec.ts` with placeholder test for Project entity
 
 ## Dev Notes
 
@@ -93,20 +97,16 @@ so that the application can persist user and project data.
 
 **data-source.ts Structure:**
 ```typescript
+import 'dotenv/config';
 import { DataSource } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
-import { config } from 'dotenv';
-
-config();
-const configService = new ConfigService();
 
 export default new DataSource({
   type: 'mysql',
-  host: configService.get('DB_HOST'),
-  port: configService.get<number>('DB_PORT'),
-  username: configService.get('DB_USERNAME'),
-  password: configService.get('DB_PASSWORD'),
-  database: configService.get('DB_NAME'),
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   entities: ['dist/**/*.entity.js'],
   migrations: ['dist/migrations/*.js'],
   migrationsTableName: 'typeorm_migrations',
@@ -114,7 +114,7 @@ export default new DataSource({
   synchronize: false,
 });
 ```
-[Source: architecture.md#Database Migration Strategy - Configuration]
+Note: Uses `dotenv/config` and `process.env` directly — NOT ConfigService. ConfigService requires NestJS DI which is unavailable in CLI context. [Source: architecture.md#Database Migration Strategy - Configuration]
 
 **app.module.ts TypeORM Config:**
 ```typescript
@@ -158,10 +158,10 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
+  @Column({ unique: true, length: 255 })
   email: string;
 
-  @Column()
+  @Column({ length: 255 })
   password: string;
 
   @Column({ default: 'user' })
@@ -177,6 +177,7 @@ export class User {
   projects: Project[];
 }
 ```
+Field constraints: email unique + max 255 chars, password max 255 (stores bcrypt hash), role defaults to 'user'. Email format validation happens in DTOs/auth layer, not in entity.
 
 **Project Entity (`backend/src/projects/entities/project.entity.ts`):**
 ```typescript
@@ -208,16 +209,19 @@ export class Project {
 
 ### .env Configuration
 
+Add these DB variables to existing `backend/.env` (created in story 1.1):
 ```env
-# Development
-NODE_ENV=development
+# Database
 DB_HOST=localhost
 DB_PORT=3306
-DB_USERNAME=user
+DB_USERNAME=root
 DB_PASSWORD=password
 DB_NAME=kanbanflow_dev
+
+# App
+NODE_ENV=development
 ```
-[Source: architecture.md#Database Migration Strategy - Configuration]
+Note: Modify the existing .env file — do NOT overwrite it. Story 1.1 may have added other variables. [Source: architecture.md#Database Migration Strategy - Configuration]
 
 ### Migration Scripts (package.json)
 
@@ -238,24 +242,95 @@ Add to `backend/package.json` scripts:
 ### Migration Naming Convention
 
 ```
-{timestamp}-{action}-{table}-{description}.ts
+{timestamp}-{Action}{Table}.ts
 ```
 Actions: `Create`, `Add`, `Remove`, `Rename`, `Alter`, `Seed`
+
+Examples:
+- `1710825600000-CreateUsers.ts`
+- `1710825600001-CreateProjects.ts`
+- `1710825600002-AddIndexOnProjectsUserId.ts`
 [Source: architecture.md#Database Migration Strategy - Migration Naming Convention]
 
 ### ConfigModule Setup
 
+Create `backend/src/config/configuration.ts`:
 ```typescript
-// app.module.ts
+import { registerAs } from '@nestjs/config';
+
+export default registerAs('database', () => ({
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT ?? '3306', 10),
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  name: process.env.DB_NAME,
+}));
+```
+
+Create `backend/src/config/env.validation.ts`:
+```typescript
+import { plainToInstance } from 'class-transformer';
+import { IsString, IsNumber, IsOptional, validateSync } from 'class-validator';
+
+class EnvironmentVariables {
+  @IsString()
+  DB_HOST: string;
+
+  @IsNumber()
+  DB_PORT: number;
+
+  @IsString()
+  DB_USERNAME: string;
+
+  @IsString()
+  DB_PASSWORD: string;
+
+  @IsString()
+  DB_NAME: string;
+
+  @IsOptional()
+  @IsString()
+  NODE_ENV: string;
+}
+
+export function validate(config: Record<string, unknown>) {
+  const validatedConfig = plainToInstance(EnvironmentVariables, config, {
+    enableImplicitConversion: true,
+  });
+  const errors = validateSync(validatedConfig, { skipMissingProperties: false });
+  if (errors.length > 0) throw new Error(errors.toString());
+  return validatedConfig;
+}
+```
+
+In `app.module.ts`:
+```typescript
+import { ConfigModule } from '@nestjs/config';
+import { validate } from './config/env.validation';
+import configuration from './config/configuration';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      validate: validate,
+      load: [configuration],
+      validate,
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({ /* ... */ }),
+      useFactory: (config: ConfigService) => ({
+        type: 'mysql',
+        host: config.get('DB_HOST'),
+        port: config.get<number>('DB_PORT'),
+        username: config.get('DB_USERNAME'),
+        password: config.get('DB_PASSWORD'),
+        database: config.get('DB_NAME'),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        migrations: [__dirname + '/migrations/*{.ts,.js}'],
+        migrationsTableName: 'typeorm_migrations',
+        migrationsRun: false,
+        synchronize: false,
+      }),
     }),
   ],
 })
@@ -284,22 +359,25 @@ export class AppModule {}
 
 ```
 backend/
-├── .env                              (created)
+├── .env                              (modified - added DB vars)
 ├── .env.example                      (created)
 ├── package.json                      (modified - migration scripts)
 └── src/
     ├── app.module.ts                 (modified - ConfigModule + TypeORM)
     ├── config/
-    │   └── configuration.ts          (created)
+    │   ├── configuration.ts          (created)
+    │   └── env.validation.ts         (created)
     ├── data-source.ts                (created)
     ├── migrations/
     │   └── {timestamp}-CreateUsersProjects.ts  (generated)
     ├── users/
     │   └── entities/
-    │       └── user.entity.ts        (created)
+    │       ├── user.entity.ts        (created)
+    │       └── user.entity.spec.ts   (created - test stub)
     └── projects/
         └── entities/
-            └── project.entity.ts     (created)
+            ├── project.entity.ts     (created)
+            └── project.entity.spec.ts (created - test stub)
 ```
 
 ### References
@@ -308,8 +386,10 @@ backend/
 - [Source: architecture.md#Implementation Patterns - Naming Patterns] — DB table/column naming conventions
 - [Source: architecture.md#Project Structure & Boundaries] — Backend directory structure
 - [Source: architecture.md#Core Architectural Decisions - Data Architecture] — TypeORM + MySQL decisions
+- [Source: architecture.md#Infrastructure & Deployment - Config management] — NestJS ConfigModule with validation
 - [Source: project-context.md#Technology Stack & Versions] — Backend tech stack
 - [Source: project-context.md#Critical Implementation Rules] — Language and framework rules
+- [Source: project-context.md#Testing Rules] — Co-located .spec.ts files, Jest for backend
 - [Source: project-context.md#Development Workflow Rules] — Database workflow rules
 - [Source: epics.md#Story 1.2] — Original story acceptance criteria
 - [Source: implementation-artifacts/1-1-project-initialization.md] — Previous story context and file list
