@@ -1,6 +1,6 @@
 # Story 1.6: App Shell & Navigation
 
-Status: review
+Status: done
 
 ## Story
 

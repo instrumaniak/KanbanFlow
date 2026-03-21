@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/use-auth';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,9 +36,12 @@ function persistCollapsed(collapsed: boolean) {
 }
 
 export function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user, isLoading, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const { projectId, boardId } = useParams();
   const [collapsed, setCollapsed] = useState(getStoredCollapsed);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const toggleSidebar = useCallback(() => {
     setCollapsed((prev) => {
@@ -48,7 +51,7 @@ export function AppLayout() {
     });
   }, []);
 
-  // Auto-collapse on tablet (640-1023px), hide on mobile (<640px)
+  // Auto-collapse on tablet/mobile, re-expand on desktop
   useEffect(() => {
     const tablet = window.matchMedia(
       '(min-width: 640px) and (max-width: 1023px)',
@@ -62,6 +65,9 @@ export function AppLayout() {
       } else if (tablet.matches) {
         setCollapsed(true);
         persistCollapsed(true);
+      } else {
+        // Desktop: restore stored preference
+        setCollapsed(getStoredCollapsed());
       }
     };
 
@@ -75,8 +81,33 @@ export function AppLayout() {
   }, []);
 
   const handleLogout = async () => {
-    await logout();
+    setLoggingOut(true);
+    try {
+      await logout();
+      navigate('/login');
+    } catch {
+      // Logout failed — user can retry
+    } finally {
+      setLoggingOut(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Derive breadcrumb data from route params
+  // Project/board names will be populated when data fetching is added
+  const breadcrumbProjectName = projectId ? decodeURIComponent(projectId) : undefined;
+  const breadcrumbBoardName = boardId ? decodeURIComponent(boardId) : undefined;
 
   return (
     <div className="flex h-screen flex-col">
@@ -87,7 +118,6 @@ export function AppLayout() {
             size="icon-sm"
             onClick={toggleSidebar}
             aria-label="Toggle sidebar"
-            className="sm:hidden"
           >
             <Menu className="h-4 w-4" />
           </Button>
@@ -95,7 +125,12 @@ export function AppLayout() {
         </div>
 
         <div className="hidden items-center gap-2 sm:flex">
-          <Breadcrumbs />
+          <Breadcrumbs
+            projectName={breadcrumbProjectName}
+            boardName={breadcrumbBoardName}
+            projectId={projectId}
+            boardId={boardId}
+          />
         </div>
 
         <div className="flex items-center gap-1">
@@ -115,16 +150,16 @@ export function AppLayout() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">
-                <span className="hidden sm:inline">{user?.email}</span>
+                <span className="hidden sm:inline">{user.email}</span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
+              <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem onClick={handleLogout} disabled={loggingOut}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Log out
+                {loggingOut ? 'Logging out...' : 'Log out'}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

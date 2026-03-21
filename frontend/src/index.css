@@ -148,55 +148,7 @@
   color-scheme: dark;
 }
 
-/* System preference fallback */
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    --primary: #14B8A6;
-    --primary-hover: #0D9488;
-    --background: #0F172A;
-    --surface: #1E293B;
-    --card: #334155;
-    --border: #475569;
-    --text-primary: #F8FAFB;
-    --text-secondary: #94A3B8;
-    --success: #34D399;
-    --warning: #FBBF24;
-    --error: #FB7185;
 
-    --label-red: #F87171;
-    --label-orange: #FB923C;
-    --label-yellow: #FACC15;
-    --label-green: #4ADE80;
-    --label-blue: #60A5FA;
-    --label-purple: #C084FC;
-
-    --foreground: #F8FAFB;
-    --card-foreground: #F8FAFB;
-    --popover: #334155;
-    --popover-foreground: #F8FAFB;
-    --primary-foreground: #0F172A;
-    --secondary: #1E293B;
-    --secondary-foreground: #F8FAFB;
-    --muted: #1E293B;
-    --muted-foreground: #94A3B8;
-    --accent: #1E293B;
-    --accent-foreground: #F8FAFB;
-    --destructive: #FB7185;
-    --input: #475569;
-    --ring: #14B8A6;
-
-    --sidebar: #0F172A;
-    --sidebar-foreground: #F8FAFB;
-    --sidebar-primary: #14B8A6;
-    --sidebar-primary-foreground: #0F172A;
-    --sidebar-accent: #1E293B;
-    --sidebar-accent-foreground: #F8FAFB;
-    --sidebar-border: #475569;
-    --sidebar-ring: #14B8A6;
-
-    color-scheme: dark;
-  }
-}
 
 /* === Tailwind v4 Theme Mapping === */
 @theme inline {
@@ -258,6 +210,14 @@
   --spacing-8: var(--space-8);
   --spacing-12: var(--space-12);
   --spacing-16: var(--space-16);
+
+  /* Type scale */
+  --text-h1: var(--text-h1-size);
+  --text-h2: var(--text-h2-size);
+  --text-h3: var(--text-h3-size);
+  --text-body: var(--text-body-size);
+  --text-small: var(--text-small-size);
+  --text-card-title: var(--text-card-title-size);
 }
 
 /* === Base Layer === */

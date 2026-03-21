@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 type Theme = 'light' | 'dark';
 
 const STORAGE_KEY = 'theme';
-let userHasPreference = false;
 
 function getSystemPreference(): Theme {
   if (typeof window === 'undefined') return 'light';
@@ -36,10 +35,11 @@ function applyTheme(theme: Theme) {
 }
 
 export function useTheme() {
+  const userPrefRef = useRef(!!getStoredTheme());
+
   const [theme, setThemeState] = useState<Theme>(() => {
     const initial = getStoredTheme() ?? getSystemPreference();
     applyTheme(initial);
-    if (getStoredTheme()) userHasPreference = true;
     return initial;
   });
 
@@ -48,11 +48,11 @@ export function useTheme() {
   }, [theme]);
 
   useEffect(() => {
-    if (userHasPreference) return;
+    if (userPrefRef.current) return;
 
     const mql = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = (e: MediaQueryListEvent) => {
-      if (!userHasPreference) {
+      if (!userPrefRef.current) {
         setThemeState(e.matches ? 'dark' : 'light');
       }
     };
@@ -63,7 +63,7 @@ export function useTheme() {
   const toggleTheme = useCallback(() => {
     setThemeState((prev) => {
       const next = prev === 'light' ? 'dark' : 'light';
-      userHasPreference = true;
+      userPrefRef.current = true;
       persistTheme(next);
       return next;
     });
@@ -71,7 +71,7 @@ export function useTheme() {
 
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
-    userHasPreference = true;
+    userPrefRef.current = true;
     persistTheme(t);
   }, []);
 
