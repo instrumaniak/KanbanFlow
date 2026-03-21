@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19T19:27:21.000Z
-last_updated: 2026-03-21T21:00:00.000Z
+last_updated: 2026-03-21T12:30:00.000Z
 project: trello-clone
 project_key: NOKEY
 tracking_system: file-system
@@ -49,7 +49,7 @@ development_status:
   1-3-user-registration: done
   1-4-user-login-logout: done
   1-5-design-system-foundation: done
-  1-6-app-shell-navigation: ready-for-dev
+  1-6-app-shell-navigation: review
   1-7-project-crud: backlog
   1-8-empty-state-toast-system: backlog
   1-9-cli-superadmin-creation: backlog

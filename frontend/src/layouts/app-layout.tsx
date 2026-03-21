@@ -1,0 +1,142 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Outlet } from 'react-router-dom';
+import { useAuth } from '@/features/auth/use-auth';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { LogOut, ChevronDown, Moon, Sun, Menu } from 'lucide-react';
+import { useTheme } from '@/hooks/use-theme';
+import { Sidebar } from './sidebar';
+import { Breadcrumbs } from './breadcrumbs';
+
+const STORAGE_KEY = 'sidebar-collapsed';
+
+function getStoredCollapsed(): boolean {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'false') return false;
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+function persistCollapsed(collapsed: boolean) {
+  try {
+    localStorage.setItem(STORAGE_KEY, String(collapsed));
+  } catch {
+    // localStorage unavailable
+  }
+}
+
+export function AppLayout() {
+  const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const [collapsed, setCollapsed] = useState(getStoredCollapsed);
+
+  const toggleSidebar = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      persistCollapsed(next);
+      return next;
+    });
+  }, []);
+
+  // Auto-collapse on tablet (640-1023px), hide on mobile (<640px)
+  useEffect(() => {
+    const tablet = window.matchMedia(
+      '(min-width: 640px) and (max-width: 1023px)',
+    );
+    const mobile = window.matchMedia('(max-width: 639px)');
+
+    const handleResize = () => {
+      if (mobile.matches) {
+        setCollapsed(true);
+        persistCollapsed(true);
+      } else if (tablet.matches) {
+        setCollapsed(true);
+        persistCollapsed(true);
+      }
+    };
+
+    handleResize();
+    tablet.addEventListener('change', handleResize);
+    mobile.addEventListener('change', handleResize);
+    return () => {
+      tablet.removeEventListener('change', handleResize);
+      mobile.removeEventListener('change', handleResize);
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  return (
+    <div className="flex h-screen flex-col">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={toggleSidebar}
+            aria-label="Toggle sidebar"
+            className="sm:hidden"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+          <h1 className="text-lg font-semibold text-foreground">KanbanFlow</h1>
+        </div>
+
+        <div className="hidden items-center gap-2 sm:flex">
+          <Breadcrumbs />
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2">
+                <span className="hidden sm:inline">{user?.email}</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
+        <main className="flex-1 overflow-y-auto bg-background p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
