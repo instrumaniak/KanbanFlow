@@ -5,6 +5,7 @@ import { ToastProvider } from './components/ui/use-toast';
 import { RegisterForm } from './features/auth/register-form';
 import { LoginForm } from './features/auth/login-form';
 import { ProjectList } from './features/projects/project-list';
+import { useProjects } from './features/projects/use-projects';
 import { AppLayout } from './layouts/app-layout';
 
 const queryClient = new QueryClient({
@@ -27,6 +28,11 @@ function ForgotPasswordPage() {
   );
 }
 
+function AppLayoutRoute() {
+  const { data: projectsData } = useProjects();
+  return <AppLayout projectsData={projectsData} />;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -38,7 +44,7 @@ function App() {
               <Route path="/login" element={<LoginForm />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-              <Route element={<AppLayout />}>
+              <Route element={<AppLayoutRoute />}>
                 <Route path="/" element={<ProjectList />} />
                 <Route
                   path="/projects/:projectId"

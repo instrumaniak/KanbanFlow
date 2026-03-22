@@ -46,7 +46,9 @@ export class ProjectsService {
   }
 
   async remove(id: number, userId: number): Promise<void> {
-    await this.findOne(id, userId);
-    await this.projectRepository.delete(id);
+    const result = await this.projectRepository.delete({ id, user_id: userId });
+    if (result.affected === 0) {
+      throw new NotFoundException('Project not found');
+    }
   }
 }

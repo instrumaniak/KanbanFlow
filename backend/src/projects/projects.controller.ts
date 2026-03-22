@@ -11,6 +11,7 @@ import {
   ParseIntPipe,
   ValidationPipe,
   UsePipes,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { SessionGuard } from '../auth/guards/session.guard';
@@ -78,6 +79,9 @@ export class ProjectsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateProjectDto,
   ) {
+    if (!dto.name) {
+      throw new BadRequestException('At least one field must be provided');
+    }
     const project = await this.projectsService.update(id, session.userId, dto);
     const data: ProjectResponse = {
       id: project.id,

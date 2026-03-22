@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/use-auth';
-import { useProjects } from '@/features/projects/use-projects';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,6 +14,7 @@ import { LogOut, ChevronDown, Moon, Sun, Menu } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme';
 import { Sidebar } from './sidebar';
 import { Breadcrumbs } from './breadcrumbs';
+import type { ListResponse, Project } from '@/features/projects/projects.api';
 
 const STORAGE_KEY = 'sidebar-collapsed';
 
@@ -36,9 +36,8 @@ function persistCollapsed(collapsed: boolean) {
   }
 }
 
-export function AppLayout() {
+export function AppLayout({ projectsData }: { projectsData?: ListResponse<Project> }) {
   const { user, isLoading, logout } = useAuth();
-  const { data: projectsData } = useProjects();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const { projectId, boardId } = useParams();

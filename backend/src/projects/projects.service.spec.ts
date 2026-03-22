@@ -119,21 +119,19 @@ describe('ProjectsService', () => {
 
   describe('remove', () => {
     it('should delete a project', async () => {
-      const project = { id: 1, name: 'Project', user_id: 1 };
-      mockRepository.findOne.mockResolvedValue(project);
       mockRepository.delete.mockResolvedValue({ affected: 1 });
 
       await service.remove(1, 1);
-      expect(mockRepository.delete).toHaveBeenCalledWith(1);
+      expect(mockRepository.delete).toHaveBeenCalledWith({ id: 1, user_id: 1 });
     });
 
     it('should throw NotFoundException when deleting non-existent project', async () => {
-      mockRepository.findOne.mockResolvedValue(null);
+      mockRepository.delete.mockResolvedValue({ affected: 0 });
       await expect(service.remove(999, 1)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException when user does not own project', async () => {
-      mockRepository.findOne.mockResolvedValue(null);
+      mockRepository.delete.mockResolvedValue({ affected: 0 });
       await expect(service.remove(1, 999)).rejects.toThrow(NotFoundException);
     });
   });

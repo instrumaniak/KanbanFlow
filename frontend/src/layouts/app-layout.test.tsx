@@ -33,13 +33,6 @@ vi.mock('@/hooks/use-theme', () => ({
   }),
 }));
 
-vi.mock('@/features/projects/use-projects', () => ({
-  useProjects: () => ({
-    data: { data: [], total: 0 },
-    isLoading: false,
-  }),
-}));
-
 // Mock Outlet to render child content
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -61,13 +54,13 @@ describe('AppLayout', () => {
   });
 
   it('renders header with app name', () => {
-    renderWithRouter(<AppLayout />);
+    renderWithRouter(<AppLayout projectsData={{ data: [], total: 0 }} />);
 
     expect(screen.getByText('KanbanFlow')).toBeInTheDocument();
   });
 
   it('renders sidebar toggle button', () => {
-    renderWithRouter(<AppLayout />);
+    renderWithRouter(<AppLayout projectsData={{ data: [], total: 0 }} />);
 
     const toggleButtons = screen.getAllByLabelText('Toggle sidebar');
     // One in header (mobile), one in sidebar
@@ -75,14 +68,14 @@ describe('AppLayout', () => {
   });
 
   it('sidebar is collapsed by default', () => {
-    renderWithRouter(<AppLayout />);
+    renderWithRouter(<AppLayout projectsData={{ data: [], total: 0 }} />);
 
     const aside = screen.getByRole('complementary');
     expect(aside).toHaveClass('w-0');
   });
 
   it('toggle expands/collapses sidebar', () => {
-    renderWithRouter(<AppLayout />);
+    renderWithRouter(<AppLayout projectsData={{ data: [], total: 0 }} />);
 
     // Use the sidebar's toggle button (inside the aside)
     const aside = screen.getByRole('complementary');
@@ -98,7 +91,7 @@ describe('AppLayout', () => {
   });
 
   it('collapsed state persists to localStorage', () => {
-    renderWithRouter(<AppLayout />);
+    renderWithRouter(<AppLayout projectsData={{ data: [], total: 0 }} />);
 
     const aside = screen.getByRole('complementary');
     const sidebarToggle = within(aside).getByLabelText('Toggle sidebar');
@@ -113,19 +106,19 @@ describe('AppLayout', () => {
   });
 
   it('renders user email in header', () => {
-    renderWithRouter(<AppLayout />);
+    renderWithRouter(<AppLayout projectsData={{ data: [], total: 0 }} />);
 
     expect(screen.getByText('test@example.com')).toBeInTheDocument();
   });
 
   it('renders theme toggle button', () => {
-    renderWithRouter(<AppLayout />);
+    renderWithRouter(<AppLayout projectsData={{ data: [], total: 0 }} />);
 
     expect(screen.getByLabelText('Toggle theme')).toBeInTheDocument();
   });
 
   it('renders Outlet for nested routes', () => {
-    renderWithRouter(<AppLayout />);
+    renderWithRouter(<AppLayout projectsData={{ data: [], total: 0 }} />);
 
     expect(screen.getByTestId('outlet')).toBeInTheDocument();
   });

@@ -22,6 +22,8 @@ interface ApiError {
   error: string;
 }
 
+const FETCH_OPTIONS: RequestInit = { credentials: 'include' };
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     let message = 'Request failed';
@@ -33,37 +35,68 @@ async function handleResponse<T>(response: Response): Promise<T> {
     }
     throw new Error(message);
   }
-  return response.json();
+  try {
+    return await response.json();
+  } catch {
+    throw new Error('Unexpected response format');
+  }
 }
 
 export async function fetchProjects(): Promise<ListResponse<Project>> {
-  const response = await fetch('/api/projects');
+  let response: Response;
+  try {
+    response = await fetch('/api/projects', FETCH_OPTIONS);
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
   return handleResponse(response);
 }
 
 export async function createProject(name: string): Promise<ApiResponse<Project>> {
-  const response = await fetch('/api/projects', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name }),
-  });
+  let response: Response;
+  try {
+    response = await fetch('/api/projects', {
+      ...FETCH_OPTIONS,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
   return handleResponse(response);
 }
 
 export async function updateProject(id: number, name: string): Promise<ApiResponse<Project>> {
-  const response = await fetch(`/api/projects/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`/api/projects/${id}`, {
+      ...FETCH_OPTIONS,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
   return handleResponse(response);
 }
 
 export async function deleteProject(id: number): Promise<ApiResponse<void>> {
-  const response = await fetch(`/api/projects/${id}`, {
-    method: 'DELETE',
-  });
+  let response: Response;
+  try {
+    response = await fetch(`/api/projects/${id}`, {
+      ...FETCH_OPTIONS,
+      method: 'DELETE',
+    });
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
   return handleResponse(response);
+}
+
+export async function recreateProject(name: string): Promise<ApiResponse<Project>> {
+  return createProject(name);
 }
 
 export type { Project, ApiResponse, ListResponse };

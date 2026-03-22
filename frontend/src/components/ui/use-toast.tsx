@@ -2,16 +2,22 @@ import * as React from 'react';
 
 type ToastType = 'default' | 'success' | 'error' | 'destructive';
 
+interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface Toast {
   id: string;
   title: string;
   description?: string;
   type: ToastType;
+  action?: ToastAction;
 }
 
 interface ToastContextType {
   toasts: Toast[];
-  toast: (options: { title: string; description?: string; type?: ToastType }) => void;
+  toast: (options: { title: string; description?: string; type?: ToastType; action?: ToastAction }) => void;
   dismiss: (id: string) => void;
 }
 
@@ -21,7 +27,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<Toast[]>([]);
 
   const toast = React.useCallback(
-    (options: { title: string; description?: string; type?: ToastType }) => {
+    (options: { title: string; description?: string; type?: ToastType; action?: ToastAction }) => {
       const id = Math.random().toString(36).slice(2);
       setToasts((prev) => [...prev, { ...options, id, type: options.type || 'default' }]);
       setTimeout(() => {
@@ -55,12 +61,25 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 <p className="text-sm font-medium">{t.title}</p>
                 {t.description && <p className="text-sm opacity-80">{t.description}</p>}
               </div>
-              <button
-                onClick={() => dismiss(t.id)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                ×
-              </button>
+              <div className="flex items-center gap-2">
+                {t.action && (
+                  <button
+                    onClick={() => {
+                      t.action!.onClick();
+                      dismiss(t.id);
+                    }}
+                    className="text-sm font-medium underline hover:opacity-80"
+                  >
+                    {t.action.label}
+                  </button>
+                )}
+                <button
+                  onClick={() => dismiss(t.id)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  ×
+                </button>
+              </div>
             </div>
           </div>
         ))}

@@ -16,6 +16,7 @@ import {
   useUpdateProject,
   useDeleteProject,
 } from './use-projects';
+import { recreateProject } from './projects.api';
 import { Plus, Pencil, Trash2, FolderKanban } from 'lucide-react';
 
 function InlineCreateForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
@@ -97,6 +98,8 @@ function InlineEdit({
   }, []);
 
   const handleSave = async () => {
+    if (updateMutation.isPending) return;
+
     const trimmed = name.trim();
     if (!trimmed || trimmed === initialValue) {
       onCancel();
@@ -155,6 +158,7 @@ function DeleteDialog({
   const { toast } = useToast();
 
   const handleDelete = async () => {
+    const deletedName = projectName;
     try {
       await deleteMutation.mutateAsync(projectId);
       onOpenChange(false);
@@ -162,6 +166,21 @@ function DeleteDialog({
       toast({
         title: 'Project deleted',
         type: 'destructive',
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              await recreateProject(deletedName);
+              toast({ title: 'Project restored', type: 'success' });
+            } catch (err) {
+              toast({
+                title: 'Failed to restore project',
+                description: err instanceof Error ? err.message : 'Something went wrong',
+                type: 'error',
+              });
+            }
+          },
+        },
       });
     } catch (err) {
       toast({
@@ -278,7 +297,7 @@ export function ProjectList() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
-  const { data, isLoading } = useProjects();
+  const { data, isLoading, isError, error, refetch } = useProjects();
 
   const handleEdit = useCallback((id: number, name: string) => {
     setEditingId(id);
@@ -304,6 +323,21 @@ export function ProjectList() {
       <div className="mx-auto max-w-2xl">
         <h1 className="mb-6 text-2xl font-bold">My Projects</h1>
         <LoadingSkeleton />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <h1 className="mb-6 text-2xl font-bold">My Projects</h1>
+        <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive">
+          <p className="text-sm font-medium">Failed to load projects</p>
+          <p className="text-sm opacity-80">{error instanceof Error ? error.message : 'Something went wrong'}</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>
+            Retry
+          </Button>
+        </div>
       </div>
     );
   }
