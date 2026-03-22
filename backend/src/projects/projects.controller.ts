@@ -46,7 +46,7 @@ export class ProjectsController {
     const data: ProjectResponse[] = projects.map((p) => ({
       id: p.id,
       name: p.name,
-      boardCount: Array.isArray(p.boards) ? p.boards.length : 0,
+      boardCount: 0,
       created_at: p.created_at.toISOString(),
       updated_at: p.updated_at.toISOString(),
     }));
@@ -86,7 +86,7 @@ export class ProjectsController {
     const data: ProjectResponse = {
       id: project.id,
       name: project.name,
-      boardCount: Array.isArray(project.boards) ? project.boards.length : 0,
+      boardCount: 0,
       created_at: project.created_at.toISOString(),
       updated_at: project.updated_at.toISOString(),
     };
