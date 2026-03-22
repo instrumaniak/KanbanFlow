@@ -8,6 +8,7 @@ import { validate } from './config/env.validation';
 import configuration from './config/configuration';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { ProjectsModule } from './projects/projects.module';
 import * as cookieParser from 'cookie-parser';
 import session from 'express-session';
 
@@ -42,6 +43,7 @@ import session from 'express-session';
     ]),
     UsersModule,
     AuthModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

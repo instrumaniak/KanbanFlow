@@ -4,6 +4,7 @@ import { AuthProvider } from './features/auth/use-auth';
 import { ToastProvider } from './components/ui/use-toast';
 import { RegisterForm } from './features/auth/register-form';
 import { LoginForm } from './features/auth/login-form';
+import { ProjectList } from './features/projects/project-list';
 import { AppLayout } from './layouts/app-layout';
 
 const queryClient = new QueryClient({
@@ -14,14 +15,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-function ProjectsPage() {
-  return (
-    <div className="flex flex-1 items-center justify-center">
-      <p className="text-muted-foreground">Coming soon...</p>
-    </div>
-  );
-}
 
 function ForgotPasswordPage() {
   return (
@@ -46,14 +39,22 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
               <Route element={<AppLayout />}>
-                <Route path="/" element={<ProjectsPage />} />
+                <Route path="/" element={<ProjectList />} />
                 <Route
                   path="/projects/:projectId"
-                  element={<ProjectsPage />}
+                  element={
+                    <div className="flex flex-1 items-center justify-center">
+                      <p className="text-muted-foreground">Board view coming soon...</p>
+                    </div>
+                  }
                 />
                 <Route
                   path="/projects/:projectId/boards/:boardId"
-                  element={<ProjectsPage />}
+                  element={
+                    <div className="flex flex-1 items-center justify-center">
+                      <p className="text-muted-foreground">Board view coming soon...</p>
+                    </div>
+                  }
                 />
               </Route>
 

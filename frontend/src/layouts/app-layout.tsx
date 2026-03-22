@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/use-auth';
+import { useProjects } from '@/features/projects/use-projects';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -37,6 +38,7 @@ function persistCollapsed(collapsed: boolean) {
 
 export function AppLayout() {
   const { user, isLoading, logout } = useAuth();
+  const { data: projectsData } = useProjects();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const { projectId, boardId } = useParams();
@@ -104,9 +106,11 @@ export function AppLayout() {
     return <Navigate to="/login" replace />;
   }
 
-  // Derive breadcrumb data from route params
-  // Project/board names will be populated when data fetching is added
-  const breadcrumbProjectName = projectId ? decodeURIComponent(projectId) : undefined;
+  // Derive breadcrumb data from route params and projects data
+  const activeProject = projectId
+    ? projectsData?.data.find((p) => String(p.id) === projectId)
+    : undefined;
+  const breadcrumbProjectName = activeProject?.name ?? (projectId ? decodeURIComponent(projectId) : undefined);
   const breadcrumbBoardName = boardId ? decodeURIComponent(boardId) : undefined;
 
   return (
@@ -167,7 +171,13 @@ export function AppLayout() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
+        <Sidebar
+          collapsed={collapsed}
+          onToggle={toggleSidebar}
+          projects={(projectsData?.data ?? []).map((p) => ({ id: String(p.id), name: p.name }))}
+          activeProjectId={projectId}
+          onProjectClick={(id) => navigate(`/projects/${id}`)}
+        />
         <main className="flex-1 overflow-y-auto bg-background p-6">
           <Outlet />
         </main>

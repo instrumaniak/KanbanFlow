@@ -33,6 +33,13 @@ vi.mock('@/hooks/use-theme', () => ({
   }),
 }));
 
+vi.mock('@/features/projects/use-projects', () => ({
+  useProjects: () => ({
+    data: { data: [], total: 0 },
+    isLoading: false,
+  }),
+}));
+
 // Mock Outlet to render child content
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
