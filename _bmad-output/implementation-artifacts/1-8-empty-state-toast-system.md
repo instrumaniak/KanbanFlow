@@ -1,6 +1,6 @@
 # Story 1.8: Empty State & Toast System
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -21,51 +21,51 @@ so that I know what to do next and get clear feedback on my actions.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Extract reusable EmptyState component (AC: 1, 2)
-  - [ ] Create `frontend/src/components/empty-state.tsx`
-  - [ ] Props: `icon` (ReactNode), `headline` (string), `description` (string), `action` (CTA button props)
-  - [ ] Centered layout: icon circle + headline + description + primary CTA button
-  - [ ] Use CSS variables for theming (dark mode support)
-  - [ ] Follow existing pattern from `project-list.tsx` EmptyState component (lines 264-280)
+- [x] Task 1: Extract reusable EmptyState component (AC: 1, 2)
+  - [x] Create `frontend/src/components/empty-state.tsx`
+  - [x] Props: `icon` (ReactNode), `headline` (string), `description` (string), `action` (CTA button props)
+  - [x] Centered layout: icon circle + headline + description + primary CTA button
+  - [x] Use CSS variables for theming (dark mode support)
+  - [x] Follow existing pattern from `project-list.tsx` EmptyState component (lines 264-280)
 
-- [ ] Task 2: Extract reusable LoadingSkeleton component (AC: 8)
-  - [ ] Create `frontend/src/components/loading-skeleton.tsx`
-  - [ ] Props: `count` (number of skeleton rows, default 3), `className` (optional)
-  - [ ] Render `count` animated pulse bars matching card/row height
-  - [ ] Follow existing pattern from `project-list.tsx` LoadingSkeleton component (lines 282-293)
+- [x] Task 2: Extract reusable LoadingSkeleton component (AC: 8)
+  - [x] Create `frontend/src/components/loading-skeleton.tsx`
+  - [x] Props: `count` (number of skeleton rows, default 3), `className` (optional)
+  - [x] Render `count` animated pulse bars matching card/row height
+  - [x] Follow existing pattern from `project-list.tsx` LoadingSkeleton component (lines 282-293)
 
-- [ ] Task 3: Fix toast auto-dismiss timing (AC: 4, 5, 7)
-  - [ ] Update `frontend/src/components/ui/use-toast.tsx`
-  - [ ] Change `setTimeout` logic: success/default → 3000ms, destructive/error → manual (no auto-dismiss or 5000ms for destructive with action)
-  - [ ] Success + default: 3s auto-dismiss
-  - [ ] Destructive with action (Undo): 5s auto-dismiss
-  - [ ] Error: no auto-dismiss (manual dismiss only)
-  - [ ] Keep existing action button support for Undo
+- [x] Task 3: Fix toast auto-dismiss timing (AC: 4, 5, 7)
+  - [x] Update `frontend/src/components/ui/use-toast.tsx`
+  - [x] Change `setTimeout` logic: success/default → 3000ms, destructive/error → manual (no auto-dismiss or 5000ms for destructive with action)
+  - [x] Success + default: 3s auto-dismiss
+  - [x] Destructive with action (Undo): 5s auto-dismiss
+  - [x] Error: no auto-dismiss (manual dismiss only)
+  - [x] Keep existing action button support for Undo
 
-- [ ] Task 4: Create toast helper function (AC: 4, 5, 7)
-  - [ ] Add convenience functions to `use-toast.tsx` or create `frontend/src/lib/toast-helpers.ts`
-  - [ ] `showSuccess(title, description?)` — success type, 3s auto-dismiss
-  - [ ] `showError(title, description?)` — error type, manual dismiss
-  - [ ] `showDestructive(title, onUndo)` — destructive type with Undo action, 5s auto-dismiss
-  - [ ] All functions wrap the existing `toast()` call with correct defaults
+- [x] Task 4: Create toast helper function (AC: 4, 5, 7)
+  - [x] Add convenience functions to `use-toast.tsx` or create `frontend/src/lib/toast-helpers.ts`
+  - [x] `showSuccess(title, description?)` — success type, 3s auto-dismiss
+  - [x] `showError(title, description?)` — error type, manual dismiss
+  - [x] `showDestructive(title, onUndo)` — destructive type with Undo action, 5s auto-dismiss
+  - [x] All functions wrap the existing `toast()` call with correct defaults
 
-- [ ] Task 5: Refactor project-list.tsx to use shared components (AC: 1)
-  - [ ] Replace inline `EmptyState` with imported `EmptyState` from `components/empty-state`
-  - [ ] Replace inline `LoadingSkeleton` with imported `LoadingSkeleton` from `components/loading-skeleton`
-  - [ ] Update toast calls to use helper functions where appropriate
-  - [ ] Verify existing tests still pass
+- [x] Task 5: Refactor project-list.tsx to use shared components (AC: 1)
+  - [x] Replace inline `EmptyState` with imported `EmptyState` from `components/empty-state`
+  - [x] Replace inline `LoadingSkeleton` with imported `LoadingSkeleton` from `components/loading-skeleton`
+  - [x] Update toast calls to use helper functions where appropriate
+  - [x] Verify existing tests still pass
 
-- [ ] Task 6: Add tests for EmptyState component (AC: 1, 2)
-  - [ ] Create `frontend/src/components/empty-state.test.tsx`
-  - [ ] Test: renders icon, headline, description, and CTA button
-  - [ ] Test: CTA button click fires callback
-  - [ ] Test: renders correctly in dark mode (CSS variable check)
+- [x] Task 6: Add tests for EmptyState component (AC: 1, 2)
+  - [x] Create `frontend/src/components/empty-state.test.tsx`
+  - [x] Test: renders icon, headline, description, and CTA button
+  - [x] Test: CTA button click fires callback
+  - [x] Test: renders correctly in dark mode (CSS variable check)
 
-- [ ] Task 7: Add tests for toast helpers (AC: 4, 5, 7)
-  - [ ] Create `frontend/src/lib/toast-helpers.test.ts` or inline in `use-toast.test.tsx`
-  - [ ] Test: showSuccess creates toast with type 'success'
-  - [ ] Test: showError creates toast with type 'error'
-  - [ ] Test: showDestructive creates toast with action and type 'destructive'
+- [x] Task 7: Add tests for toast helpers (AC: 4, 5, 7)
+  - [x] Create `frontend/src/lib/toast-helpers.test.ts` or inline in `use-toast.test.tsx`
+  - [x] Test: showSuccess creates toast with type 'success'
+  - [x] Test: showError creates toast with type 'error'
+  - [x] Test: showDestructive creates toast with action and type 'destructive'
 
 ## Dev Notes
 
@@ -288,5 +288,19 @@ frontend/src/components/ui/input.tsx                  # shadcn — never modify
 ### Debug Log References
 
 ### Completion Notes List
+- Task 1: Extracted EmptyState component with icon, headline, description, and action props. Uses CSS variables for theming.
+- Task 2: Extracted LoadingSkeleton component with count and className props. Includes aria-busy and aria-label for accessibility.
+- Task 3: Updated toast auto-dismiss timing: success/default 3s, destructive with action 5s, error manual dismiss only.
+- Task 4: Created useToastHelpers hook with showSuccess, showError, and showDestructive convenience functions.
+- Task 5: Refactored project-list.tsx to use shared EmptyState and LoadingSkeleton components.
+- Task 6: Added EmptyState tests covering rendering, CTA callback, no-button state, and dark mode CSS variables.
+- Task 7: Added toast helper tests covering success, error, and destructive toast creation.
 
 ### File List
+- frontend/src/components/empty-state.tsx (NEW)
+- frontend/src/components/empty-state.test.tsx (NEW)
+- frontend/src/components/loading-skeleton.tsx (NEW)
+- frontend/src/components/ui/use-toast.tsx (MODIFIED)
+- frontend/src/components/ui/toast-helpers.test.tsx (NEW)
+- frontend/src/lib/toast-helpers.ts (NEW)
+- frontend/src/features/projects/project-list.tsx (MODIFIED)

@@ -29,10 +29,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const toast = React.useCallback(
     (options: { title: string; description?: string; type?: ToastType; action?: ToastAction }) => {
       const id = Math.random().toString(36).slice(2);
-      setToasts((prev) => [...prev, { ...options, id, type: options.type || 'default' }]);
-      setTimeout(() => {
+      const type = options.type || 'default';
+      setToasts((prev) => [...prev, { ...options, id, type }]);
+
+      const timeoutRef = { current: undefined as ReturnType<typeof setTimeout> | undefined };
+
+      if (type === 'error') {
+        return;
+      }
+
+      const duration = type === 'destructive' && options.action ? 5000 : 3000;
+      timeoutRef.current = setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, 5000);
+      }, duration);
     },
     [],
   );

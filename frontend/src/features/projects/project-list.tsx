@@ -18,6 +18,8 @@ import {
 } from './use-projects';
 import { recreateProject } from './projects.api';
 import { Plus, Pencil, Trash2, FolderKanban } from 'lucide-react';
+import { EmptyState } from '@/components/empty-state';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
 
 function InlineCreateForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
   const [name, setName] = useState('');
@@ -261,36 +263,7 @@ function ProjectCard({
   );
 }
 
-function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-        <FolderKanban className="h-8 w-8 text-muted-foreground" />
-      </div>
-      <div className="text-center">
-        <h2 className="text-lg font-semibold">Start organizing</h2>
-        <p className="text-sm text-muted-foreground">Create your first project to get started</p>
-      </div>
-      <Button onClick={onCreateClick}>
-        <Plus className="mr-1 h-4 w-4" />
-        Create your first project
-      </Button>
-    </div>
-  );
-}
 
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-3">
-      {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="h-16 animate-pulse rounded-lg border border-border bg-muted/50"
-        />
-      ))}
-    </div>
-  );
-}
 
 export function ProjectList() {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -346,7 +319,15 @@ export function ProjectList() {
     return (
       <div className="mx-auto max-w-2xl">
         <h1 className="mb-6 text-2xl font-bold">My Projects</h1>
-        <EmptyState onCreateClick={() => setShowCreateForm(true)} />
+        <EmptyState
+          icon={<FolderKanban className="h-8 w-8 text-muted-foreground" />}
+          headline="Start organizing"
+          description="Create your first project to get started"
+          action={{
+            label: 'Create your first project',
+            onClick: () => setShowCreateForm(true),
+          }}
+        />
       </div>
     );
   }
