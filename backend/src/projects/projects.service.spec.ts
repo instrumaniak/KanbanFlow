@@ -115,6 +115,15 @@ describe('ProjectsService', () => {
       mockRepository.findOne.mockResolvedValue(null);
       await expect(service.update(999, 1, { name: 'New' })).rejects.toThrow(NotFoundException);
     });
+
+    it('should preserve existing name when dto.name is undefined', async () => {
+      const project = { id: 1, name: 'Original', user_id: 1, created_at: new Date(), updated_at: new Date() };
+      mockRepository.findOne.mockResolvedValue(project);
+      mockRepository.save.mockResolvedValue(project);
+
+      await service.update(1, 1, {});
+      expect(mockRepository.save).toHaveBeenCalledWith(project);
+    });
   });
 
   describe('remove', () => {

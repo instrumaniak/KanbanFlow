@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -103,6 +104,34 @@ describe('ProjectsController', () => {
       const result = await controller.remove(mockSession, 1);
       expect(result.message).toBe('Project deleted');
       expect(mockProjectsService.remove).toHaveBeenCalledWith(1, 1);
+    });
+  });
+
+  describe('update edge cases', () => {
+    it('should throw BadRequestException when no fields provided', async () => {
+      const dto: UpdateProjectDto = {};
+
+      await expect(controller.update(mockSession, 1, dto)).rejects.toThrow(BadRequestException);
+      await expect(controller.update(mockSession, 1, dto)).rejects.toThrow(
+        'At least one field must be provided',
+      );
+    });
+  });
+
+  describe('findAll with multiple projects', () => {
+    it('should return projects in the order returned by service', async () => {
+      const projects = [
+        { ...mockProject, id: 1, name: 'First', created_at: new Date('2026-01-01') },
+        { ...mockProject, id: 2, name: 'Second', created_at: new Date('2026-01-02') },
+        { ...mockProject, id: 3, name: 'Third', created_at: new Date('2026-01-03') },
+      ];
+      mockProjectsService.findAllByUserId.mockResolvedValue(projects);
+
+      const result = await controller.findAll(mockSession);
+      expect(result.data).toHaveLength(3);
+      expect(result.total).toBe(3);
+      expect(result.data[0].name).toBe('First');
+      expect(result.data[2].name).toBe('Third');
     });
   });
 });
