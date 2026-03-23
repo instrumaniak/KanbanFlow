@@ -8,6 +8,7 @@ interface EmptyStateProps {
   action?: {
     label: string;
     onClick: () => void;
+    ariaLabel?: string;
   };
 }
 
@@ -22,7 +23,7 @@ export function EmptyState({ icon, headline, description, action }: EmptyStatePr
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
       {action && (
-        <Button onClick={action.onClick}>
+        <Button onClick={action.onClick} aria-label={action.ariaLabel ?? action.label}>
           {action.label}
         </Button>
       )}

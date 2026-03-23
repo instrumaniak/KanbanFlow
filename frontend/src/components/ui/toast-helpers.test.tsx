@@ -47,4 +47,29 @@ describe('Toast helpers', () => {
     fireEvent.click(screen.getByText('Destructive'));
     expect(screen.getByText('Deleted')).toBeInTheDocument();
   });
+
+  it('showDestructive Undo button fires the callback', () => {
+    const undoFn = vi.fn();
+    function TestComponentWithUndo() {
+      const { showDestructive } = useToastHelpers();
+      return (
+        <div>
+          <button onClick={() => showDestructive('Deleted', undoFn, 'Removed')}>Destructive</button>
+        </div>
+      );
+    }
+
+    render(
+      <ToastProvider>
+        <TestComponentWithUndo />
+      </ToastProvider>,
+    );
+
+    fireEvent.click(screen.getByText('Destructive'));
+    expect(screen.getByText('Deleted')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
+    
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(undoFn).toHaveBeenCalledTimes(1);
+  });
 });
