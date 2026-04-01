@@ -1,6 +1,6 @@
 # Story 1.8: Empty State & Toast System
 
-Status: review
+Status: done
 
 ## Story
 
