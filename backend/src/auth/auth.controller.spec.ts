@@ -110,7 +110,9 @@ describe('AuthController', () => {
 
       mockAuthService.logout.mockRejectedValue(new Error('Session error'));
 
-      await expect(controller.logout(mockSession, mockRes as never)).rejects.toThrow('Session error');
+      await expect(controller.logout(mockSession, mockRes as never)).rejects.toThrow(
+        'Session error',
+      );
       expect(mockRes.clearCookie).not.toHaveBeenCalled();
     });
   });

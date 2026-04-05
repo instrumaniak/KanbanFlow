@@ -90,7 +90,13 @@ describe('ProjectsService', () => {
   describe('create', () => {
     it('should create a project', async () => {
       const dto = { name: 'New Project' };
-      const project = { id: 1, name: 'New Project', user_id: 1, created_at: new Date(), updated_at: new Date() };
+      const project = {
+        id: 1,
+        name: 'New Project',
+        user_id: 1,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
       mockRepository.create.mockReturnValue(project);
       mockRepository.save.mockResolvedValue(project);
 
@@ -103,7 +109,13 @@ describe('ProjectsService', () => {
 
   describe('update', () => {
     it('should update a project name', async () => {
-      const project = { id: 1, name: 'Old Name', user_id: 1, created_at: new Date(), updated_at: new Date() };
+      const project = {
+        id: 1,
+        name: 'Old Name',
+        user_id: 1,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
       mockRepository.findOne.mockResolvedValue(project);
       mockRepository.save.mockResolvedValue({ ...project, name: 'New Name' });
 
@@ -117,7 +129,13 @@ describe('ProjectsService', () => {
     });
 
     it('should preserve existing name when dto.name is undefined', async () => {
-      const project = { id: 1, name: 'Original', user_id: 1, created_at: new Date(), updated_at: new Date() };
+      const project = {
+        id: 1,
+        name: 'Original',
+        user_id: 1,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
       mockRepository.findOne.mockResolvedValue(project);
       mockRepository.save.mockResolvedValue(project);
 

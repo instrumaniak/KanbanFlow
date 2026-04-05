@@ -1,6 +1,6 @@
 # Story 1.9: CLI Superadmin Creation
 
-Status: ready-for-dev
+Status: done
 
 ---
 
@@ -25,32 +25,32 @@ so that I can set up admin access before opening registration.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create CLI script entry point (AC: #1, #2, #3)
-  - [ ] Subtask 1.1: Add `create-admin` script to `backend/package.json`:
+- [x] Task 1: Create CLI script entry point (AC: #1, #2, #3)
+  - [x] Subtask 1.1: Add `create-admin` script to `backend/package.json`:
     ```json
     "create-admin": "ts-node -r tsconfig-paths/register src/scripts/create-admin.ts"
     ```
-  - [ ] Subtask 1.2: Create `src/scripts/create-admin.ts` CLI entry point
-  - [ ] Subtask 1.3: Install `inquirer@^8.x` (last CJS-compatible version) for interactive prompts
-- [ ] Task 2: Implement argument parsing (AC: #9)
-  - [ ] Subtask 2.1: Accept --email and --password flags
-  - [ ] Subtask 2.2: Display usage help when --help is used or arguments missing
-- [ ] Task 3: Implement interactive prompts (AC: #1, #2, #3, #10)
-  - [ ] Subtask 3.1: Prompt for email if not provided via flag
-  - [ ] Subtask 3.2: Prompt for password if not provided via flag (masked input)
-  - [ ] Subtask 3.3: Handle Ctrl+C for clean exit
-- [ ] Task 4: Implement email validation (AC: #4)
-  - [ ] Subtask 4.1: Add email format validation using regex
-  - [ ] Subtask 4.2: Return clear error message for invalid email
-  - [ ] Subtask 4.3: Reprompt on invalid input in interactive mode
-- [ ] Task 5: Implement password validation (AC: #5)
-  - [ ] Subtask 5.1: **CRITICAL**: Use IDENTICAL regex from `register.dto.ts` for consistency. The existing regex requires min 8 chars with "a number OR special character" (no letter requirement). Use exactly: `/^(?=.*[a-zA-Z])(?=.*\d|[!@#$%^&*])[a-zA-Z\d!@#$%^&*]{8,}$/`
-  - [ ] Subtask 5.2: Return clear error message for weak password
-  - [ ] Subtask 5.3: Reprompt on invalid input in interactive mode
-- [ ] Task 6: Implement admin user creation (AC: #3, #7)
-  - [ ] Subtask 6.1: Use bcrypt to hash password with explicitly 10 rounds: `await bcrypt.hash(password, 10)`
-  - [ ] Subtask 6.2: **CRITICAL**: Insert directly via TypeORM repository with `role: 'admin'` explicitly set. The `UsersService.create()` always defaults to `'user'` role via `CreateUserDto` which has no role field. Use: `repo.insert({ email, password: hashedPassword, role: 'admin' })`
-  - [ ] Subtask 6.3: **CRITICAL**: Initialize DataSource explicitly:
+  - [x] Subtask 1.2: Create `src/scripts/create-admin.ts` CLI entry point
+  - [x] Subtask 1.3: Install `inquirer@^8.x` (last CJS-compatible version) for interactive prompts
+- [x] Task 2: Implement argument parsing (AC: #9)
+  - [x] Subtask 2.1: Accept --email and --password flags
+  - [x] Subtask 2.2: Display usage help when --help is used or arguments missing
+- [x] Task 3: Implement interactive prompts (AC: #1, #2, #3, #10)
+  - [x] Subtask 3.1: Prompt for email if not provided via flag
+  - [x] Subtask 3.2: Prompt for password if not provided via flag (masked input)
+  - [x] Subtask 3.3: Handle Ctrl+C for clean exit
+- [x] Task 4: Implement email validation (AC: #4)
+  - [x] Subtask 4.1: Add email format validation using regex
+  - [x] Subtask 4.2: Return clear error message for invalid email
+  - [x] Subtask 4.3: Reprompt on invalid input in interactive mode
+- [x] Task 5: Implement password validation (AC: #5)
+  - [x] Subtask 5.1: **CRITICAL**: Use IDENTICAL regex from `register.dto.ts` for consistency. The existing regex requires min 8 chars with "a number OR special character" (no letter requirement). Use exactly: `/^(?=.*[a-zA-Z])(?=.*\d|[!@#$%^&*])[a-zA-Z\d!@#$%^&*]{8,}$/`
+  - [x] Subtask 5.2: Return clear error message for weak password
+  - [x] Subtask 5.3: Reprompt on invalid input in interactive mode
+- [x] Task 6: Implement admin user creation (AC: #3, #7)
+  - [x] Subtask 6.1: Use bcrypt to hash password with explicitly 10 rounds: `await bcrypt.hash(password, 10)`
+  - [x] Subtask 6.2: **CRITICAL**: Insert directly via TypeORM repository with `role: 'admin'` explicitly set. The `UsersService.create()` always defaults to `'user'` role via `CreateUserDto` which has no role field. Use: `repo.insert({ email, password: hashedPassword, role: 'admin' })`
+  - [x] Subtask 6.3: **CRITICAL**: Initialize DataSource explicitly:
     ```typescript
     const dataSource = new DataSource(dataSourceOptions);
     await dataSource.initialize();
@@ -60,11 +60,11 @@ so that I can set up admin access before opening registration.
       await dataSource.destroy(); // Always cleanup
     }
     ```
-- [ ] Task 7: Implement duplicate admin prevention (AC: #6)
-  - [ ] Subtask 7.1: **CRITICAL**: Query repository directly (not via UsersService which has no findByRole method): `const existingAdmin = await repo.findOne({ where: { role: 'admin' } })`
-  - [ ] Subtask 7.2: Return error if admin already exists
-- [ ] Task 8: Implement error handling (AC: #8)
-  - [ ] Subtask 8.1: **CRITICAL**: `dotenv/config` must be the VERY FIRST import in the script (before any other import that reads `process.env`). This matches existing `data-source.ts` pattern:
+- [x] Task 7: Implement duplicate admin prevention (AC: #6)
+  - [x] Subtask 7.1: **CRITICAL**: Query repository directly (not via UsersService which has no findByRole method): `const existingAdmin = await repo.findOne({ where: { role: 'admin' } })`
+  - [x] Subtask 7.2: Return error if admin already exists
+- [x] Task 8: Implement error handling (AC: #8)
+  - [x] Subtask 8.1: **CRITICAL**: `dotenv/config` must be the VERY FIRST import in the script (before any other import that reads `process.env`). This matches existing `data-source.ts` pattern:
     ```typescript
     import 'dotenv/config'; // MUST be first import
     import { DataSource } from 'typeorm';
@@ -72,8 +72,8 @@ so that I can set up admin access before opening registration.
     import inquirer from 'inquirer';
     // ... other imports
     ```
-  - [ ] Subtask 8.2: Handle database connection failures
-  - [ ] Subtask 8.3: Set proper exit codes (0 success, 1 error)
+  - [x] Subtask 8.2: Handle database connection failures
+  - [x] Subtask 8.3: Set proper exit codes (0 success, 1 error)
 
 ## Dev Notes
 
@@ -195,14 +195,33 @@ backend/
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude 3.5 Sonnet (via OpenCode)
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Created CLI script `backend/src/scripts/create-admin.ts` with full argument parsing, interactive prompts, email/password validation
+- Added `create-admin` npm script to `backend/package.json`
+- Installed `inquirer@^8.x` as runtime dependency (and `@types/inquirer` as devDependency)
+- Used bcrypt with 10 rounds for password hashing
+- Implemented duplicate admin prevention by querying for existing admin role
+- Implemented proper error handling with dotenv/config as first import
+- All unit tests pass (75 → 103 with new tests)
+- Added 28 new tests (23 unit + 5 E2E)
+
 ### File List
 
-- `backend/package.json` - Add npm script: `"create-admin": "ts-node -r tsconfig-paths/register src/scripts/create-admin.ts"`
+- `backend/package.json` - Added npm script: `"create-admin": "ts-node -r tsconfig-paths/register src/scripts/create-admin.ts"`, added dependencies: `inquirer@^8.2.7`, `@types/inquirer@^9.0.9`
 - `backend/src/scripts/create-admin.ts` - CLI entry point (NEW)
-- `inquirer@^8.x` - Install as dependency (NOT devDependency, needed at runtime)
+- `backend/src/scripts/create-admin.spec.ts` - Unit tests for validateEmail, validatePassword, parseArgs (23 tests)
+- `backend/src/scripts/create-admin.e2e.spec.ts` - E2E tests for CLI execution (5 tests)
+- `backend/src/scripts/E2E-TEST-MANUAL.md` - Manual E2E test documentation
+- `backend/src/users/entities/user.entity.ts` - Referenced for entity definition
+- `backend/src/projects/entities/project.entity.ts` - Referenced for DataSource entities
+
+### Change Log
+
+- Initial implementation: CLI admin creation script with interactive and scripted modes
+- Added unit tests: 23 tests covering validation functions and argument parsing
+- Added E2E tests: 5 tests covering CLI execution, validation errors, duplicate prevention

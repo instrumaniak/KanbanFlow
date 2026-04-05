@@ -30,11 +30,15 @@ describe('Auth API (e2e)', () => {
         .send({ email: testEmail, password: testPassword })
         .expect(201);
 
-      expect(res.body).toHaveProperty('data');
-      expect(res.body.data).toHaveProperty('email', testEmail);
-      expect(res.body.data).toHaveProperty('id');
-      expect(res.body.data).toHaveProperty('role');
-      expect(res.body).toHaveProperty('message', 'Registration successful');
+      const body = res.body as {
+        data: { email: string; id: number; role: string };
+        message: string;
+      };
+      expect(body).toHaveProperty('data');
+      expect(body.data).toHaveProperty('email', testEmail);
+      expect(body.data).toHaveProperty('id');
+      expect(body.data).toHaveProperty('role');
+      expect(body).toHaveProperty('message', 'Registration successful');
     });
 
     it('returns 400 for missing email', async () => {
@@ -73,9 +77,10 @@ describe('Auth API (e2e)', () => {
         .send({ email: testEmail, password: testPassword })
         .expect(200);
 
-      expect(res.body).toHaveProperty('data');
-      expect(res.body.data).toHaveProperty('email', testEmail);
-      expect(res.body).toHaveProperty('message', 'Login successful');
+      const body = res.body as { data: { email: string }; message: string };
+      expect(body).toHaveProperty('data');
+      expect(body.data).toHaveProperty('email', testEmail);
+      expect(body).toHaveProperty('message', 'Login successful');
     });
 
     it('returns 401 for wrong password', async () => {
@@ -93,10 +98,7 @@ describe('Auth API (e2e)', () => {
     });
 
     it('returns 400 for missing fields', async () => {
-      await request(app.getHttpServer())
-        .post('/api/auth/login')
-        .send({})
-        .expect(400);
+      await request(app.getHttpServer()).post('/api/auth/login').send({}).expect(400);
     });
   });
 
@@ -112,7 +114,8 @@ describe('Auth API (e2e)', () => {
         .expect(200);
 
       const meRes = await agent.get('/api/auth/me').expect(200);
-      expect(meRes.body.data.email).toBe(testEmail);
+      const meBody = meRes.body as { data: { email: string } };
+      expect(meBody.data.email).toBe(testEmail);
 
       await agent.post('/api/auth/logout').expect(200);
       await agent.get('/api/auth/me').expect(401);
@@ -121,9 +124,7 @@ describe('Auth API (e2e)', () => {
 
   describe('GET /api/auth/me', () => {
     it('returns 401 when not authenticated', async () => {
-      await request(app.getHttpServer())
-        .get('/api/auth/me')
-        .expect(401);
+      await request(app.getHttpServer()).get('/api/auth/me').expect(401);
     });
   });
 });

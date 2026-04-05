@@ -18,7 +18,6 @@ import { SessionGuard } from '../auth/guards/session.guard';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import { Project } from './entities/project.entity';
 
 interface SessionData {
   userId: number;
