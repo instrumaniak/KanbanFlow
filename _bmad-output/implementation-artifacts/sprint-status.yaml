@@ -43,7 +43,7 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 
 development_status:
   # Epic 1: User Onboarding & Project Setup
-  epic-1: done
+  epic-1: in-progress
   1-1-project-initialization: done
   1-2-database-schema-setup: done
   1-3-user-registration: done
@@ -52,7 +52,7 @@ development_status:
   1-6-app-shell-navigation: done
   1-7-project-crud: done
   1-8-empty-state-toast-system: done
-  1-9-cli-superadmin-creation: backlog
+  1-9-cli-superadmin-creation: ready-for-dev
   epic-1-retrospective: optional
 
   # Epic 2: Board Organization & Column Management
