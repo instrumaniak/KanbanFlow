@@ -137,19 +137,19 @@ UX-DR22: Implement micro-animations (card settle, checkmark, celebration)
 | FR2 | Epic 1 | User login |
 | FR3 | Epic 1 | User logout |
 | FR4 | Epic 1 | Registration toggle |
-| FR5 | Epic 1 | Create projects |
-| FR6 | Epic 1 | View project list |
-| FR7 | Epic 1 | Edit project details |
-| FR8 | Epic 1 | Delete projects |
-| FR9 | Epic 1 | Boards organized under projects |
-| FR10 | Epic 2 | Create boards |
-| FR11 | Epic 2 | Board background color |
-| FR12 | Epic 2 | Edit board name |
-| FR13 | Epic 2 | View boards |
-| FR14 | Epic 2 | Archive boards |
-| FR15 | Epic 2 | View archived boards |
-| FR16 | Epic 2 | Restore archived boards |
-| FR17 | Epic 2 | Delete archived boards |
+| FR5  | Epic 1 | Create boards (top-level) |
+| FR6  | Epic 1 | View board list (homepage) |
+| FR7  | Epic 1 | Board background color |
+| FR8  | Epic 1 | Edit board name |
+| FR9  | Epic 2 | Optionally group boards into projects |
+| FR10 | Epic 2 | Archive boards |
+| FR11 | Epic 2 | View archived boards |
+| FR12 | Epic 2 | Restore archived boards |
+| FR13 | Epic 2 | Delete archived boards |
+| FR14 | Epic 1 | Create projects (optional) |
+| FR15 | Epic 1 | View project list |
+| FR16 | Epic 1 | Edit project details |
+| FR17 | Epic 1 | Delete projects (boards ungrouped) |
 | FR18 | Epic 2 | Create columns |
 | FR19 | Epic 2 | Edit column names |
 | FR20 | Epic 2 | Delete columns |
@@ -185,15 +185,17 @@ UX-DR22: Implement micro-animations (card settle, checkmark, celebration)
 
 ## Epic List
 
-### Epic 1: User Onboarding & Project Setup
-Users can register, login, and create their first project with a board — the foundation that gets users productive immediately.
-**FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR8, FR9, FR49
+### Epic 1: User Onboarding & Foundation
+
+Users can register, login, and create their first board — the foundation that gets users productive immediately. Projects are optional and introduced later.
+**FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR8, FR14, FR15, FR16, FR17, FR49
 **UX Requirements:** UX-DR1, UX-DR2, UX-DR3, UX-DR10, UX-DR11, UX-DR16, UX-DR17, UX-DR19
 **Additional:** Starter template, Database, Sessions, Config, Formatting
 
-### Epic 2: Board Organization & Column Management
-Users can manage boards within projects and structure their workflow with customizable columns.
-**FRs covered:** FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR17, FR18, FR19, FR20, FR21, FR22
+### Epic 2: Board & Project Organization
+
+Users can manage boards as first-class entities and optionally organize them into projects. Columns provide customizable workflow structure.
+**FRs covered:** FR9, FR10, FR11, FR12, FR13, FR18, FR19, FR20, FR21, FR22
 **UX Requirements:** UX-DR4, UX-DR5
 
 ### Epic 3: Task Capture & Card Management
@@ -218,9 +220,9 @@ Admins can manage users, control registration, and monitor activity to keep the 
 
 ---
 
-## Epic 1: User Onboarding & Project Setup
+## Epic 1: User Onboarding & Foundation
 
-Users can register, login, and create their first project with a board — the foundation that gets users productive immediately.
+Users can register, login, and create their first board — the foundation that gets users productive immediately.
 
 ### Story 1.1: Project Initialization
 
@@ -333,28 +335,27 @@ So that I can easily move between projects and boards.
 **Then** I see a header with the app name and user menu
 **And** I see a collapsible sidebar (240px expanded, 0px collapsed)
 **And** the sidebar is collapsed by default
-**And** the sidebar shows my projects list
-**And** breadcrumbs show current location (Project > Board)
-**And** clicking a project navigates to it
+**And** the sidebar shows my boards list
+**And** clicking a board navigates to it
 **And** React Router handles client-side navigation
 
-### Story 1.7: Project CRUD
+### Story 1.7: Project CRUD (Optional Organization)
 
 As a user,
 I want to create, view, edit, and delete projects,
-So that I can organize my boards into logical groups.
+So that I can optionally organize my boards into logical groups.
 
 **Acceptance Criteria:**
 
-**Given** I am on the projects page
-**When** I click "Create Project"
+**Given** I am on the boards page
+**When** I click "Create Project" in the sidebar or projects section
 **Then** an inline form appears for project name
-**And** submitting creates the project and adds it to my list
+**And** submitting creates the project and adds it to my projects list
 
 **Given** I have projects
-**When** I view the projects page
+**When** I view the projects list
 **Then** I see all my projects listed with names
-**And** each project shows its board count
+**And** each project shows its board count (boards assigned to it)
 
 **Given** I want to rename a project
 **When** I click edit on a project
@@ -363,7 +364,7 @@ So that I can organize my boards into logical groups.
 
 **Given** I want to delete a project
 **When** I click delete and confirm
-**Then** the project and all its boards are deleted (cascade)
+**Then** the project is deleted but its boards become ungrouped (NOT deleted)
 **And** a success toast appears with undo option (5 seconds)
 
 ### Story 1.8: Empty State & Toast System
@@ -374,9 +375,13 @@ So that I know what to do next and get feedback on my actions.
 
 **Acceptance Criteria:**
 
+**Given** I have no boards
+**When** I view the boards page (homepage)
+**Then** I see an empty state with illustration, "Start organizing" headline, and "Create your first board" CTA
+
 **Given** I have no projects
-**When** I view the projects page
-**Then** I see an empty state with illustration, "Start organizing" headline, and "Create your first project" CTA
+**When** I view the projects list
+**Then** I see a simplified empty state with "Create a project" CTA (secondary action)
 
 **Given** I perform an action (create, update, delete)
 **When** the action completes
@@ -402,43 +407,50 @@ So that I can set up admin access before opening registration.
 
 ---
 
-## Epic 2: Board Organization & Column Management
+## Epic 2: Board & Project Organization
 
-Users can manage boards within projects and structure their workflow with customizable columns.
+Users can manage boards as first-class entities and optionally organize them into projects. Columns provide customizable workflow structure.
 
 ### Story 2.1: Board CRUD
 
 As a user,
-I want to create, view, edit, and delete boards within my projects,
+I want to create, view, edit, and delete boards,
 So that I can organize different workflows for different purposes.
 
 **Acceptance Criteria:**
 
-**Given** I am viewing a project
+**Given** I am on the boards page (homepage)
 **When** I click "Create Board"
-**Then** an inline form appears with board name and background color picker
+**Then** a modal form appears with board name, background color picker, and optional project selector
 **And** the color picker shows 8 preset colors
+**And** the project selector shows my existing projects (or "No project" as default)
 **And** submitting creates the board with default columns: "To Do", "In Progress", "Done"
 **And** I am navigated to the new board view
 
-**Given** I have boards in a project
-**When** I view the project page
-**Then** I see all boards listed with name and background color preview
+**Given** I have boards
+**When** I view the boards page
+**Then** I see all my boards listed with name, background color preview, and project label (if assigned)
+**And** boards are sorted by most recently updated
 
 **Given** I want to rename a board
-**When** I click edit on the board header
+**When** I click edit on the board card or header
 **Then** I can modify the name inline
 **And** changes are saved on Enter or blur
 
 **Given** I want to change board background
 **When** I click the color picker in board settings
 **Then** I can select a new color
-**And** the board background updates immediately
+**And** the board background updates immediately (optimistic UI)
+
+**Given** I want to assign a board to a project (or remove from project)
+**When** I open board settings
+**Then** I can select a project or choose "No project"
+**And** the change saves immediately
 
 **Given** I want to delete a board
 **When** I click delete and confirm
 **Then** the board and all its columns/cards are deleted (cascade)
-**And** a success toast appears with undo option
+**And** a success toast appears with undo option (5 seconds)
 
 ### Story 2.2: Board Archiving
 
@@ -454,8 +466,8 @@ So that my workspace stays clean without losing historical data.
 **And** a toast confirms "Board archived" with undo option
 
 **Given** I want to see archived boards
-**When** I click "Archived Boards" in the project
-**Then** I see a list of all archived boards for that project
+**When** I click "Archived Boards" in the boards page or board settings
+**Then** I see a list of all my archived boards (across all projects)
 
 **Given** I want to restore an archived board
 **When** I click "Restore" on an archived board

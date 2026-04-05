@@ -56,8 +56,8 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: Board Organization & Column Management
-  epic-2: backlog
-  2-1-board-crud: backlog
+  epic-2: in-progress
+  2-1-board-crud: ready-for-dev
   2-2-board-archiving: backlog
   2-3-column-crud: backlog
   2-4-column-sorting-bulk-move: backlog

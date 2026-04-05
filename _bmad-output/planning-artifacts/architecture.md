@@ -53,7 +53,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 ### Cross-Cutting Concerns Identified
 
-- **Authentication/Authorization:** Session-based auth protecting all user data, admin role enforcement
+- **Authentication/Authorization:** Session-based auth protecting all user data, admin role enforcement. Boards owned directly by users (not through projects).
 - **CRUD consistency:** Reliable persistence for Projects, Boards, Columns, Cards, Checklists with cascade deletes
 - **Drag-drop state management:** Optimistic UI updates with server sync for card movement
 - **Dark mode theming:** System preference detection + manual toggle, CSS variable-based theming
@@ -201,7 +201,7 @@ npx @nestjs/cli new backend --package-manager npm
 
 **Cross-Component Dependencies:**
 - Auth module protects all API endpoints — must be built first after DB
-- Board/Column/Card share cascade delete logic — TypeORM relations handle this
+- Board/Column/Card share cascade delete logic — TypeORM relations handle this. Project deletion sets board.project_id to NULL (no cascade).
 - Drag-drop requires optimistic UI updates — React Query mutations
 - Dark mode requires CSS variables established early in frontend setup
 
@@ -481,9 +481,12 @@ KanbanFlow/
 │       │   │   ├── use-projects.ts
 │       │   │   └── projects.api.ts
 │       │   ├── boards/
+│       │   │   ├── board-list.tsx          (homepage board list)
+│       │   │   ├── board-card.tsx          (board preview with color + project label)
+│       │   │   ├── create-board-modal.tsx  (modal with name, color, optional project)
 │       │   │   ├── board-view.tsx
 │       │   │   ├── board-header.tsx
-│       │   │   ├── board-settings.tsx
+│       │   │   ├── board-settings.tsx      (includes project assignment)
 │       │   │   ├── archived-boards.tsx
 │       │   │   ├── use-boards.ts
 │       │   │   └── boards.api.ts
@@ -667,7 +670,8 @@ KanbanFlow/
 - Entities define database schema — TypeORM decorators handle mapping
 
 **Data Boundaries:**
-- User owns Projects → Projects own Boards → Boards own Columns → Columns own Cards
+- User owns Boards → Boards own Columns → Columns own Cards
+- User optionally groups Boards into Projects (Projects → Boards is 1:many, NULLable)
 - Labels are shared across cards within a user's scope
 - Checklists belong to Cards — cascade delete on card deletion
 - Admin has read-only access to all user data for management
@@ -751,7 +755,7 @@ Response → React Query Cache → UI Update
 |-------------|----------------|------------------|----------|
 | Auth (FR1-FR4) | `src/auth/` | `features/auth/` | ✅ Complete |
 | Projects (FR5-FR9) | `src/projects/` | `features/projects/` | ✅ Complete |
-| Boards (FR10-FR17) | `src/boards/` | `features/boards/` | ✅ Complete |
+| Boards (FR5-FR13) | `src/boards/` | `features/boards/` | ✅ Complete |
 | Columns (FR18-FR22) | `src/columns/` | `features/columns/` | ✅ Complete |
 | Cards (FR23-FR37) | `src/cards/` | `features/cards/` | ✅ Complete |
 | Checklists (FR29-FR30) | `src/checklists/` | `features/checklists/` | ✅ Complete |

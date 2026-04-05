@@ -102,9 +102,10 @@ Users can create and manage multiple boards with customizable backgrounds, defin
 | Step | Action | Emotional State |
 |------|--------|-----------------|
 | Opening | Login after a long day, brain full of things to do | Overwhelmed, scattered |
-| Discovery | See project list, click "New Project" | Hopeful |
-| Action | Name project "Website Redesign", pick a color | Focused |
-| Building | Create board "Backlog" with columns: To Do, In Progress, Done | Creating order from chaos |
+| Discovery | See board list, click "Create Board" | Hopeful |
+| Action | Name board "Website Redesign", pick a color | Focused |
+| Building | Board created with default columns: To Do, In Progress, Done | Creating order from chaos |
+| Capture | Quickly add 5 cards for tasks I remember | Relieved, things are being captured |
 | Capture | Quickly add 5 cards for tasks I remember | Relieved, things are being captured |
 | Detail | Open a card, add checklist items, set due date | In control |
 | Close | Drag card from "To Do" to "In Progress" as I start work | Satisfied |
@@ -123,8 +124,8 @@ Users can create and manage multiple boards with customizable backgrounds, defin
 |------|--------|-----------------|
 | Opening | Received link to your demo, clicks it | Curious |
 | Entry | Register with email, set password | No friction |
-| Onboarding | Land on empty projects page, see "Create your first project" prompt | Guided but not forced |
-| Experimenting | Create a board, add columns, drag cards around | Playful, impressed |
+| Onboarding | Land on empty boards page, see "Create your first board" prompt | Guided but not forced |
+| Experimenting | Create a board with default columns, drag cards around | Playful, impressed |
 | Discovery | Find dark mode toggle, switch to dark | Delighted |
 | Value Moment | Add a card with checklist, see progress bar | "This actually works well" |
 | Exit | Close browser, plan to return | Satisfied |
@@ -190,17 +191,18 @@ Older browsers not supported.
 - Session management
 - User roles: regular user, admin (CLI script to create initial superadmin)
 
-**Projects**
-- Create, view, edit projects
-- Delete projects (cascades to boards)
-- Project list view
-
 **Boards**
-- Create boards with background color
+- Create boards with background color (top-level, no project required)
 - Edit board name and background
+- Optionally group boards into projects for organization
 - Board archiving (hidden from main view)
 - Archive section (view archived, restore, permanently delete)
-- Board list view per project
+- Board list view (homepage)
+
+**Projects**
+- Create, view, edit projects (optional organizational containers)
+- Delete projects (does NOT cascade to boards — boards become ungrouped)
+- Project list view (secondary navigation)
 
 **Columns**
 - Create columns per board
@@ -253,24 +255,24 @@ Older browsers not supported.
 - FR3: Users can log out to end their session
 - FR4: System can prevent new user registration when disabled by admin
 
-### Project Management
-
-- FR5: Users can create projects
-- FR6: Users can view their project list
-- FR7: Users can edit project details (name)
-- FR8: Users can delete projects (cascades to boards)
-- FR9: System organizes boards under projects
-
 ### Board Management
 
-- FR10: Users can create boards within a project
-- FR11: Users can customize board background color
-- FR12: Users can edit board name
-- FR13: Users can view boards within a project
-- FR14: Users can archive boards (hidden from main view)
-- FR15: Users can view archived boards in archive section
-- FR16: Users can restore archived boards
-- FR17: Users can permanently delete archived boards
+- FR5: Users can create boards (top-level, owned by user)
+- FR6: Users can view their board list (homepage)
+- FR7: Users can customize board background color
+- FR8: Users can edit board name
+- FR9: Users can optionally group boards into projects
+- FR10: Users can archive boards (hidden from main view)
+- FR11: Users can view archived boards in archive section
+- FR12: Users can restore archived boards
+- FR13: Users can permanently delete archived boards
+
+### Project Management (Optional)
+
+- FR14: Users can create projects as organizational containers
+- FR15: Users can view their project list
+- FR16: Users can edit project details (name)
+- FR17: Users can delete projects (boards become ungrouped, NOT deleted)
 
 ### Column Management
 

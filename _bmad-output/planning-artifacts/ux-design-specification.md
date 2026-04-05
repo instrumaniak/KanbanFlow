@@ -75,6 +75,7 @@ The core experience of KanbanFlow is defined by a single loop: **capture → org
 2. **Tactile feedback** — Interactions should feel physical, not digital. Drag, drop, done.
 3. **Visual calm** — The UI reduces overwhelm, not adds to it. Clear hierarchy, breathing room.
 4. **Progressive detail** — Start simple (board view), reveal complexity on demand (card details).
+5. **Progressive complexity** — Start simple (just boards), reveal organization (projects) when the user is ready. Don't force structure on day one.
 
 ## Desired Emotional Response
 
@@ -140,8 +141,8 @@ The core experience of KanbanFlow is defined by a single loop: **capture → org
 ### Transferable UX Patterns
 
 **Navigation Patterns:**
-- **Shallow hierarchy** — Project → Board → Column → Card. No deeper. Users always know where they are.
-- **Single sidebar** — Context switches only at board level. No nested navigation.
+- **Flat hierarchy** — Board → Column → Card. Projects are optional grouping. Users always know where they are.
+- **Sidebar** — Shows boards (primary) with optional project groupings (secondary). Homepage = board list.
 
 **Interaction Patterns:**
 - **Drag-drop as primary action** — Moving cards between columns is the core interaction. No menus required.
@@ -429,15 +430,16 @@ The Organizer's primary interaction — capturing tasks as fast as they think of
 
 Creating the organizational structure.
 
-**Entry point:** Project page, "Create Board" button
+**Entry point:** Boards page (homepage), "Create Board" button
 
 **Flow:**
 1. User clicks "Create Board"
-2. Inline form: board name + background color picker
+2. Modal form: board name + background color picker + optional project selector
 3. Board created with default columns: "To Do", "In Progress", "Done"
-4. User can immediately start adding cards
-5. User adds columns via "+ Add column" at right edge
-6. Columns are editable: rename, reorder, delete via column menu
+4. User redirected to new board view
+5. User can immediately start adding cards
+6. User adds columns via "+ Add column" at right edge
+7. Columns are editable: rename, reorder, delete via column menu
 
 **Key interactions:**
 - Background color picker is simple — 8 preset colors, no custom hex input
@@ -481,9 +483,9 @@ The Explorer's entry — from curious click to productive use.
 **Flow:**
 1. User clicks "Register"
 2. Minimal form: email + password only (no name, no preferences)
-3. Submit → auto-login, redirect to projects page
-4. Empty state: illustration + "Create your first project" prompt
-5. User enters project name → board created with default columns
+3. Submit → auto-login, redirect to boards page (homepage)
+4. Empty state: illustration + "Create your first board" prompt
+5. User enters board name + picks color → board created with default columns
 6. Empty board: "Add your first card" with inline input pre-focused
 7. User creates first card → subtle celebration animation
 
@@ -520,7 +522,7 @@ The Admin managing users and security.
 ### Journey Patterns
 
 **Navigation Patterns:**
-- Shallow hierarchy: always Project → Board → Card (never deeper)
+- Flat hierarchy: Board → Column → Card. Projects are optional grouping (never deeper)
 - Sidebar for project/board switching (collapsed by default)
 - Breadcrumbs for context: Project > Board name in header
 
@@ -692,7 +694,7 @@ The Admin managing users and security.
 | **Board switching** | Via sidebar only. No tabs — avoids clutter. |
 
 **Rules:**
-- Shallow hierarchy: Project → Board → Card (never deeper)
+- Flat hierarchy: Board → Column → Card. Projects are optional grouping (never deeper)
 - Sidebar is the primary navigation for multi-project workflows
 - Breadcrumbs provide context, not primary navigation
 - Current location always clear via sidebar highlight + breadcrumb
@@ -701,8 +703,8 @@ The Admin managing users and security.
 
 | Context | Headline | CTA |
 |---------|----------|-----|
-| No projects | "Start organizing" | "Create your first project" |
-| No boards in project | "This project is empty" | "Create a board" |
+| No boards | "Start organizing" | "Create your first board" |
+| No projects | "No projects yet" | "Create a project" (secondary action) |
 | No cards on board | "Add your first task" | Inline input pre-focused |
 | No search results | "No cards found" | "Clear search" |
 | No filter matches | "No cards match your filters" | "Clear all filters" |
