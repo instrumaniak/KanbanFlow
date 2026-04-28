@@ -128,12 +128,11 @@ export function AppLayout({ projectsData }: { projectsData?: ListResponse<Projec
         </div>
 
         <div className="hidden items-center gap-2 sm:flex">
-          <Breadcrumbs
-            projectName={breadcrumbProjectName}
-            boardName={breadcrumbBoardName}
-            projectId={projectId}
-            boardId={boardId}
-          />
+<Breadcrumbs
+              projectName={breadcrumbProjectName}
+              boardName={breadcrumbBoardName}
+              projectId={projectId}
+            />
         </div>
 
         <div className="flex items-center gap-1">

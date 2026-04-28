@@ -15,13 +15,24 @@ export class BoardsService {
     private readonly columnRepository: Repository<BoardColumn>,
   ) {}
 
-  async findAllByUserId(userId: number, projectId?: number): Promise<Board[]> {
-    const where: Record<string, number> = { user_id: userId };
+  async findAllByUserId(userId: number, projectId?: number, includeArchived = false): Promise<Board[]> {
+    const where: Record<string, number | boolean> = { user_id: userId };
     if (projectId) {
       where.project_id = projectId;
     }
+    if (!includeArchived) {
+      where.is_archived = false;
+    }
     return this.boardRepository.find({
       where,
+      relations: ['project'],
+      order: { updated_at: 'DESC' },
+    });
+  }
+
+  async findAllArchivedByUserId(userId: number): Promise<Board[]> {
+    return this.boardRepository.find({
+      where: { user_id: userId, is_archived: true },
       relations: ['project'],
       order: { updated_at: 'DESC' },
     });
@@ -89,6 +100,32 @@ export class BoardsService {
 
   async remove(id: number, userId: number): Promise<void> {
     const board = await this.findOne(id, userId);
+    await this.boardRepository.remove(board);
+  }
+
+  async archive(id: number, userId: number): Promise<Board> {
+    const board = await this.findOne(id, userId);
+    if (board.is_archived) {
+      return board;
+    }
+    board.is_archived = true;
+    return this.boardRepository.save(board);
+  }
+
+  async restore(id: number, userId: number): Promise<Board> {
+    const board = await this.findOne(id, userId);
+    if (!board.is_archived) {
+      return board;
+    }
+    board.is_archived = false;
+    return this.boardRepository.save(board);
+  }
+
+  async permanentDelete(id: number, userId: number): Promise<void> {
+    const board = await this.findOne(id, userId);
+    if (!board.is_archived) {
+      throw new ForbiddenException('Board must be archived before permanent deletion');
+    }
     await this.boardRepository.remove(board);
   }
 }

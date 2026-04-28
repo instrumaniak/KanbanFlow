@@ -32,6 +32,7 @@ interface BoardResponse {
   created_at: string;
   updated_at: string;
   columns?: { id: number; name: string; position: number }[];
+  is_archived?: boolean;
 }
 
 @Controller('api/boards')
@@ -44,14 +45,18 @@ export class BoardsController {
   @ApiOperation({ summary: 'Get all boards for the authenticated user' })
   @ApiResponse({ status: 200, description: 'List of boards' })
   @ApiQuery({ name: 'projectId', required: false, type: Number })
+  @ApiQuery({ name: 'archived', required: false, type: Boolean })
   async findAll(
     @Session() session: SessionData,
     @Query('projectId') projectId?: string,
+    @Query('archived') archived?: string,
   ) {
     const projectIdNum = projectId ? parseInt(projectId, 10) : undefined;
+    const includeArchived = archived === 'true';
     const boards = await this.boardsService.findAllByUserId(
       session.userId,
       projectIdNum,
+      includeArchived,
     );
     const data: BoardResponse[] = boards.map((b) => ({
       id: b.id,
@@ -61,6 +66,25 @@ export class BoardsController {
       project: b.project ? { id: b.project.id, name: b.project.name } : null,
       created_at: b.created_at.toISOString(),
       updated_at: b.updated_at.toISOString(),
+      is_archived: b.is_archived,
+    }));
+    return { data, total: data.length };
+  }
+
+  @Get('archived')
+  @ApiOperation({ summary: 'Get all archived boards for the authenticated user' })
+  @ApiResponse({ status: 200, description: 'List of archived boards' })
+  async findArchived(@Session() session: SessionData) {
+    const boards = await this.boardsService.findAllArchivedByUserId(session.userId);
+    const data: BoardResponse[] = boards.map((b) => ({
+      id: b.id,
+      name: b.name,
+      background_color: b.background_color,
+      project_id: b.project_id,
+      project: b.project ? { id: b.project.id, name: b.project.name } : null,
+      created_at: b.created_at.toISOString(),
+      updated_at: b.updated_at.toISOString(),
+      is_archived: b.is_archived,
     }));
     return { data, total: data.length };
   }
@@ -84,6 +108,7 @@ export class BoardsController {
         name: c.name,
         position: c.position,
       })),
+      is_archived: board.is_archived,
     };
     return { data, message: 'Board created successfully' };
   }
@@ -110,6 +135,7 @@ export class BoardsController {
         name: c.name,
         position: c.position,
       })),
+      is_archived: board.is_archived,
     };
     return { data };
   }
@@ -133,6 +159,7 @@ export class BoardsController {
       project: board.project ? { id: board.project.id, name: board.project.name } : null,
       created_at: board.created_at.toISOString(),
       updated_at: board.updated_at.toISOString(),
+      is_archived: board.is_archived,
     };
     return { data, message: 'Board updated' };
   }
@@ -147,5 +174,61 @@ export class BoardsController {
   ) {
     await this.boardsService.remove(id, session.userId);
     return { message: 'Board deleted' };
+  }
+
+  @Patch(':id/archive')
+  @ApiOperation({ summary: 'Archive a board' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Board archived' })
+  async archive(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    const board = await this.boardsService.archive(id, session.userId);
+    const data: BoardResponse = {
+      id: board.id,
+      name: board.name,
+      background_color: board.background_color,
+      project_id: board.project_id,
+      project: board.project ? { id: board.project.id, name: board.project.name } : null,
+      created_at: board.created_at.toISOString(),
+      updated_at: board.updated_at.toISOString(),
+      is_archived: board.is_archived,
+    };
+    return { data, message: 'Board archived' };
+  }
+
+  @Patch(':id/restore')
+  @ApiOperation({ summary: 'Restore an archived board' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Board restored' })
+  async restore(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    const board = await this.boardsService.restore(id, session.userId);
+    const data: BoardResponse = {
+      id: board.id,
+      name: board.name,
+      background_color: board.background_color,
+      project_id: board.project_id,
+      project: board.project ? { id: board.project.id, name: board.project.name } : null,
+      created_at: board.created_at.toISOString(),
+      updated_at: board.updated_at.toISOString(),
+      is_archived: board.is_archived,
+    };
+    return { data, message: 'Board restored' };
+  }
+
+  @Delete(':id/permanent')
+  @ApiOperation({ summary: 'Permanently delete an archived board' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Board permanently deleted' })
+  async permanentDelete(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    await this.boardsService.permanentDelete(id, session.userId);
+    return { message: 'Board permanently deleted' };
   }
 }

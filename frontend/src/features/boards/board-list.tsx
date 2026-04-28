@@ -2,11 +2,13 @@ import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
 import { EmptyState } from '@/components/empty-state';
-import { useBoards } from './use-boards';
+import { useBoards, useRestoreBoard } from './use-boards';
 import { useProjects } from '../projects/use-projects';
 import { CreateBoardModal } from './create-board-modal';
 import { BoardCard, InlineEditForm, DeleteDialog } from './board-card';
-import { Plus, Layout } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { Plus, Layout, Archive } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function BoardList() {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -15,6 +17,8 @@ export function BoardList() {
 
   const { data: boardsData, isLoading, isError, error, refetch } = useBoards();
   const { data: projectsData } = useProjects();
+  const restoreMutation = useRestoreBoard();
+  const { toast } = useToast();
 
   const boards = boardsData?.data ?? [];
   const projects = projectsData?.data ?? [];
@@ -65,10 +69,18 @@ export function BoardList() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold">My Boards</h1>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="mr-1 h-4 w-4" />
-            Create Board
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/archived-boards">
+                <Archive className="mr-1 h-4 w-4" />
+                Archived Boards
+              </Link>
+            </Button>
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="mr-1 h-4 w-4" />
+              Create Board
+            </Button>
+          </div>
         </div>
         <EmptyState
           icon={<Layout className="h-8 w-8 text-muted-foreground" />}
@@ -92,10 +104,18 @@ export function BoardList() {
     <div className="mx-auto max-w-6xl">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">My Boards</h1>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="mr-1 h-4 w-4" />
-          Create Board
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/archived-boards">
+              <Archive className="mr-1 h-4 w-4" />
+              Archived Boards
+            </Link>
+          </Button>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="mr-1 h-4 w-4" />
+            Create Board
+          </Button>
+        </div>
       </div>
 
       {showCreateModal && (
@@ -122,30 +142,57 @@ export function BoardList() {
               onCancel={handleEditCancel}
             />
           ) : (
-            <BoardCard
-              key={board.id}
-              board={board}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
+<BoardCard
+                key={board.id}
+                board={board}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
           )
         )}
       </div>
 
-      {deleteTarget && (
-        <DeleteDialog
-          boardName={deleteTarget.name}
-          boardId={deleteTarget.id}
-          open={!!deleteTarget}
-          onOpenChange={(open) => {
-            if (!open) setDeleteTarget(null);
-          }}
-          onDeleted={() => {
-            setDeleteTarget(null);
-            refetch();
-          }}
-        />
-      )}
+      {deleteTarget && (() => {
+          const archivedBoard = { id: deleteTarget.id, name: deleteTarget.name };
+          return (
+            <DeleteDialog
+              boardName={deleteTarget.name}
+              boardId={deleteTarget.id}
+              open={!!deleteTarget}
+              onOpenChange={(open) => {
+                if (!open) setDeleteTarget(null);
+              }}
+              onDeleted={() => {
+                setDeleteTarget(null);
+                refetch();
+                toast({
+                  title: 'Board archived',
+                  description: `"${archivedBoard.name}" has been archived.`,
+                  action: {
+                    label: 'Undo',
+                    onClick: async () => {
+                      try {
+                        await restoreMutation.mutateAsync(archivedBoard.id);
+                        refetch();
+                        toast({
+                          title: 'Board restored',
+                          description: 'The board has been restored successfully.',
+                        });
+                      } catch (err) {
+                        toast({
+                          type: 'destructive',
+                          title: 'Failed to restore board',
+                          description: err instanceof Error ? err.message : 'Something went wrong',
+                        });
+                      }
+                    },
+                  },
+                });
+              }}
+              mode="archive"
+            />
+          );
+        })()}
     </div>
   );
 }

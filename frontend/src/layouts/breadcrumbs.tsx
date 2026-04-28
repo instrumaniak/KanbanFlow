@@ -10,14 +10,12 @@ interface BreadcrumbsProps {
   projectName?: string;
   boardName?: string;
   projectId?: string;
-  boardId?: string;
 }
 
 export function Breadcrumbs({
   projectName,
   boardName,
   projectId,
-  boardId,
 }: BreadcrumbsProps) {
   if (!projectName) return null;
 

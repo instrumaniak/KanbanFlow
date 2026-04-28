@@ -8,10 +8,14 @@ describe('BoardsController', () => {
 
   const mockBoardsService = {
     findAllByUserId: jest.fn(),
+    findAllArchivedByUserId: jest.fn(),
     findOne: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    archive: jest.fn(),
+    restore: jest.fn(),
+    permanentDelete: jest.fn(),
   };
 
   const mockSession = { userId: 1 };
@@ -56,7 +60,7 @@ describe('BoardsController', () => {
 
       await controller.findAll(mockSession, '1');
 
-      expect(service.findAllByUserId).toHaveBeenCalledWith(1, 1);
+      expect(service.findAllByUserId).toHaveBeenCalledWith(1, 1, false);
     });
   });
 
@@ -135,6 +139,85 @@ describe('BoardsController', () => {
       const result = await controller.remove(mockSession, 1);
 
       expect(result.message).toBe('Board deleted');
+    });
+  });
+
+  describe('findArchived', () => {
+    it('should return list of archived boards', async () => {
+      const boards = [
+        {
+          id: 1,
+          name: 'Archived Board',
+          background_color: '#0079BF',
+          project_id: null,
+          project: null,
+          created_at: new Date(),
+          updated_at: new Date(),
+          is_archived: true,
+        },
+      ];
+      service.findAllArchivedByUserId.mockResolvedValue(boards as any);
+
+      const result = await controller.findArchived(mockSession);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.total).toBe(1);
+      expect(service.findAllArchivedByUserId).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('archive', () => {
+    it('should archive a board', async () => {
+      const board = {
+        id: 1,
+        name: 'Board',
+        background_color: '#0079BF',
+        project_id: null,
+        project: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+        is_archived: true,
+      };
+      service.archive.mockResolvedValue(board as any);
+
+      const result = await controller.archive(mockSession, 1);
+
+      expect(result.data.is_archived).toBe(true);
+      expect(result.message).toBe('Board archived');
+      expect(service.archive).toHaveBeenCalledWith(1, 1);
+    });
+  });
+
+  describe('restore', () => {
+    it('should restore an archived board', async () => {
+      const board = {
+        id: 1,
+        name: 'Board',
+        background_color: '#0079BF',
+        project_id: null,
+        project: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+        is_archived: false,
+      };
+      service.restore.mockResolvedValue(board as any);
+
+      const result = await controller.restore(mockSession, 1);
+
+      expect(result.data.is_archived).toBe(false);
+      expect(result.message).toBe('Board restored');
+      expect(service.restore).toHaveBeenCalledWith(1, 1);
+    });
+  });
+
+  describe('permanentDelete', () => {
+    it('should permanently delete an archived board', async () => {
+      service.permanentDelete.mockResolvedValue();
+
+      const result = await controller.permanentDelete(mockSession, 1);
+
+      expect(result.message).toBe('Board permanently deleted');
+      expect(service.permanentDelete).toHaveBeenCalledWith(1, 1);
     });
   });
 });

@@ -17,6 +17,7 @@ describe('BoardsService', () => {
     create: jest.fn(),
     save: jest.fn(),
     remove: jest.fn(),
+    update: jest.fn(),
   };
 
   const mockColumnRepository = {
@@ -54,7 +55,7 @@ describe('BoardsService', () => {
 
       expect(result).toEqual(boards);
       expect(mockBoardRepository.find).toHaveBeenCalledWith({
-        where: { user_id: 1 },
+        where: { user_id: 1, is_archived: false },
         relations: ['project'],
         order: { updated_at: 'DESC' },
       });
@@ -68,7 +69,7 @@ describe('BoardsService', () => {
 
       expect(result).toEqual(boards);
       expect(mockBoardRepository.find).toHaveBeenCalledWith({
-        where: { user_id: 1, project_id: 1 },
+        where: { user_id: 1, project_id: 1, is_archived: false },
         relations: ['project'],
         order: { updated_at: 'DESC' },
       });
@@ -193,6 +194,131 @@ describe('BoardsService', () => {
       mockBoardRepository.findOne.mockResolvedValue(null);
 
       await expect(service.remove(999, 1)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('findAllByUserId', () => {
+    it('should not return archived boards by default', async () => {
+      const boards = [
+        { id: 1, name: 'Board 1', user_id: 1, is_archived: false },
+        { id: 2, name: 'Board 2', user_id: 1, is_archived: false },
+      ];
+      mockBoardRepository.find.mockResolvedValue(boards as Board[]);
+
+      const result = await service.findAllByUserId(1);
+
+      expect(result).toEqual(boards);
+      expect(mockBoardRepository.find).toHaveBeenCalledWith({
+        where: { user_id: 1, is_archived: false },
+        relations: ['project'],
+        order: { updated_at: 'DESC' },
+      });
+    });
+
+    it('should return all boards when includeArchived is true', async () => {
+      const boards = [
+        { id: 1, name: 'Board 1', user_id: 1, is_archived: false },
+        { id: 2, name: 'Board 2', user_id: 1, is_archived: true },
+      ];
+      mockBoardRepository.find.mockResolvedValue(boards as Board[]);
+
+      const result = await service.findAllByUserId(1, undefined, true);
+
+      expect(result).toEqual(boards);
+      expect(mockBoardRepository.find).toHaveBeenCalledWith({
+        where: { user_id: 1 },
+        relations: ['project'],
+        order: { updated_at: 'DESC' },
+      });
+    });
+  });
+
+  describe('findAllArchivedByUserId', () => {
+    it('should return only archived boards', async () => {
+      const boards = [
+        { id: 2, name: 'Archived Board', user_id: 1, is_archived: true },
+      ];
+      mockBoardRepository.find.mockResolvedValue(boards as Board[]);
+
+      const result = await service.findAllArchivedByUserId(1);
+
+      expect(result).toEqual(boards);
+      expect(mockBoardRepository.find).toHaveBeenCalledWith({
+        where: { user_id: 1, is_archived: true },
+        relations: ['project'],
+        order: { updated_at: 'DESC' },
+      });
+    });
+  });
+
+  describe('archive', () => {
+    it('should archive a board', async () => {
+      const board = { id: 1, name: 'Board', user_id: 1, is_archived: false };
+      const archivedBoard = { ...board, is_archived: true };
+      mockBoardRepository.findOne.mockResolvedValue(board as Board);
+      mockBoardRepository.save.mockResolvedValue(archivedBoard as Board);
+
+      const result = await service.archive(1, 1);
+
+      expect(result.is_archived).toBe(true);
+      expect(mockBoardRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 1, is_archived: true }),
+      );
+    });
+
+    it('should throw NotFoundException if board not found', async () => {
+      mockBoardRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.archive(999, 1)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('restore', () => {
+    it('should restore an archived board', async () => {
+      const board = { id: 1, name: 'Board', user_id: 1, is_archived: true };
+      const restoredBoard = { ...board, is_archived: false };
+      mockBoardRepository.findOne.mockResolvedValue(board as Board);
+      mockBoardRepository.save.mockResolvedValue(restoredBoard as Board);
+
+      const result = await service.restore(1, 1);
+
+      expect(result.is_archived).toBe(false);
+      expect(mockBoardRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 1, is_archived: false }),
+      );
+    });
+
+    it('should throw NotFoundException if board not found', async () => {
+      mockBoardRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.restore(999, 1)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('permanentDelete', () => {
+    it('should permanently delete an archived board', async () => {
+      const board = { id: 1, name: 'Board', user_id: 1, is_archived: true };
+      mockBoardRepository.findOne.mockResolvedValue(board as Board);
+      mockBoardRepository.remove.mockResolvedValue(board as Board);
+
+      await service.permanentDelete(1, 1);
+
+      expect(mockBoardRepository.remove).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 1 }),
+      );
+    });
+
+    it('should throw NotFoundException if board not found', async () => {
+      mockBoardRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.permanentDelete(999, 1)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException if board is not archived', async () => {
+      const board = { id: 1, name: 'Board', user_id: 1, is_archived: false };
+      mockBoardRepository.findOne.mockResolvedValue(board as Board);
+
+      await expect(service.permanentDelete(1, 1)).rejects.toThrow(ForbiddenException);
     });
   });
 });

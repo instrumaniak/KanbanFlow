@@ -7,6 +7,7 @@ interface Board {
   created_at: string;
   updated_at: string;
   columns?: { id: number; name: string; position: number }[];
+  is_archived?: boolean;
 }
 
 interface ApiResponse<T> {
@@ -115,6 +116,55 @@ export async function deleteBoard(id: number): Promise<ApiResponse<void>> {
       ...FETCH_OPTIONS,
       method: 'DELETE',
     });
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
+  return handleResponse(response);
+}
+
+export async function archiveBoard(id: number): Promise<ApiResponse<Board>> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/boards/${id}/archive`, {
+      ...FETCH_OPTIONS,
+      method: 'PATCH',
+    });
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
+  return handleResponse(response);
+}
+
+export async function restoreBoard(id: number): Promise<ApiResponse<Board>> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/boards/${id}/restore`, {
+      ...FETCH_OPTIONS,
+      method: 'PATCH',
+    });
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
+  return handleResponse(response);
+}
+
+export async function permanentDeleteBoard(id: number): Promise<ApiResponse<void>> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/boards/${id}/permanent`, {
+      ...FETCH_OPTIONS,
+      method: 'DELETE',
+    });
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
+  return handleResponse(response);
+}
+
+export async function fetchArchivedBoards(): Promise<ListResponse<Board>> {
+  let response: Response;
+  try {
+    response = await fetch('/api/boards/archived', FETCH_OPTIONS);
   } catch {
     throw new Error('Network error — please check your connection');
   }

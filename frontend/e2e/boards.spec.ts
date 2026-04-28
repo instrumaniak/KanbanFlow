@@ -105,3 +105,151 @@ test.describe('Boards CRUD', () => {
     await expect(nameInput).not.toBeVisible();
   });
 });
+
+test.describe('Board Archiving', () => {
+  const boardNameToArchive = `Board to Archive ${Date.now()}`;
+  let createdBoardId: number;
+
+  test.beforeAll(async ({ request }) => {
+    const res = await request.post('http://localhost:3000/api/auth/register', {
+      data: { email: TEST_EMAIL, password: TEST_PASSWORD },
+    });
+    if (res.status() !== 201 && res.status() !== 409) {
+      throw new Error(`Failed to create test user: ${res.status()}`);
+    }
+
+    // Create a board to archive
+    const loginRes = await request.post('http://localhost:3000/api/auth/login', {
+      data: { email: TEST_EMAIL, password: TEST_PASSWORD },
+    });
+    const cookies = loginRes.headers().set-cookie || '';
+
+    const createRes = await request.post('http://localhost:3000/api/boards', {
+      data: { name: boardNameToArchive },
+      headers: { Cookie: cookies },
+    });
+    const boardData = await createRes.json();
+    createdBoardId = boardData.data.id;
+  });
+
+  test('archives a board from board card', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(TEST_EMAIL);
+    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('/projects');
+
+    await page.goto('/');
+    await page.waitForTimeout(500);
+
+    // Find the board and click the delete/archive button
+    const boardCard = page.locator('.group').filter({ hasText: boardNameToArchive });
+    await expect(boardCard).toBeVisible();
+
+    // Click the delete button (trash icon) on the board card
+    const deleteButton = boardCard.getByLabel(new RegExp(`Delete board ${boardNameToArchive}`));
+    await deleteButton.click();
+
+    // Verify the archive dialog appears
+    await expect(page.getByRole('heading', { name: 'Archive board' })).toBeVisible();
+    await expect(page.getByText(/Archive board/)).toBeVisible();
+
+    // Click Archive button
+    await page.getByRole('button', { name: 'Archive' }).click();
+
+    // Wait for the board to disappear from the main list
+    await page.waitForTimeout(1000);
+    await expect(boardCard).not.toBeVisible();
+  });
+
+  test('views archived boards', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(TEST_EMAIL);
+    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('/projects');
+
+    await page.goto('/');
+    await page.waitForTimeout(500);
+
+    // Click on "Archived Boards" link
+    const archivedBoardsLink = page.getByRole('link', { name: 'Archived Boards' });
+    await archivedBoardsLink.click();
+
+    // Verify we're on the archived boards page
+    await expect(page.getByRole('heading', { name: 'Archived Boards' })).toBeVisible();
+
+    // Verify the archived board is visible
+    await expect(page.getByText(boardNameToArchive)).toBeVisible();
+  });
+
+  test('restores an archived board', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(TEST_EMAIL);
+    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('/projects');
+
+    // Navigate to archived boards
+    await page.goto('/archived-boards');
+    await page.waitForTimeout(500);
+
+    // Find and click restore button
+    const restoreButton = page.getByRole('button', { name: /restore/i });
+    await restoreButton.click();
+
+    // Verify we're redirected to the main boards page and board is visible
+    await page.waitForTimeout(1000);
+    await expect(page.getByRole('heading', { name: 'My Boards' })).toBeVisible();
+  });
+
+  test('permanently deletes an archived board', async ({ page }) => {
+    // First archive a new board
+    const boardNameToDelete = `Board to Delete ${Date.now()}`;
+    
+    // Login and create board via API
+    const loginRes = await page.request.post('http://localhost:3000/api/auth/login', {
+      data: { email: TEST_EMAIL, password: TEST_PASSWORD },
+    });
+    const cookies = loginRes.headers()['set-cookie'] || '';
+    
+    const createRes = await page.request.post('http://localhost:3000/api/boards', {
+      data: { name: boardNameToDelete },
+      headers: { Cookie: cookies },
+    });
+    const boardData = await createRes.json();
+    const boardId = boardData.data.id;
+
+    // Archive the board via API
+    await page.request.patch(`http://localhost:3000/api/boards/${boardId}/archive`, {
+      headers: { Cookie: cookies },
+    });
+
+    // Now test the UI - navigate to archived boards
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(TEST_EMAIL);
+    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('/projects');
+
+    await page.goto('/archived-boards');
+    await page.waitForTimeout(500);
+
+    // Find the board and click delete
+    const boardCard = page.locator('.group').filter({ hasText: boardNameToDelete });
+    await expect(boardCard).toBeVisible();
+
+    const deleteButton = page.getByRole('button', { name: /delete/i }).first();
+    await deleteButton.click();
+
+    // Verify the permanent delete dialog appears
+    await expect(page.getByRole('heading', { name: 'Delete board permanently' })).toBeVisible();
+
+    // Click Delete Permanently
+    await page.getByRole('button', { name: 'Delete Permanently' }).click();
+
+    // Wait for the board to disappear
+    await page.waitForTimeout(1000);
+    await expect(boardCard).not.toBeVisible();
+  });
+});

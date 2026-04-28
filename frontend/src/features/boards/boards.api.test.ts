@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchBoards, fetchBoard, createBoard, updateBoard, deleteBoard } from './boards.api';
+import { fetchBoards, fetchBoard, createBoard, updateBoard, deleteBoard, archiveBoard, restoreBoard, permanentDeleteBoard, fetchArchivedBoards } from './boards.api';
 
 global.fetch = vi.fn();
 
@@ -121,6 +121,128 @@ describe('boards.api', () => {
         method: 'DELETE'
       }));
       expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('archiveBoard', () => {
+    it('archives a board', async () => {
+      const mockResponse = {
+        data: { id: 1, name: 'Board', is_archived: true },
+        message: 'Board archived'
+      };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse)
+      });
+
+      const result = await archiveBoard(1);
+      expect(mockFetch).toHaveBeenCalledWith('/api/boards/1/archive', expect.objectContaining({
+        method: 'PATCH'
+      }));
+      expect(result).toEqual(mockResponse);
+      expect(result.data.is_archived).toBe(true);
+    });
+
+    it('throws error on failed archive', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        json: () => Promise.resolve({ message: 'Board not found', error: 'Not Found' }),
+      });
+
+      await expect(archiveBoard(999)).rejects.toThrow('Board not found');
+    });
+  });
+
+  describe('restoreBoard', () => {
+    it('restores an archived board', async () => {
+      const mockResponse = {
+        data: { id: 1, name: 'Board', is_archived: false },
+        message: 'Board restored'
+      };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse)
+      });
+
+      const result = await restoreBoard(1);
+      expect(mockFetch).toHaveBeenCalledWith('/api/boards/1/restore', expect.objectContaining({
+        method: 'PATCH'
+      }));
+      expect(result).toEqual(mockResponse);
+      expect(result.data.is_archived).toBe(false);
+    });
+
+    it('throws error on failed restore', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        json: () => Promise.resolve({ message: 'Board not found', error: 'Not Found' }),
+      });
+
+      await expect(restoreBoard(999)).rejects.toThrow('Board not found');
+    });
+  });
+
+  describe('permanentDeleteBoard', () => {
+    it('permanently deletes an archived board', async () => {
+      const mockResponse = { message: 'Board permanently deleted' };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse)
+      });
+
+      const result = await permanentDeleteBoard(1);
+      expect(mockFetch).toHaveBeenCalledWith('/api/boards/1/permanent', expect.objectContaining({
+        method: 'DELETE'
+      }));
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('throws error if board is not archived', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        json: () => Promise.resolve({ message: 'Board must be archived before permanent deletion', error: 'Bad Request' }),
+      });
+
+      await expect(permanentDeleteBoard(1)).rejects.toThrow('Board must be archived before permanent deletion');
+    });
+  });
+
+  describe('fetchArchivedBoards', () => {
+    it('fetches all archived boards', async () => {
+      const mockResponse = {
+        data: [
+          { id: 1, name: 'Archived Board 1', is_archived: true },
+          { id: 2, name: 'Archived Board 2', is_archived: true }
+        ],
+        total: 2
+      };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse)
+      });
+
+      const result = await fetchArchivedBoards();
+      expect(mockFetch).toHaveBeenCalledWith('/api/boards/archived', { credentials: 'include' });
+      expect(result).toEqual(mockResponse);
+      expect(result.total).toBe(2);
+    });
+
+    it('returns empty list when no archived boards', async () => {
+      const mockResponse = { data: [], total: 0 };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse)
+      });
+
+      const result = await fetchArchivedBoards();
+      expect(result.data).toHaveLength(0);
+      expect(result.total).toBe(0);
     });
   });
 });

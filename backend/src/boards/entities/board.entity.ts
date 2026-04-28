@@ -35,6 +35,10 @@ export class Board {
   @Column({ nullable: true })
   project_id!: number | null;
 
+  @ApiProperty({ example: false })
+  @Column({ default: false })
+  is_archived!: boolean;
+
   @ManyToOne(() => User, (user) => user.boards, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user!: User;

@@ -5,6 +5,10 @@ import {
   createBoard,
   updateBoard,
   deleteBoard,
+  archiveBoard,
+  restoreBoard,
+  permanentDeleteBoard,
+  fetchArchivedBoards,
   type CreateBoardData,
   type UpdateBoardData,
 } from './boards.api';
@@ -55,5 +59,43 @@ export function useDeleteBoard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['boards'] });
     },
+  });
+}
+
+export function useArchiveBoard() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => archiveBoard(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+    },
+  });
+}
+
+export function useRestoreBoard() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => restoreBoard(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      queryClient.invalidateQueries({ queryKey: ['archivedBoards'] });
+    },
+  });
+}
+
+export function usePermanentDeleteBoard() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => permanentDeleteBoard(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['archivedBoards'] });
+    },
+  });
+}
+
+export function useArchivedBoards() {
+  return useQuery({
+    queryKey: ['archivedBoards'],
+    queryFn: () => fetchArchivedBoards(),
   });
 }

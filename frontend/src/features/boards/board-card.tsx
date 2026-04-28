@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { useUpdateBoard, useDeleteBoard, type Board } from './use-boards';
+import { useUpdateBoard, useArchiveBoard, usePermanentDeleteBoard, type Board } from './use-boards';
 import { Pencil, Trash2, Layout } from 'lucide-react';
 import {
   Dialog,
@@ -198,34 +198,34 @@ export function DeleteDialog({
   open,
   onOpenChange,
   onDeleted,
+  mode = 'archive',
 }: {
   boardName: string;
   boardId: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDeleted: () => void;
+  mode?: 'archive' | 'permanent';
 }) {
-  const deleteMutation = useDeleteBoard();
+  const archiveMutation = useArchiveBoard();
+  const permanentDeleteMutation = usePermanentDeleteBoard();
   const { toast } = useToast();
+
+  const isArchiveMode = mode === 'archive';
+  const mutation = isArchiveMode ? archiveMutation : permanentDeleteMutation;
 
   const handleDelete = async () => {
     try {
-      await deleteMutation.mutateAsync(boardId);
+      if (isArchiveMode) {
+        await archiveMutation.mutateAsync(boardId);
+      } else {
+        await permanentDeleteMutation.mutateAsync(boardId);
+      }
       onOpenChange(false);
       onDeleted();
-      toast({
-        title: 'Board deleted',
-        type: 'destructive',
-        action: {
-          label: 'Undo',
-          onClick: async () => {
-            toast({ title: 'Undo not available', type: 'error' });
-          },
-        },
-      });
     } catch (err) {
       toast({
-        title: 'Failed to delete board',
+        title: `Failed to ${isArchiveMode ? 'archive' : 'delete'} board`,
         description: err instanceof Error ? err.message : 'Something went wrong',
         type: 'error',
       });
@@ -236,17 +236,29 @@ export function DeleteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete board</DialogTitle>
+          <DialogTitle>{isArchiveMode ? 'Archive board' : 'Delete board permanently'}</DialogTitle>
           <DialogDescription>
-            Delete board &quot;{boardName}&quot;? This will delete all columns and cards within it.
+            {isArchiveMode
+              ? `Archive board "${boardName}"? The board will be moved to archived boards and can be restored later.`
+              : `Permanently delete board "${boardName}"? This action cannot be undone and all columns and cards will be deleted.`}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
-            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+          <Button
+            variant={isArchiveMode ? 'default' : 'destructive'}
+            onClick={handleDelete}
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending
+              ? isArchiveMode
+                ? 'Archiving...'
+                : 'Deleting...'
+              : isArchiveMode
+                ? 'Archive'
+                : 'Delete Permanently'}
           </Button>
         </DialogFooter>
       </DialogContent>

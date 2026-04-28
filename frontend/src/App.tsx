@@ -6,6 +6,7 @@ import { RegisterForm } from './features/auth/register-form';
 import { LoginForm } from './features/auth/login-form';
 import { ProjectList } from './features/projects/project-list';
 import { BoardList } from './features/boards/board-list';
+import { ArchivedBoards } from './features/boards/archived-boards';
 import { useProjects } from './features/projects/use-projects';
 import { AppLayout } from './layouts/app-layout';
 
@@ -47,6 +48,7 @@ function App() {
 
               <Route element={<AppLayoutRoute />}>
                 <Route path="/" element={<BoardList />} />
+                <Route path="/archived-boards" element={<ArchivedBoards />} />
                 <Route path="/projects" element={<ProjectList />} />
                 <Route
                   path="/board/:boardId"
