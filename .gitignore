@@ -7,3 +7,4 @@ dist/
 # Test coverage
 coverage/
 frontend/test-results/
+.codemogger/
