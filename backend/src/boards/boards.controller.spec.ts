@@ -1,0 +1,140 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { BoardsController } from './boards.controller';
+import { BoardsService } from './boards.service';
+
+describe('BoardsController', () => {
+  let controller: BoardsController;
+  let service: jest.Mocked<BoardsService>;
+
+  const mockBoardsService = {
+    findAllByUserId: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+  };
+
+  const mockSession = { userId: 1 };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [BoardsController],
+      providers: [{ provide: BoardsService, useValue: mockBoardsService }],
+    }).compile();
+
+    controller = module.get<BoardsController>(BoardsController);
+    service = module.get(BoardsService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('findAll', () => {
+    it('should return list of boards', async () => {
+      const boards = [
+        {
+          id: 1,
+          name: 'Board 1',
+          background_color: '#0079BF',
+          project_id: null,
+          project: null,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      ];
+      service.findAllByUserId.mockResolvedValue(boards as any);
+
+      const result = await controller.findAll(mockSession);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.total).toBe(1);
+    });
+
+    it('should filter by projectId query param', async () => {
+      service.findAllByUserId.mockResolvedValue([] as any);
+
+      await controller.findAll(mockSession, '1');
+
+      expect(service.findAllByUserId).toHaveBeenCalledWith(1, 1);
+    });
+  });
+
+  describe('create', () => {
+    it('should create a board and return it with columns', async () => {
+      const board = {
+        id: 1,
+        name: 'New Board',
+        background_color: '#0079BF',
+        project_id: null,
+        project: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+        columns: [
+          { id: 1, name: 'To Do', position: 0 },
+          { id: 2, name: 'In Progress', position: 1 },
+          { id: 3, name: 'Done', position: 2 },
+        ],
+      };
+      service.create.mockResolvedValue(board as any);
+
+      const result = await controller.create(mockSession, {
+        name: 'New Board',
+        background_color: '#0079BF',
+      });
+
+      expect(result.data.name).toBe('New Board');
+      expect(result.message).toBe('Board created successfully');
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a single board', async () => {
+      const board = {
+        id: 1,
+        name: 'Board',
+        background_color: '#0079BF',
+        project_id: null,
+        project: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+        columns: [],
+      };
+      service.findOne.mockResolvedValue(board as any);
+
+      const result = await controller.findOne(mockSession, 1);
+
+      expect(result.data.id).toBe(1);
+    });
+  });
+
+  describe('update', () => {
+    it('should update a board', async () => {
+      const board = {
+        id: 1,
+        name: 'Updated Board',
+        background_color: '#0079BF',
+        project_id: null,
+        project: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+      service.update.mockResolvedValue(board as any);
+
+      const result = await controller.update(mockSession, 1, { name: 'Updated Board' });
+
+      expect(result.data.name).toBe('Updated Board');
+      expect(result.message).toBe('Board updated');
+    });
+  });
+
+  describe('remove', () => {
+    it('should delete a board', async () => {
+      service.remove.mockResolvedValue();
+
+      const result = await controller.remove(mockSession, 1);
+
+      expect(result.message).toBe('Board deleted');
+    });
+  });
+});

@@ -99,6 +99,21 @@ test.describe('App shell & navigation', () => {
   });
 
   test('renders main content area', async ({ page }) => {
-    await expect(page.getByText('Coming soon...')).toBeVisible();
+    await page.goto('/');
+    if (page.url().includes('/login')) {
+      await page.getByLabel('Email').fill(TEST_EMAIL);
+      await page.getByLabel('Password').fill(TEST_PASSWORD);
+      await page.getByRole('button', { name: 'Sign In' }).click();
+      await page.waitForURL('/');
+    }
+    
+    await page.waitForTimeout(500);
+    const boardsHeading = page.getByRole('heading', { name: 'My Boards' });
+    const projectsHeading = page.getByRole('heading', { name: 'My Projects' });
+    
+    const isBoardsVisible = await boardsHeading.isVisible().catch(() => false);
+    const isProjectsVisible = await projectsHeading.isVisible().catch(() => false);
+    
+    expect(isBoardsVisible || isProjectsVisible).toBe(true);
   });
 });

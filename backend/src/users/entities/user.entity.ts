@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
 import { Project } from '../../projects/entities/project.entity';
+import { Board } from '../../boards/entities/board.entity';
 
 @Entity('users')
 export class User {
@@ -37,4 +38,7 @@ export class User {
 
   @OneToMany(() => Project, (project) => project.user)
   projects!: Project[];
+
+  @OneToMany(() => Board, (board) => board.user)
+  boards!: Board[];
 }

@@ -5,6 +5,7 @@ import { ToastProvider } from './components/ui/use-toast';
 import { RegisterForm } from './features/auth/register-form';
 import { LoginForm } from './features/auth/login-form';
 import { ProjectList } from './features/projects/project-list';
+import { BoardList } from './features/boards/board-list';
 import { useProjects } from './features/projects/use-projects';
 import { AppLayout } from './layouts/app-layout';
 
@@ -45,20 +46,13 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
               <Route element={<AppLayoutRoute />}>
-                <Route path="/" element={<ProjectList />} />
+                <Route path="/" element={<BoardList />} />
+                <Route path="/projects" element={<ProjectList />} />
                 <Route
-                  path="/projects/:projectId"
+                  path="/board/:boardId"
                   element={
                     <div className="flex flex-1 items-center justify-center">
-                      <p className="text-muted-foreground">Board view coming soon...</p>
-                    </div>
-                  }
-                />
-                <Route
-                  path="/projects/:projectId/boards/:boardId"
-                  element={
-                    <div className="flex flex-1 items-center justify-center">
-                      <p className="text-muted-foreground">Board view coming soon...</p>
+                      <p className="text-muted-foreground">Board view coming soon (Story 2.5)...</p>
                     </div>
                   }
                 />

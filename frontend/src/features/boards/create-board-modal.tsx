@@ -1,0 +1,177 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
+import { useCreateBoard } from './use-boards';
+import { useProjects } from '../projects/use-projects';
+import { Plus } from 'lucide-react';
+
+const PRESET_COLORS = [
+  '#0079BF', // Trello Blue
+  '#D29034', // Orange
+  '#519839', // Green
+  '#B61C26', // Red
+  '#F5D6CC', // Peach
+  '#C0B6F2', // Purple
+  '#FFAB00', // Yellow
+  '#838C91', // Gray
+];
+
+interface CreateBoardModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
+}
+
+export function CreateBoardModal({ open, onOpenChange, onSuccess }: CreateBoardModalProps) {
+  const [name, setName] = useState('');
+  const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const { toast } = useToast();
+  const createBoard = useCreateBoard();
+  const { data: projectsData } = useProjects();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (open) {
+      setName('');
+      setSelectedColor(PRESET_COLORS[0]);
+      setSelectedProjectId(null);
+    }
+  }, [open]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+
+    try {
+      const response = await createBoard.mutateAsync({
+        name: trimmed,
+        background_color: selectedColor,
+        project_id: selectedProjectId,
+      });
+      toast({ title: 'Board created', type: 'success' });
+      onOpenChange(false);
+      onSuccess?.();
+      navigate(`/board/${response.data.id}`);
+    } catch (err) {
+      toast({
+        title: 'Failed to create board',
+        description: err instanceof Error ? err.message : 'Something went wrong',
+        type: 'error',
+      });
+    }
+  };
+
+  const projects = projectsData?.data ?? [];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Create new board</DialogTitle>
+            <DialogDescription>
+              Give your board a name and choose a background color
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="board-name" className="text-sm font-medium">
+                Board name
+              </label>
+              <Input
+                id="board-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="My awesome board"
+                disabled={createBoard.isPending}
+                autoFocus
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Background color</label>
+              <div className="flex gap-2 flex-wrap">
+                {PRESET_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setSelectedColor(color)}
+                    className={`h-8 w-8 rounded-md border-2 transition-all ${
+                      selectedColor === color
+                        ? 'border-foreground scale-110'
+                        : 'border-transparent hover:border-muted-foreground/50'
+                    }`}
+                    style={{ backgroundColor: color }}
+                    aria-label={`Select ${color} background`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <label htmlFor="project" className="text-sm font-medium">
+                Project (optional)
+              </label>
+              <select
+                id="project"
+                value={selectedProjectId ?? ''}
+                onChange={(e) =>
+                  setSelectedProjectId(e.target.value ? parseInt(e.target.value, 10) : null)
+                }
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={createBoard.isPending}
+              >
+                <option value="">No project</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={createBoard.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!name.trim() || createBoard.isPending}
+            >
+              {createBoard.isPending ? (
+                <>
+                  <Plus className="mr-1 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-1 h-4 w-4" />
+                  Create Board
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

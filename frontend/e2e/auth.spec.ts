@@ -56,8 +56,8 @@ test.describe('Auth flows', () => {
       await page.getByLabel('Confirm Password').fill(TEST_PASSWORD);
       await page.getByRole('button', { name: 'Register' }).click();
 
-      await expect(page).toHaveURL('/');
-      await expect(page.getByText('KanbanFlow')).toBeVisible();
+      await page.waitForURL((url) => url.pathname === '/projects', { timeout: 15000 });
+      await expect(page.getByRole('heading', { name: 'My Projects' })).toBeVisible();
     });
   });
 

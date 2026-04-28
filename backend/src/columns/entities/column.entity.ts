@@ -5,33 +5,32 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { User } from '../../users/entities/user.entity';
 import { Board } from '../../boards/entities/board.entity';
 
-@Entity('projects')
-export class Project {
+@Entity('columns')
+export class BoardColumn {
   @ApiProperty({ example: 1 })
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ApiProperty({ example: 'My Project' })
+  @ApiProperty({ example: 'To Do' })
   @Column({ length: 255 })
   name!: string;
 
+  @ApiProperty({ example: 0 })
+  @Column()
+  position!: number;
+
   @ApiProperty({ example: 1 })
   @Column()
-  user_id!: number;
+  board_id!: number;
 
-  @ManyToOne(() => User, (user) => user.projects, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
-  user!: User;
-
-  @OneToMany(() => Board, (board) => board.project)
-  boards!: Board[];
+  @ManyToOne(() => Board, (board) => board.columns, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'board_id' })
+  board!: Board;
 
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
   @CreateDateColumn()

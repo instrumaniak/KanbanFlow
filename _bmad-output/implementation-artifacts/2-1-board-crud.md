@@ -1,6 +1,6 @@
 # Story 2.1: Board CRUD
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -28,33 +28,51 @@ so that I can organize different workflows for different purposes.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create Board entity and database migration (AC: #1, #2, #3, #4)
-  - [ ] Subtask 1.1: Create `backend/src/boards/entities/board.entity.ts` with `user_id` (NOT NULL) and `project_id` (NULLable)
-  - [ ] Subtask 1.2: Create `backend/src/columns/entities/column.entity.ts` with Board relationship
-  - [ ] Subtask 1.3: Generate and run migration for boards and columns tables
-- [ ] Task 2: Create Boards backend module (AC: #1, #6, #7)
-  - [ ] Subtask 2.1: Create `backend/src/boards/boards.module.ts`
-  - [ ] Subtask 2.2: Create `backend/src/boards/boards.service.ts` with CRUD methods
-  - [ ] Subtask 2.3: Create `backend/src/boards/boards.controller.ts` with REST endpoints
-- [ ] Task 3: Implement default columns creation (AC: #3)
-  - [ ] Subtask 3.1: On board creation, automatically create "To Do", "In Progress", "Done" columns
-- [ ] Task 4: Create frontend board feature (AC: #1, #2, #3, #6, #7)
-  - [ ] Subtask 4.1: Create board list component (homepage)
-  - [ ] Subtask 4.2: Create board creation modal with color picker and optional project selector
-  - [ ] Subtask 4.3: Create board card component with color preview and project label
-  - [ ] Subtask 4.4: Handle redirect to board view after creation
-- [ ] Task 5: Implement board editing (AC: #8, #9, #10, #11, #12, #13)
-  - [ ] Subtask 5.1: Inline edit for board name
-  - [ ] Subtask 5.2: Color picker for background change
-  - [ ] Subtask 5.3: Project assignment in board settings
-- [ ] Task 6: Implement board deletion (AC: #14, #15)
-  - [ ] Subtask 6.1: Delete confirmation dialog
-  - [ ] Subtask 6.2: Cascade delete columns and cards
-  - [ ] Subtask 6.3: Toast with undo option
-- [ ] Task 7: Add tests (AC: all)
-  - [ ] Subtask 7.1: Backend unit tests for boards service
-  - [ ] Subtask 7.2: Backend unit tests for boards controller
-  - [ ] Subtask 7.3: Frontend tests for board components
+- [x] Task 1: Create Board entity and database migration (AC: #1, #2, #3, #4)
+  - [x] Subtask 1.1: Create `backend/src/boards/entities/board.entity.ts` with `user_id` (NOT NULL) and `project_id` (NULLable)
+  - [x] Subtask 1.2: Create `backend/src/columns/entities/column.entity.ts` with Board relationship
+  - [x] Subtask 1.3: Generate and run migration for boards and columns tables
+- [x] Task 2: Create Boards backend module (AC: #1, #6, #7)
+  - [x] Subtask 2.1: Create `backend/src/boards/boards.module.ts`
+  - [x] Subtask 2.2: Create `backend/src/boards/boards.service.ts` with CRUD methods
+  - [x] Subtask 2.3: Create `backend/src/boards/boards.controller.ts` with REST endpoints
+- [x] Task 3: Implement default columns creation (AC: #3)
+  - [x] Subtask 3.1: On board creation, automatically create "To Do", "In Progress", "Done" columns
+- [x] Task 4: Create frontend board feature (AC: #1, #2, #3, #6, #7)
+  - [x] Subtask 4.1: Create board list component (homepage)
+  - [x] Subtask 4.2: Create board creation modal with color picker and optional project selector
+  - [x] Subtask 4.3: Create board card component with color preview and project label
+  - [x] Subtask 4.4: Handle redirect to board view after creation
+- [x] Task 5: Implement board editing (AC: #8, #9, #10, #11, #12, #13)
+  - [x] Subtask 5.1: Inline edit for board name
+  - [x] Subtask 5.2: Color picker for background change
+  - [x] Subtask 5.3: Project assignment in board settings
+- [x] Task 6: Implement board deletion (AC: #14, #15)
+  - [x] Subtask 6.1: Delete confirmation dialog
+  - [x] Subtask 6.2: Cascade delete columns and cards
+  - [x] Subtask 6.3: Toast with undo option
+- [x] Task 7: Add tests (AC: all)
+  - [x] Subtask 7.1: Backend unit tests for boards service
+  - [x] Subtask 7.2: Backend unit tests for boards controller
+  - [x] Subtask 7.3: Frontend tests for board components
+
+## Fix Log (Post-Implementation)
+
+### Fix 1: Navigation to board view after creation (AC #5)
+- **Issue**: After creating a board, user was not navigated to the new board view
+- **Root Cause**: CreateBoardModal missing navigation call after successful creation
+- **Fix**: Added `useNavigate` hook and `navigate('/board/${response.data.id}')` after board creation success
+- **Files Changed**: `frontend/src/features/boards/create-board-modal.tsx`
+
+### Fix 2: BoardCard click behavior (AC #5)
+- **Issue**: Clicking board card navigated to edit mode instead of board view
+- **Root Cause**: BoardCard onClick handler called `onEdit` instead of router navigation
+- **Fix**: Added `useNavigate` to BoardCard, changed onClick to `navigate(\`/board/${board.id}\`)`
+- **Files Changed**: `frontend/src/features/boards/board-card.tsx`
+
+### Test Updates
+- Added MemoryRouter wrapper to board-card.test.tsx and create-board-modal.test.tsx
+- Updated BoardCard test to verify navigation on click
 
 ## Dev Notes
 
@@ -262,10 +280,41 @@ frontend/src/features/boards/
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+minimax-m2.5-free
 
 ### Debug Log References
 
+- Migration: 1745862000000-CreateBoardsColumns.ts
+
 ### Completion Notes List
 
+- Created Board entity with user_id and optional project_id relationships
+- Created BoardColumn entity with position for ordering
+- Implemented full CRUD API: POST/GET/PATCH/DELETE /api/boards
+- Default columns ("To Do", "In Progress", "Done") auto-created on board creation
+- Frontend: Board list, board card, create modal, inline edit, delete dialog
+- 8 preset colors for board backgrounds
+- Project assignment optional for boards
+- Cascading delete for board → columns (cards come later in Story 3)
+
 ### File List
+
+backend/src/boards/entities/board.entity.ts
+backend/src/boards/boards.module.ts
+backend/src/boards/boards.service.ts
+backend/src/boards/boards.controller.ts
+backend/src/boards/boards.service.spec.ts
+backend/src/boards/boards.controller.spec.ts
+backend/src/boards/dto/create-board.dto.ts
+backend/src/boards/dto/update-board.dto.ts
+backend/src/columns/entities/column.entity.ts
+backend/src/migrations/1745862000000-CreateBoardsColumns.ts
+backend/src/app.module.ts (BoardsModule import)
+backend/src/users/entities/user.entity.ts (updated imports)
+backend/src/projects/entities/project.entity.ts (updated imports)
+frontend/src/features/boards/boards.api.ts
+frontend/src/features/boards/use-boards.ts
+frontend/src/features/boards/board-list.tsx
+frontend/src/features/boards/board-card.tsx
+frontend/src/features/boards/create-board-modal.tsx
+frontend/src/App.tsx (updated routes)

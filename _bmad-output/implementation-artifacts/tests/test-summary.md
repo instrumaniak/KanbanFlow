@@ -2,48 +2,59 @@
 
 ## Generated Tests
 
-### Frontend Tests (Vitest)
-| File | Tests | Status |
-|------|-------|--------|
-| `src/features/projects/use-projects.test.tsx` | 15 | ✅ |
-| `src/features/projects/projects.api.test.ts` | 17 | ✅ |
-| `src/components/ui/use-toast.test.tsx` | 12 | ✅ |
-| `src/features/auth/auth-provider.test.tsx` | 10 | ✅ |
-| `src/lib/utils.test.ts` | 10 | ✅ |
+### Backend E2E Tests (Jest + Supertest)
+- **auth.e2e-spec.ts** - Auth: register, login, logout, session, /me (already existed)
+- **projects.e2e-spec.ts** - Projects CRUD validation (already existed)
+- **boards.e2e-spec.ts** - Boards CRUD validation (NEW)
+- **app.e2e-spec.ts** - App health check (already existed)
 
-### Backend Tests (Jest)
-| File | Tests | Status |
-|------|-------|--------|
-| `src/auth/guards/session.guard.spec.ts` | 9 | ✅ |
-| `src/projects/dto/project.dto.spec.ts` | 14 | ✅ |
-| `src/projects/projects.controller.spec.ts` | 12 (enhanced) | ✅ |
-| `src/projects/projects.service.spec.ts` | 12 (enhanced) | ✅ |
+### Frontend E2E Tests (Playwright)
+- **auth.spec.ts** - Registration, login, logout, auth guard (already existed)
+- **projects.spec.ts** - Projects CRUD (already existed)
+- **boards.spec.ts** - Boards CRUD and workflows (NEW)
+- **app-shell.spec.ts** - App shell and navigation (already existed)
+
+### Frontend Unit Tests (Vitest)
+- **boards.api.test.ts** - Boards API functions (NEW)
+- **boards.api.test.ts** - useBoards hook (NEW)
+- **create-board-modal.test.tsx** - Create board modal component (NEW)
+- **board-card.test.tsx** - Board card, inline edit, delete dialog (NEW)
+- **auth.api.test.ts** - Auth API functions (NEW)
+
+## Coverage
+
+| Area | Type | Status |
+|------|------|--------|
+| Auth API | Backend E2E | Complete |
+| Projects API | Backend E2E | Complete |
+| Boards API | Backend E2E | Complete (NEW) |
+| Auth Flows | Frontend E2E | Complete |
+| Projects CRUD | Frontend E2E | Complete |
+| Boards CRUD | Frontend E2E | Complete (NEW) |
+| Boards API | Unit Tests | Complete (NEW) |
+| Boards Hooks | Unit Tests | Complete (NEW) |
+| Boards Components | Unit Tests | Complete (NEW) |
+| Auth API | Unit Tests | Complete (NEW) |
 
 ## Test Results
-- **Frontend:** 117 tests passed
-- **Backend:** 75 tests passed
-- **Total:** 192 tests passed
 
-## Coverage Summary
+- **Frontend**: 160 tests passed (Vitest)
+- **Backend**: 27 tests passed, 1 skipped (Jest E2E)
 
-### Frontend Coverage
-| Area | Coverage |
-|------|----------|
-| Projects Hooks (use-projects) | ✅ Query, create, update, delete |
-| Projects API | ✅ fetch, create, update, delete, error handling |
-| Toast System | ✅ Provider, useToast hook, dismiss, auto-dismiss |
-| Auth Provider | ✅ Register, login, logout, initial state |
-| Utils (cn) | ✅ Tailwind merging, conditional classes |
+## Run Commands
 
-### Backend Coverage
-| Area | Coverage |
-|------|----------|
-| SessionGuard | ✅ Valid userId, invalid userId, edge cases |
-| DTOs | ✅ CreateProjectDto, UpdateProjectDto validation |
-| Projects Controller | ✅ CRUD + edge cases |
-| Projects Service | ✅ CRUD + edge cases |
+```bash
+# Frontend unit tests
+cd frontend && npm test
+
+# Frontend E2E tests
+cd frontend && npm run test:e2e
+
+# Backend E2E tests
+cd backend && npm run test:e2e
+```
 
 ## Next Steps
-1. Run tests in CI pipeline
-2. Add more E2E tests for user workflows
-3. Consider App.tsx router tests when needed
+- Add more edge case tests as needed
+- Consider adding test coverage reporting
+- Set up CI pipeline for automated test runs

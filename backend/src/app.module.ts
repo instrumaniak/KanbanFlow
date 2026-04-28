@@ -9,6 +9,7 @@ import configuration from './config/configuration';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ProjectsModule } from './projects/projects.module';
+import { BoardsModule } from './boards/boards.module';
 import * as cookieParser from 'cookie-parser';
 import session from 'express-session';
 
@@ -44,6 +45,7 @@ import session from 'express-session';
     UsersModule,
     AuthModule,
     ProjectsModule,
+    BoardsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
