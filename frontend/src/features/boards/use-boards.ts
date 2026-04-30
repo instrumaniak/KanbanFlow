@@ -68,6 +68,7 @@ export function useArchiveBoard() {
     mutationFn: (id: number) => archiveBoard(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['boards'] });
+      queryClient.invalidateQueries({ queryKey: ['archivedBoards'] });
     },
   });
 }

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
 import { EmptyState } from '@/components/empty-state';
@@ -8,6 +8,7 @@ import {
   usePermanentDeleteBoard,
   type Board,
 } from './use-boards';
+import { DeleteDialog } from './board-card';
 import { Archive, RotateCcw, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -16,6 +17,10 @@ export function ArchivedBoards() {
   const restoreMutation = useRestoreBoard();
   const deleteMutation = usePermanentDeleteBoard();
   const { toast } = useToast();
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; board: Board | null }>({
+    open: false,
+    board: null,
+  });
 
   const boards = boardsData?.data ?? [];
 
@@ -41,26 +46,29 @@ export function ArchivedBoards() {
 
   const handlePermanentDelete = useCallback(
     async (board: Board) => {
-      if (!confirm(`Are you sure you want to permanently delete "${board.name}"? This action cannot be undone.`)) {
-        return;
-      }
-      try {
-        await deleteMutation.mutateAsync(board.id);
-        toast({
-          title: 'Board deleted',
-          description: `"${board.name}" has been permanently deleted.`,
-        });
-        refetch();
-      } catch (err) {
-        toast({
-          type: 'destructive',
-          title: 'Error',
-          description: err instanceof Error ? err.message : 'Failed to delete board',
-        });
-      }
+      setDeleteDialog({ open: true, board });
     },
-    [deleteMutation, toast, refetch]
+    []
   );
+
+  const handlePermanentDeleteConfirm = useCallback(async () => {
+    if (!deleteDialog.board) return;
+    try {
+      await deleteMutation.mutateAsync(deleteDialog.board.id);
+      toast({
+        title: 'Board deleted',
+        description: `"${deleteDialog.board.name}" has been permanently deleted.`,
+      });
+      setDeleteDialog({ open: false, board: null });
+      refetch();
+    } catch (err) {
+      toast({
+        type: 'destructive',
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to delete board',
+      });
+    }
+  }, [deleteMutation, toast, refetch, deleteDialog.board]);
 
   if (isLoading) {
     return (
@@ -86,59 +94,63 @@ export function ArchivedBoards() {
     );
   }
 
-  if (boards.length === 0) {
-    return (
-      <div className="mx-auto max-w-6xl">
-        <h1 className="mb-6 text-2xl font-bold">Archived Boards</h1>
+  return (
+    <div className="mx-auto max-w-6xl">
+      <h1 className="mb-6 text-2xl font-bold">Archived Boards</h1>
+
+      {boards.length === 0 ? (
         <EmptyState
           icon={<Archive className="h-8 w-8 text-muted-foreground" />}
           headline="No archived boards"
           description="Boards you archive will appear here"
         />
-      </div>
-    );
-  }
-
-  return (
-    <div className="mx-auto max-w-6xl">
-      <h1 className="mb-6 text-2xl font-bold">Archived Boards</h1>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {boards.map((board) => (
-          <div
-            key={board.id}
-            className="relative overflow-hidden rounded-lg border bg-card p-4 shadow-sm"
-            style={{ backgroundColor: board.background_color + '20' }}
-          >
-            <h3 className="mb-3 truncate font-semibold">{board.name}</h3>
-            {board.project && (
-              <p className="mb-4 text-sm text-muted-foreground">
-                Project: {board.project.name}
-              </p>
-            )}
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="default"
-                onClick={() => handleRestore(board)}
-                disabled={restoreMutation.isPending}
-              >
-                <RotateCcw className="mr-1 h-4 w-4" />
-                Restore
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => handlePermanentDelete(board)}
-                disabled={deleteMutation.isPending}
-              >
-                <Trash2 className="mr-1 h-4 w-4" />
-                Delete
-              </Button>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {boards.map((board) => (
+            <div
+              key={board.id}
+              className="relative overflow-hidden rounded-lg border bg-card p-4 shadow-sm"
+              style={{ backgroundColor: board.background_color + '20' }}
+            >
+              <h3 className="mb-3 truncate font-semibold">{board.name}</h3>
+              {board.project && (
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Project: {board.project.name}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={() => handleRestore(board)}
+                  disabled={restoreMutation.isPending}
+                >
+                  <RotateCcw className="mr-1 h-4 w-4" />
+                  Restore
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handlePermanentDelete(board)}
+                  disabled={deleteMutation.isPending}
+                >
+                  <Trash2 className="mr-1 h-4 w-4" />
+                  Delete
+                </Button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      <DeleteDialog
+        boardName={deleteDialog.board?.name ?? ''}
+        boardId={deleteDialog.board?.id ?? 0}
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
+        onDeleted={handlePermanentDeleteConfirm}
+        mode="permanent"
+      />
     </div>
   );
 }
