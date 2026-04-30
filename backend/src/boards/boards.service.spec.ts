@@ -84,7 +84,7 @@ describe('BoardsService', () => {
         user_id: 1,
         columns: [],
       };
-      mockBoardRepository.findOne.mockResolvedValue(board as Board);
+      mockBoardRepository.findOne.mockResolvedValue(board as unknown as Board);
 
       const result = await service.findOne(1, 1);
 
@@ -104,9 +104,9 @@ describe('BoardsService', () => {
       const savedBoard = { id: 1, ...createDto, user_id: 1, columns: [] };
       const createdBoard = { id: 1, ...createDto, user_id: 1 };
 
-      mockBoardRepository.create.mockReturnValue(createdBoard as Board);
-      mockBoardRepository.save.mockResolvedValue(savedBoard as Board);
-      mockBoardRepository.findOne.mockResolvedValue(savedBoard as Board);
+      mockBoardRepository.create.mockReturnValue(createdBoard as unknown as Board);
+      mockBoardRepository.save.mockResolvedValue(savedBoard as unknown as Board);
+      mockBoardRepository.findOne.mockResolvedValue(savedBoard as unknown as Board);
       mockColumnRepository.create.mockReturnValue([
         { name: 'To Do', position: 0, board_id: 1 },
         { name: 'In Progress', position: 1, board_id: 1 },
@@ -124,9 +124,9 @@ describe('BoardsService', () => {
       const createDto = { name: 'New Board' };
       const createdBoard = { id: 1, name: 'New Board', background_color: '#0079BF', user_id: 1 };
 
-      mockBoardRepository.create.mockReturnValue(createdBoard as Board);
-      mockBoardRepository.save.mockResolvedValue(createdBoard as Board);
-      mockBoardRepository.findOne.mockResolvedValue(createdBoard as Board);
+      mockBoardRepository.create.mockReturnValue(createdBoard as unknown as Board);
+      mockBoardRepository.save.mockResolvedValue(createdBoard as unknown as Board);
+      mockBoardRepository.findOne.mockResolvedValue(createdBoard as unknown as Board);
       mockColumnRepository.create.mockReturnValue([] as BoardColumn[]);
       mockColumnRepository.save.mockResolvedValue([]);
 
@@ -170,9 +170,7 @@ describe('BoardsService', () => {
 
       mockBoardRepository.findOne.mockResolvedValue(board as Board);
 
-      await expect(
-        service.update(1, 1, { project_id: 999 }),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.update(1, 1, { project_id: 999 })).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -235,9 +233,7 @@ describe('BoardsService', () => {
 
   describe('findAllArchivedByUserId', () => {
     it('should return only archived boards', async () => {
-      const boards = [
-        { id: 2, name: 'Archived Board', user_id: 1, is_archived: true },
-      ];
+      const boards = [{ id: 2, name: 'Archived Board', user_id: 1, is_archived: true }];
       mockBoardRepository.find.mockResolvedValue(boards as Board[]);
 
       const result = await service.findAllArchivedByUserId(1);
@@ -303,9 +299,7 @@ describe('BoardsService', () => {
 
       await service.permanentDelete(1, 1);
 
-      expect(mockBoardRepository.remove).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 1 }),
-      );
+      expect(mockBoardRepository.remove).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
     });
 
     it('should throw NotFoundException if board not found', async () => {

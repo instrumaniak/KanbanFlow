@@ -15,7 +15,11 @@ export class BoardsService {
     private readonly columnRepository: Repository<BoardColumn>,
   ) {}
 
-  async findAllByUserId(userId: number, projectId?: number, includeArchived = false): Promise<Board[]> {
+  async findAllByUserId(
+    userId: number,
+    projectId?: number,
+    includeArchived = false,
+  ): Promise<Board[]> {
     const where: Record<string, number | boolean> = { user_id: userId };
     if (projectId) {
       where.project_id = projectId;
@@ -67,9 +71,7 @@ export class BoardsService {
       { name: 'Done', position: 2, board_id: savedBoard.id },
     ];
 
-    await this.columnRepository.save(
-      this.columnRepository.create(defaultColumns),
-    );
+    await this.columnRepository.save(this.columnRepository.create(defaultColumns));
 
     return this.findOne(savedBoard.id, userId);
   }
