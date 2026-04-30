@@ -10,6 +10,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ProjectsModule } from './projects/projects.module';
 import { BoardsModule } from './boards/boards.module';
+import { ColumnsModule } from './columns/columns.module';
 import * as cookieParser from 'cookie-parser';
 import session from 'express-session';
 
@@ -46,6 +47,7 @@ import session from 'express-session';
     AuthModule,
     ProjectsModule,
     BoardsModule,
+    ColumnsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

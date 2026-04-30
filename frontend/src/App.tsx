@@ -7,6 +7,7 @@ import { LoginForm } from './features/auth/login-form';
 import { ProjectList } from './features/projects/project-list';
 import { BoardList } from './features/boards/board-list';
 import { ArchivedBoards } from './features/boards/archived-boards';
+import { BoardView } from './features/boards/board-view/board-view';
 import { useProjects } from './features/projects/use-projects';
 import { AppLayout } from './layouts/app-layout';
 
@@ -52,11 +53,7 @@ function App() {
                 <Route path="/projects" element={<ProjectList />} />
                 <Route
                   path="/board/:boardId"
-                  element={
-                    <div className="flex flex-1 items-center justify-center">
-                      <p className="text-muted-foreground">Board view coming soon (Story 2.5)...</p>
-                    </div>
-                  }
+                  element={<BoardView />}
                 />
               </Route>
 

@@ -5,10 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Board } from '../../boards/entities/board.entity';
+import { Card } from '../../cards/entities/card.entity';
 
 @Entity('columns')
 export class BoardColumn {
@@ -39,4 +41,7 @@ export class BoardColumn {
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
   @UpdateDateColumn()
   updated_at!: Date;
+
+  @OneToMany(() => Card, (card) => card.column, { cascade: true, onDelete: 'CASCADE' })
+  cards!: Card[];
 }

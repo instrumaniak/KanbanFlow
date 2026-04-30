@@ -59,8 +59,8 @@ development_status:
   epic-2: in-progress
   2-1-board-crud: done
   2-2-board-archiving: done
-  2-3-column-crud: ready-for-dev
-  2-4-column-sorting-bulk-move: backlog
+  2-3-column-crud: done
+  2-4-column-sorting-bulk-move: ready-for-dev
   2-5-board-view-layout: backlog
   epic-2-retrospective: optional
 
