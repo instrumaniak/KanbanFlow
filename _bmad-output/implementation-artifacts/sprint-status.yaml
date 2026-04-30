@@ -61,7 +61,7 @@ development_status:
   2-2-board-archiving: done
   2-3-column-crud: done
   2-4-column-sorting-bulk-move: ready-for-dev
-  2-5-board-view-layout: backlog
+  2-5-board-view-layout: ready-for-dev
   epic-2-retrospective: optional
 
   # Epic 3: Task Capture & Card Management
