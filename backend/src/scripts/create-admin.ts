@@ -4,6 +4,9 @@ import bcrypt from 'bcrypt';
 import inquirer from 'inquirer';
 import { User } from '../users/entities/user.entity';
 import { Project } from '../projects/entities/project.entity';
+import { Board } from '../boards/entities/board.entity';
+import { BoardColumn } from '../columns/entities/column.entity';
+import { Card } from '../cards/entities/card.entity';
 
 const dataSourceOptions = {
   type: 'mysql' as const,
@@ -12,7 +15,10 @@ const dataSourceOptions = {
   username: process.env.DB_USERNAME ?? 'root',
   password: process.env.DB_PASSWORD ?? '',
   database: process.env.DB_NAME ?? 'kanbanflow_dev',
-  entities: [User, Project],
+  entities: [User, Project, Board, BoardColumn, Card],
+  migrations: [__dirname + '/migrations/*{.ts,.js}'],
+  migrationsTableName: 'typeorm_migrations',
+  synchronize: false,
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

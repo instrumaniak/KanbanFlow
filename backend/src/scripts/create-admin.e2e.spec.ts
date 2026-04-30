@@ -1,4 +1,8 @@
 import { spawn } from 'child_process';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
 
 describe('create-admin CLI E2E Tests', () => {
   const timeout = 30000;
@@ -7,10 +11,14 @@ describe('create-admin CLI E2E Tests', () => {
     args: string[],
   ): Promise<{ stdout: string; stderr: string; code: number | null }> {
     return new Promise((resolve) => {
-      const child = spawn('npm', ['run', 'create-admin', '--', ...args], {
-        shell: true,
-        cwd: process.cwd(),
-      });
+      const child = spawn(
+        'npx',
+        ['ts-node', '-r', 'tsconfig-paths/register', 'src/scripts/create-admin.ts', ...args],
+        {
+          shell: true,
+          cwd: process.cwd(),
+        },
+      );
 
       let stdout = '';
       let stderr = '';
