@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19T19:27:21.000Z
-last_updated: 2026-04-30
+last_updated: 2026-04-30T22:35:00.000Z
 project: trello-clone
 project_key: NOKEY
 tracking_system: file-system
@@ -56,12 +56,12 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: Board Organization & Column Management
-  epic-2: in-progress
+  epic-2: done
   2-1-board-crud: done
   2-2-board-archiving: done
   2-3-column-crud: done
-  2-4-column-sorting-bulk-move: ready-for-dev
-  2-5-board-view-layout: ready-for-dev
+  2-4-column-sorting-bulk-move: done
+  2-5-board-view-layout: done
   epic-2-retrospective: optional
 
   # Epic 3: Task Capture & Card Management

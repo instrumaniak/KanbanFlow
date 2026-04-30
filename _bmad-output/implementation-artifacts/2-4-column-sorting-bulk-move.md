@@ -1,6 +1,6 @@
 # Story 2.4: Column Sorting & Bulk Move
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -15,33 +15,33 @@ so that I can efficiently organize and reorganize my workflow.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Backend API - Add card sorting endpoint (AC: #1)
-  - [ ] Subtask 1.1: Add `PATCH /api/columns/:id/sort` endpoint with `{ order: 'asc' | 'desc' }` payload
-  - [ ] Subtask 1.2: Implement sorting by `created_at` ascending or descending
-  - [ ] Subtask 1.3: Update Card entity if needed to ensure `created_at` exists
-  - [ ] Subtask 1.4: Add authorization check - user must own the board
-- [ ] Task 2: Backend API - Add bulk move cards endpoint (AC: #2)
-  - [ ] Subtask 2.1: Add `POST /api/columns/:id/move-all` endpoint with `{ targetColumnId: number }` payload
-  - [ ] Subtask 2.2: Move all cards from source column to target column
-  - [ ] Subtask 2.3: Add authorization check - user must own both source and target columns' board
-  - [ ] Subtask 2.4: Return count of moved cards in response
-- [ ] Task 3: Frontend - Add column menu items (AC: #1, #2)
-  - [ ] Subtask 3.1: Update column header menu to include "Sort by Date" option
-  - [ ] Subtask 3.2: Add sort submenu with "Ascending (Oldest first)" and "Descending (Newest first)" options
-  - [ ] Subtask 3.3: Add "Move All Cards" option to column menu
-- [ ] Task 4: Frontend - Sort UI implementation (AC: #1)
-  - [ ] Subtask 4.1: Create API function `sortCards(columnId, order)` in `columns.api.ts`
-  - [ ] Subtask 4.2: Add React Query mutation hook in `use-columns.ts`
-  - [ ] Subtask 4.3: Connect sort menu items to API call
-  - [ ] Subtask 4.4: Optimistically update card order in UI after successful sort
-- [ ] Task 5: Frontend - Bulk move UI implementation (AC: #2)
-  - [ ] Subtask 5.1: Create API function `moveAllCards(sourceColumnId, targetColumnId)` in `columns.api.ts`
-  - [ ] Subtask 5.2: Add React Query mutation hook in `use-columns.ts`
-  - [ ] Subtask 5.3: Create dropdown showing other columns in the board (exclude current column)
-  - [ ] Subtask 5.4: Show toast with "X cards moved" on successful move
-- [ ] Task 6: Tests (AC: #1, #2)
-  - [ ] Subtask 6.1: Backend unit tests for sort and bulk move endpoints
-  - [ ] Subtask 6.2: Frontend tests for sort menu and bulk move dropdown
+- [x] Task 1: Backend API - Add card sorting endpoint (AC: #1)
+  - [x] Subtask 1.1: Add `PATCH /api/columns/:id/sort` endpoint with `{ order: 'asc' | 'desc' }` payload
+  - [x] Subtask 1.2: Implement sorting by `created_at` ascending or descending
+  - [x] Subtask 1.3: Update Card entity if needed to ensure `created_at` exists
+  - [x] Subtask 1.4: Add authorization check - user must own the board
+- [x] Task 2: Backend API - Add bulk move cards endpoint (AC: #2)
+  - [x] Subtask 2.1: Add `POST /api/columns/:id/move-all` endpoint with `{ targetColumnId: number }` payload
+  - [x] Subtask 2.2: Move all cards from source column to target column
+  - [x] Subtask 2.3: Add authorization check - user must own both source and target columns' board
+  - [x] Subtask 2.4: Return count of moved cards in response
+- [x] Task 3: Frontend - Add column menu items (AC: #1, #2)
+  - [x] Subtask 3.1: Update column header menu to include "Sort by Date" option
+  - [x] Subtask 3.2: Add sort submenu with "Ascending (Oldest first)" and "Descending (Newest first)" options
+  - [x] Subtask 3.3: Add "Move All Cards" option to column menu
+- [x] Task 4: Frontend - Sort UI implementation (AC: #1)
+  - [x] Subtask 4.1: Create API function `sortCards(columnId, order)` in `columns.api.ts`
+  - [x] Subtask 4.2: Add React Query mutation hook in `use-columns.ts`
+  - [x] Subtask 4.3: Connect sort menu items to API call
+  - [x] Subtask 4.4: Optimistically update card order in UI after successful sort
+- [x] Task 5: Frontend - Bulk move UI implementation (AC: #2)
+  - [x] Subtask 5.1: Create API function `moveAllCards(sourceColumnId, targetColumnId)` in `columns.api.ts`
+  - [x] Subtask 5.2: Add React Query mutation hook in `use-columns.ts`
+  - [x] Subtask 5.3: Create dropdown showing other columns in the board (exclude current column)
+  - [x] Subtask 5.4: Show toast with "X cards moved" on successful move
+- [x] Task 6: Tests (AC: #1, #2)
+  - [x] Subtask 6.1: Backend unit tests for sort and bulk move endpoints
+  - [x] Subtask 6.2: Frontend tests for sort menu and bulk move dropdown
 
 ## Dev Notes
 

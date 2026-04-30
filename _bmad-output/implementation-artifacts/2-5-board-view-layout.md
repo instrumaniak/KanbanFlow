@@ -1,6 +1,6 @@
 # Story 2.5: Board View Layout
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -17,22 +17,22 @@ so that I can see and interact with all my columns at a glance.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Verify and enhance horizontal scrolling implementation (AC: #1, #2)
-  - [ ] Subtask 1.1: Review current board-view.tsx horizontal scroll implementation
-  - [ ] Subtask 1.2: Ensure 24px gap (gap-6) between columns is applied
-  - [ ] Subtask 1.3: Ensure minimum 320px column width (min-w-[320px]) is set
-  - [ ] Subtask 1.4: Add scroll momentum and smooth scrolling for desktop (scroll-behavior: smooth)
-  - [ ] Subtask 1.5: Add touch support for mobile (touch-action: pan-x)
-- [ ] Task 2: Fix header sticky behavior (AC: #3)
-  - [ ] Subtask 2.1: Ensure board header uses sticky or fixed positioning
-  - [ ] Subtask 2.2: Test header stays visible during horizontal scroll
-- [ ] Task 3: Position Add Column button at scroll edge (AC: #4)
-  - [ ] Subtask 3.1: Verify AddColumnButton renders at the rightmost position
-  - [ ] Subtask 3.2: Ensure button stays within horizontal scroll container
-- [ ] Task 4: Cross-browser and mobile testing (AC: #2)
-  - [ ] Subtask 4.1: Test horizontal scroll on Chrome, Firefox, Safari
-  - [ ] Subtask 4.2: Test touch scrolling on iOS Safari and Android Chrome
-  - [ ] Subtask 4.3: Verify scroll momentum behavior matches acceptance criteria
+- [x] Task 1: Verify and enhance horizontal scrolling implementation (AC: #1, #2)
+  - [x] Subtask 1.1: Review current board-view.tsx horizontal scroll implementation
+  - [x] Subtask 1.2: Ensure 24px gap (gap-6) between columns is applied
+  - [x] Subtask 1.3: Ensure minimum 320px column width (min-w-[320px]) is set
+  - [x] Subtask 1.4: Add scroll momentum and smooth scrolling for desktop (scroll-behavior: smooth)
+  - [x] Subtask 1.5: Add touch support for mobile (touch-action: pan-x)
+- [x] Task 2: Fix header sticky behavior (AC: #3)
+  - [x] Subtask 2.1: Ensure board header uses sticky or fixed positioning
+  - [x] Subtask 2.2: Test header stays visible during horizontal scroll
+- [x] Task 3: Position Add Column button at scroll edge (AC: #4)
+  - [x] Subtask 3.1: Verify AddColumnButton renders at the rightmost position
+  - [x] Subtask 3.2: Ensure button stays within horizontal scroll container
+- [x] Task 4: Cross-browser and mobile testing (AC: #2)
+  - [x] Subtask 4.1: Test horizontal scroll on Chrome, Firefox, Safari
+  - [x] Subtask 4.2: Test touch scrolling on iOS Safari and Android Chrome
+  - [x] Subtask 4.3: Verify scroll momentum behavior matches acceptance criteria
 - [ ] Task 5: Accessibility verification (AC: all)
   - [ ] Subtask 5.1: Verify keyboard can navigate horizontally (arrow keys)
   - [ ] Subtask 5.2: Test with screen reader announces scroll region
