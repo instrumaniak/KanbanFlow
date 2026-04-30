@@ -46,7 +46,7 @@ describe('ColumnsController', () => {
           created_at: new Date(),
           updated_at: new Date(),
           cards: [],
-        } as BoardColumn,
+        } as unknown as BoardColumn,
       ];
 
       mockColumnsService.findAllByBoardId.mockResolvedValue(mockColumns);

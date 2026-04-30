@@ -17,6 +17,8 @@ import { SessionGuard } from '../auth/guards/session.guard';
 import { ColumnsService } from './columns.service';
 import { CreateColumnDto } from './dto/create-column.dto';
 import { UpdateColumnDto } from './dto/update-column.dto';
+import { SortCardsDto } from './dto/sort-cards.dto';
+import { MoveCardsDto } from './dto/move-cards.dto';
 
 interface SessionData {
   userId: number;
@@ -42,10 +44,7 @@ export class ColumnsController {
   @ApiOperation({ summary: 'Get all columns for a board' })
   @ApiParam({ name: 'boardId', type: Number })
   @ApiResponse({ status: 200, description: 'List of columns' })
-  async findAll(
-    @Session() session: SessionData,
-    @Param('boardId', ParseIntPipe) boardId: number,
-  ) {
+  async findAll(@Session() session: SessionData, @Param('boardId', ParseIntPipe) boardId: number) {
     const columns = await this.columnsService.findAllByBoardId(boardId, session.userId);
     const data: ColumnResponse[] = columns.map((col) => ({
       id: col.id,
@@ -109,11 +108,48 @@ export class ColumnsController {
   @ApiOperation({ summary: 'Delete a column and all its cards' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Column deleted' })
-  async remove(
-    @Session() session: SessionData,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  async remove(@Session() session: SessionData, @Param('id', ParseIntPipe) id: number) {
     await this.columnsService.remove(id, session.userId);
     return { message: 'Column deleted' };
+  }
+
+  @Patch('columns/:id/sort')
+  @ApiOperation({ summary: 'Sort cards by creation date' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Cards sorted' })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async sort(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SortCardsDto,
+  ) {
+    const column = await this.columnsService.sortCards(id, session.userId, dto.order);
+    const data: ColumnResponse = {
+      id: column.id,
+      name: column.name,
+      position: column.position,
+      board_id: column.board_id,
+      cards: column.cards ? column.cards.map((c) => ({ id: c.id, title: c.title })) : [],
+      created_at: column.created_at.toISOString(),
+      updated_at: column.updated_at.toISOString(),
+    };
+    return { data, message: 'Cards sorted' };
+  }
+
+  @Post('columns/:id/move-all')
+  @ApiOperation({ summary: 'Move all cards to another column' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Cards moved' })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async moveAll(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: MoveCardsDto,
+  ) {
+    const result = await this.columnsService.moveAllCards(id, dto.targetColumnId, session.userId);
+    return {
+      data: { movedCount: result.movedCount },
+      message: `${result.movedCount} cards moved to ${result.targetName}`,
+    };
   }
 }

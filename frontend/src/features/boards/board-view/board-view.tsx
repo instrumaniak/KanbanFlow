@@ -67,10 +67,10 @@ export function BoardView() {
         <h1 className="text-xl font-semibold text-white">{boardName}</h1>
       </div>
 
-      <div className="flex flex-1 overflow-x-auto p-6">
+      <div className="flex flex-1 overflow-x-auto scroll-smooth touch-pan-x p-6">
         <div className="flex gap-6">
           {columns?.map((column) => (
-            <Column key={column.id} column={column} />
+            <Column key={column.id} column={column} allColumns={columns} />
           ))}
           <AddColumnButton onClick={handleAddColumn} />
         </div>

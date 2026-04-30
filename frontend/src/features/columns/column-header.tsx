@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, MoveHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUpdateColumn, useDeleteColumn, type Column } from './use-columns';
+import { useUpdateColumn, useDeleteColumn, useSortCards, useMoveAllCards, type Column } from './use-columns';
 import { useToast } from '@/components/ui/use-toast';
 import {
   Dialog,
@@ -14,18 +14,25 @@ import {
 
 interface ColumnHeaderProps {
   column: Column;
+  allColumns?: Column[];
   onDeleted?: () => void;
 }
 
-export function ColumnHeader({ column, onDeleted }: ColumnHeaderProps) {
+export function ColumnHeader({ column, allColumns = [], onDeleted }: ColumnHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(column.name);
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showMoveMenu, setShowMoveMenu] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+  const moveMenuRef = useRef<HTMLDivElement>(null);
   const updateMutation = useUpdateColumn();
   const deleteMutation = useDeleteColumn();
+  const sortMutation = useSortCards();
+  const moveMutation = useMoveAllCards();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -34,6 +41,19 @@ export function ColumnHeader({ column, onDeleted }: ColumnHeaderProps) {
       inputRef.current.select();
     }
   }, [isEditing]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) {
+        setShowSortMenu(false);
+      }
+      if (moveMenuRef.current && !moveMenuRef.current.contains(event.target as Node)) {
+        setShowMoveMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleStartEdit = () => {
     setEditValue(column.name);
@@ -87,6 +107,38 @@ export function ColumnHeader({ column, onDeleted }: ColumnHeaderProps) {
     }
   };
 
+  const handleSort = async (order: 'asc' | 'desc') => {
+    try {
+      await sortMutation.mutateAsync({ columnId: column.id, order });
+      toast({ title: order === 'asc' ? 'Sorted: Oldest first' : 'Sorted: Newest first', type: 'success' });
+      setShowSortMenu(false);
+      setShowMenu(false);
+    } catch (err) {
+      toast({
+        title: 'Failed to sort cards',
+        description: err instanceof Error ? err.message : 'Something went wrong',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleMoveAll = async (targetColumnId: number) => {
+    try {
+      const result = await moveMutation.mutateAsync({ sourceColumnId: column.id, targetColumnId, boardId: column.board_id });
+      toast({ title: `${result.data.movedCount} cards moved`, type: 'success' });
+      setShowMoveMenu(false);
+      setShowMenu(false);
+    } catch (err) {
+      toast({
+        title: 'Failed to move cards',
+        description: err instanceof Error ? err.message : 'Something went wrong',
+        type: 'error',
+      });
+    }
+  };
+
+  const otherColumns = allColumns.filter((c) => c.id !== column.id);
+
   return (
     <div className="flex items-center justify-between border-b px-3 py-2">
       {isEditing ? (
@@ -118,13 +170,70 @@ export function ColumnHeader({ column, onDeleted }: ColumnHeaderProps) {
         </Button>
 
         {showMenu && (
-          <div className="absolute right-0 top-full z-10 mt-1 w-32 rounded-md border bg-popover p-1 shadow-md">
+          <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-md border bg-popover p-1 shadow-md">
             <button
               onClick={handleStartEdit}
               className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-accent"
             >
               Rename
             </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowSortMenu(!showSortMenu)}
+                className="flex w-full items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-accent"
+              >
+                <span className="flex items-center gap-2">
+                  <ArrowUpDown className="h-4 w-4" />
+                  Sort by Date
+                </span>
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              {showSortMenu && (
+                <div ref={sortMenuRef} className="absolute left-full top-0 ml-1 w-40 rounded-md border bg-popover p-1 shadow-md">
+                  <button
+                    onClick={() => handleSort('asc')}
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent"
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                    Ascending (Oldest first)
+                  </button>
+                  <button
+                    onClick={() => handleSort('desc')}
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent"
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                    Descending (Newest first)
+                  </button>
+                </div>
+              )}
+            </div>
+            {otherColumns.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowMoveMenu(!showMoveMenu)}
+                  className="flex w-full items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-accent"
+                >
+                  <span className="flex items-center gap-2">
+                    <MoveHorizontal className="h-4 w-4" />
+                    Move All Cards
+                  </span>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+                {showMoveMenu && (
+                  <div ref={moveMenuRef} className="absolute left-full top-0 ml-1 w-40 rounded-md border bg-popover p-1 shadow-md">
+                    {otherColumns.map((col) => (
+                      <button
+                        key={col.id}
+                        onClick={() => handleMoveAll(col.id)}
+                        className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-accent"
+                      >
+                        {col.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <button
               onClick={() => {
                 setShowMenu(false);

@@ -99,4 +99,38 @@ export async function deleteColumn(id: number): Promise<ApiResponse<void>> {
   return handleResponse(response);
 }
 
+export async function sortCards(columnId: number, order: 'asc' | 'desc'): Promise<ApiResponse<Column>> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/columns/${columnId}/sort`, {
+      ...FETCH_OPTIONS,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order }),
+    });
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
+  return handleResponse(response);
+}
+
+export interface MoveAllCardsResponse {
+  movedCount: number;
+}
+
+export async function moveAllCards(sourceColumnId: number, targetColumnId: number): Promise<ApiResponse<MoveAllCardsResponse>> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/columns/${sourceColumnId}/move-all`, {
+      ...FETCH_OPTIONS,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetColumnId }),
+    });
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
+  return handleResponse(response);
+}
+
 export type { ApiResponse };

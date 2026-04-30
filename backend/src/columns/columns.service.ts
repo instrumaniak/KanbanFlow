@@ -1,8 +1,14 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BoardColumn } from './entities/column.entity';
 import { Board } from '../boards/entities/board.entity';
+import { Card } from '../cards/entities/card.entity';
 import { CreateColumnDto } from './dto/create-column.dto';
 import { UpdateColumnDto } from './dto/update-column.dto';
 
@@ -13,6 +19,8 @@ export class ColumnsService {
     private readonly columnRepository: Repository<BoardColumn>,
     @InjectRepository(Board)
     private readonly boardRepository: Repository<Board>,
+    @InjectRepository(Card)
+    private readonly cardRepository: Repository<Card>,
   ) {}
 
   async findAllByBoardId(boardId: number, userId: number): Promise<BoardColumn[]> {
@@ -87,5 +95,78 @@ export class ColumnsService {
     }
 
     return column;
+  }
+
+  async sortCards(id: number, userId: number, order: 'asc' | 'desc'): Promise<BoardColumn> {
+    await this.findOneById(id, userId);
+
+    const cards = await this.cardRepository.find({
+      where: { column_id: id },
+      order: { created_at: order.toUpperCase() as 'ASC' | 'DESC' },
+    });
+
+    for (let i = 0; i < cards.length; i++) {
+      cards[i].position = i;
+    }
+    await this.cardRepository.save(cards);
+
+    const sortedColumn = await this.columnRepository.findOne({
+      where: { id },
+      relations: ['cards'],
+      order: { position: 'ASC' },
+    });
+    if (!sortedColumn) {
+      throw new NotFoundException('Column not found');
+    }
+    return sortedColumn;
+  }
+
+  private async findOneByIdWithCards(id: number, userId: number): Promise<BoardColumn> {
+    await this.findOneById(id, userId);
+    return (await this.columnRepository.findOne({ where: { id }, relations: ['board', 'cards'] }))!;
+  }
+
+  async moveAllCards(
+    sourceId: number,
+    targetId: number,
+    userId: number,
+  ): Promise<{ movedCount: number; targetName: string }> {
+    const sourceColumn = await this.findOneById(sourceId, userId);
+    const targetColumn = await this.findOneById(targetId, userId);
+
+    if (sourceColumn.board_id !== targetColumn.board_id) {
+      throw new BadRequestException('Cannot move cards between different boards');
+    }
+
+    if (sourceId === targetId) {
+      throw new BadRequestException('Cards already in this column');
+    }
+
+    const cards = await this.cardRepository.find({
+      where: { column_id: sourceId },
+    });
+
+    if (cards.length === 0) {
+      throw new BadRequestException('No cards to move');
+    }
+
+    await this.cardRepository.manager.transaction(async (manager) => {
+      const maxPositionResult = await manager
+        .createQueryBuilder('card', 'card')
+        .where('card.column_id = :targetId', { targetId })
+        .select('MAX(card.position)', 'max')
+        .getRawOne();
+
+      let maxPosition = typeof maxPositionResult?.max === 'number' ? maxPositionResult.max : -1;
+
+      for (const card of cards) {
+        card.column_id = targetId;
+        card.position = ++maxPosition;
+      }
+
+      await manager.save(cards);
+    });
+
+    return { movedCount: cards.length, targetName: targetColumn.name };
   }
 }

@@ -4,6 +4,8 @@ import {
   createColumn,
   updateColumn,
   deleteColumn,
+  sortCards,
+  moveAllCards,
   type CreateColumnData,
   type UpdateColumnData,
   type Column,
@@ -46,6 +48,30 @@ export function useDeleteColumn() {
     mutationFn: (id: number) => deleteColumn(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
+    },
+  });
+}
+
+export function useSortCards() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ columnId, order }: { columnId: number; order: 'asc' | 'desc' }) =>
+      sortCards(columnId, order),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      queryClient.invalidateQueries({ queryKey: ['board', data.data.board_id] });
+    },
+  });
+}
+
+export function useMoveAllCards() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sourceColumnId, targetColumnId, boardId }: { sourceColumnId: number; targetColumnId: number; boardId: number }) =>
+      moveAllCards(sourceColumnId, targetColumnId),
+    onSuccess: (_, { boardId }) => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      queryClient.invalidateQueries({ queryKey: ['board', boardId] });
     },
   });
 }
