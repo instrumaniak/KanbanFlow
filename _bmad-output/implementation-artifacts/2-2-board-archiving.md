@@ -1,6 +1,15 @@
 # Story 2.2: Board Archiving
 
-Status: ready-for-dev
+Status: done (after code review fixes)
+
+## Code Review Fixes
+
+- **AC 4.2**: Added optimistic UI for color change - updates immediately on color selection
+- **AC 6.2**: Verified cascade delete configured (BoardColumn has `onDelete: CASCADE`)
+- **AC 6.3**: Verified undo toast implemented (archive action shows toast with Undo button)
+
+### Files Modified
+- `frontend/src/features/boards/board-card.tsx` - Added optimistic color update
 
 ## Story
 

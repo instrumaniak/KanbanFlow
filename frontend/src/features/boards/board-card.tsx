@@ -66,6 +66,16 @@ export function BoardCard({ board, onEdit, onDelete }: BoardCardProps) {
   );
 }
 
+interface InlineEditFormProps {
+  initialValue: string;
+  boardId: number;
+  backgroundColor: string;
+  projectId: number | null;
+  projects: Array<{ id: number; name: string }>;
+  onSave: () => void;
+  onCancel: () => void;
+}
+
 export function InlineEditForm({
   initialValue,
   boardId,
@@ -74,18 +84,11 @@ export function InlineEditForm({
   projects,
   onSave,
   onCancel,
-}: {
-  initialValue: string;
-  boardId: number;
-  backgroundColor: string;
-  projectId: number | null;
-  projects: Array<{ id: number; name: string }>;
-  onSave: () => void;
-  onCancel: () => void;
-}) {
+}: InlineEditFormProps) {
   const [name, setName] = useState(initialValue);
   const [selectedColor, setSelectedColor] = useState(backgroundColor);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(projectId);
+  const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const updateMutation = useUpdateBoard();
   const { toast } = useToast();
@@ -95,11 +98,31 @@ export function InlineEditForm({
     inputRef.current?.select();
   }, []);
 
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color);
+    setIsSaving(true);
+    updateMutation.mutateAsync({
+      id: boardId,
+      data: { background_color: color },
+    }).then(() => {
+      toast({ title: 'Board updated', type: 'success' });
+    }).catch((err) => {
+      setSelectedColor(backgroundColor);
+      toast({
+        title: 'Failed to update board',
+        description: err instanceof Error ? err.message : 'Something went wrong',
+        type: 'error',
+      });
+    }).finally(() => {
+      setIsSaving(false);
+    });
+  };
+
   const handleSave = async () => {
-    if (updateMutation.isPending) return;
+    if (updateMutation.isPending || isSaving) return;
 
     const trimmed = name.trim();
-    if (!trimmed || (trimmed === initialValue && selectedColor === backgroundColor && selectedProjectId === projectId)) {
+    if (!trimmed || (trimmed === initialValue && selectedProjectId !== projectId)) {
       onCancel();
       return;
     }
@@ -109,7 +132,6 @@ export function InlineEditForm({
         id: boardId,
         data: {
           name: trimmed !== initialValue ? trimmed : undefined,
-          background_color: selectedColor !== backgroundColor ? selectedColor : undefined,
           project_id: selectedProjectId !== projectId ? selectedProjectId : undefined,
         },
       });
@@ -159,12 +181,13 @@ export function InlineEditForm({
             <button
               key={color}
               type="button"
-              onClick={() => setSelectedColor(color)}
+              onClick={() => handleColorChange(color)}
+              disabled={isSaving}
               className={`h-6 w-6 rounded border transition-all ${
                 selectedColor === color
                   ? 'border-foreground scale-110'
                   : 'border-transparent'
-              }`}
+              } ${isSaving ? 'opacity-50' : ''}`}
               style={{ backgroundColor: color }}
             />
           ))}

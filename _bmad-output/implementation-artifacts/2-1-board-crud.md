@@ -1,6 +1,6 @@
 # Story 2.1: Board CRUD
 
-Status: review
+Status: done (after code review)
 
 ## Story
 

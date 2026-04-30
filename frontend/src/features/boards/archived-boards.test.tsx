@@ -8,11 +8,15 @@ import { MemoryRouter } from 'react-router-dom';
 const mockUseArchivedBoards = vi.fn();
 const mockUseRestoreBoard = vi.fn();
 const mockUsePermanentDeleteBoard = vi.fn();
+const mockUseUpdateBoard = vi.fn();
+const mockUseArchiveBoard = vi.fn();
 
 vi.mock('./use-boards', () => ({
   useArchivedBoards: () => mockUseArchivedBoards(),
   useRestoreBoard: () => mockUseRestoreBoard(),
   usePermanentDeleteBoard: () => mockUsePermanentDeleteBoard(),
+  useUpdateBoard: () => mockUseUpdateBoard(),
+  useArchiveBoard: () => mockUseArchiveBoard(),
 }));
 
 const createWrapper = () => {
