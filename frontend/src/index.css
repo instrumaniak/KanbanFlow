@@ -109,6 +109,11 @@
   --sidebar-border: #E4E4E7;
   --sidebar-ring: #18181B;
 
+  /* Scrollbar tokens - Light Mode */
+  --scrollbar-track: #F4F4F5;
+  --scrollbar-thumb: #E4E4E7;
+  --scrollbar-thumb-hover: #C0C0C5;
+
   /* Base styles */
   color-scheme: light;
   color: var(--text-primary);
@@ -165,6 +170,11 @@
   --sidebar-accent-foreground: #DFE6EF;
   --sidebar-border: #323A46;
   --sidebar-ring: #DFE6EF;
+
+  /* Scrollbar tokens - Dark Mode */
+  --scrollbar-track: #1B2028;
+  --scrollbar-thumb: #323A46;
+  --scrollbar-thumb-hover: #404858;
 
   color-scheme: dark;
 }
@@ -274,5 +284,30 @@
   p {
     font-size: var(--text-body-size);
     font-weight: var(--text-body-weight);
+  }
+
+  /* === Custom Scrollbars === */
+  /* Firefox - use auto for native thickness */
+  * {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  /* Webkit (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
   }
 }
