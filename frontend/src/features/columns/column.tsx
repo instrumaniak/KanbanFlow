@@ -10,7 +10,7 @@ interface ColumnProps {
 
 export function Column({ column, allColumns = [], onDeleted }: ColumnProps) {
   return (
-    <div className="flex h-full min-w-[320px] max-w-[320px] shrink-0 flex-col rounded-lg border bg-card">
+    <div className="flex h-full min-w-[320px] max-w-[320px] shrink-0 flex-col rounded-lg">
       <ColumnHeader column={column} allColumns={allColumns} onDeleted={onDeleted} />
 
       <ColumnCardList cards={column.cards || []} />

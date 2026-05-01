@@ -51,14 +51,8 @@ export function BoardView() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div
-        className="flex shrink-0 items-center gap-4 border-b bg-card px-6 py-4"
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate('/')}
-        >
+      <div className="flex shrink-0 items-center gap-4 border-b px-6 py-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-xl font-semibold">{boardName}</h1>
