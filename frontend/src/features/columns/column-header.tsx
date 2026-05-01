@@ -140,7 +140,7 @@ export function ColumnHeader({ column, allColumns = [], onDeleted }: ColumnHeade
   const otherColumns = allColumns.filter((c) => c.id !== column.id);
 
   return (
-    <div className="flex items-center justify-between border-b px-3 py-2">
+    <div className="flex items-center justify-between px-3 py-2">
       {isEditing ? (
         <input
           ref={inputRef}

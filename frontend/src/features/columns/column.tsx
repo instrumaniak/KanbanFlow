@@ -19,7 +19,7 @@ export function Column({ column, allColumns = [], onDeleted }: ColumnProps) {
 
       <ColumnCardList cards={column.cards || []} />
 
-      <div className="border-t p-2">
+      <div className="p-2">
         <AddCardInput columnId={column.id} nextColumnId={nextColumnId} />
       </div>
     </div>
