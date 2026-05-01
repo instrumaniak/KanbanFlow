@@ -1,23 +1,32 @@
-import { useState, useRef, useEffect, type KeyboardEvent, type FocusEvent } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent, type FocusEvent, type ChangeEvent } from 'react';
 import { useCreateCard, type Card } from './use-cards';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AddCardInputProps {
   columnId: number;
   nextColumnId?: number;
   onCardCreated?: (card: Card) => void;
+  onCardCreateError?: (error: Error) => void;
 }
 
-export function AddCardInput({ columnId, nextColumnId, onCardCreated }: AddCardInputProps) {
+export function AddCardInput({ columnId, nextColumnId, onCardCreated, onCardCreateError }: AddCardInputProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const createCard = useCreateCard();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isOpen]);
+
+  const adjustTextareaHeight = (textarea: HTMLTextAreaElement) => {
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+  };
 
   const openInput = () => setIsOpen(true);
 
@@ -30,16 +39,37 @@ export function AddCardInput({ columnId, nextColumnId, onCardCreated }: AddCardI
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (title.trim()) {
+        const trimmedTitle = title.trim();
+        setIsCreating(true);
+        
+        const optimisticCard: Card = {
+          id: Date.now(),
+          title: trimmedTitle,
+          column_id: columnId,
+          position: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        onCardCreated?.(optimisticCard);
+        
         try {
-          const result = await createCard.mutateAsync({
-            title: title.trim(),
+          await createCard.mutateAsync({
+            title: trimmedTitle,
             column_id: columnId,
           });
-          onCardCreated?.(result.data);
           setTitle('');
+        } catch (err) {
+          const error = err instanceof Error ? err : new Error('Failed to create card');
+          onCardCreateError?.(error);
+          toast({
+            title: 'Failed to create card',
+            description: error.message,
+            type: 'error',
+          });
+        } finally {
+          setIsCreating(false);
           inputRef.current?.focus();
-        } catch {
-          // Error handled by React Query
         }
       } else {
         closeInput();
@@ -47,16 +77,24 @@ export function AddCardInput({ columnId, nextColumnId, onCardCreated }: AddCardI
     } else if (e.key === 'Escape') {
       e.preventDefault();
       closeInput();
-    } else if (e.key === 'Tab' && nextColumnId) {
+    } else if (e.key === 'Tab' && nextColumnId && !isCreating) {
       e.preventDefault();
       if (title.trim()) {
+        setIsCreating(true);
         try {
           await createCard.mutateAsync({
             title: title.trim(),
             column_id: columnId,
           });
-        } catch {
-          // Error handled by React Query
+        } catch (err) {
+          const error = err instanceof Error ? err : new Error('Failed to create card');
+          toast({
+            title: 'Failed to create card',
+            description: error.message,
+            type: 'error',
+          });
+        } finally {
+          setIsCreating(false);
         }
       }
       const selector = `[data-column-id="${nextColumnId}"] textarea`;
@@ -67,6 +105,11 @@ export function AddCardInput({ columnId, nextColumnId, onCardCreated }: AddCardI
         closeInput();
       }
     }
+  };
+
+  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setTitle(e.target.value);
+    adjustTextareaHeight(e.target);
   };
 
   const handleBlur = (e: FocusEvent<HTMLTextAreaElement>) => {
@@ -91,11 +134,11 @@ export function AddCardInput({ columnId, nextColumnId, onCardCreated }: AddCardI
   }
 
   return (
-    <div className="animate-slide-up">
+    <div>
       <textarea
         ref={inputRef}
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         placeholder="Enter a title..."
@@ -103,6 +146,7 @@ export function AddCardInput({ columnId, nextColumnId, onCardCreated }: AddCardI
         className="w-full resize-none rounded bg-card p-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary"
         style={{ minHeight: '2.5rem', height: 'auto' }}
         data-column-id={columnId}
+        disabled={isCreating}
       />
     </div>
   );

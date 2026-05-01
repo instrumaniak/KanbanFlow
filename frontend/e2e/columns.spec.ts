@@ -89,4 +89,52 @@ test.describe('Column CRUD', () => {
       await expect(addCardButton).toBeVisible();
     }
   });
+
+  test('shows error toast when card title exceeds max length', async ({ page }) => {
+    const consoleErrors: string[] = [];
+    const apiErrors: string[] = [];
+
+    page.on('console', msg => {
+      consoleErrors.push(`[${msg.type()}] ${msg.text()}`);
+    });
+    page.on('pageerror', error => {
+      consoleErrors.push(`[pageerror] ${error.message}`);
+    });
+    page.on('response', response => {
+      if (response.status() >= 400) {
+        apiErrors.push(`${response.url()} -> ${response.status()}`);
+      }
+    });
+
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(TEST_EMAIL);
+    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('/projects');
+
+    await page.goto('/');
+    await page.waitForTimeout(500);
+
+    const addCardButton = page.getByRole('button', { name: '+ Add a card' });
+    if (await addCardButton.isVisible().catch(() => false)) {
+      await addCardButton.click();
+      await page.waitForTimeout(300);
+
+      const textarea = page.locator('textarea[data-column-id]');
+      await expect(textarea).toBeVisible();
+
+      const longTitle = 'A'.repeat(300);
+      await textarea.fill(longTitle);
+      await textarea.press('Enter');
+      await page.waitForTimeout(500);
+
+      const errorToast = page.locator('[data-testid="toast-error"]');
+      await expect(errorToast).toBeVisible();
+      await expect(errorToast).toContainText('Failed to create card');
+
+      const jsErrors = consoleErrors.filter(e => e.includes('[error]') || e.includes('[pageerror]'));
+      expect(jsErrors).toEqual([]);
+      expect(apiErrors).toEqual([]);
+    }
+  });
 });

@@ -41,7 +41,10 @@ export class CardsController {
   @ApiOperation({ summary: 'Get all cards for a column' })
   @ApiParam({ name: 'columnId', type: Number })
   @ApiResponse({ status: 200, description: 'List of cards' })
-  async findAll(@Session() session: SessionData, @Param('columnId', ParseIntPipe) columnId: number) {
+  async findAll(
+    @Session() session: SessionData,
+    @Param('columnId', ParseIntPipe) columnId: number,
+  ) {
     const cards = await this.cardsService.findAllByColumnId(columnId, session.userId);
     const data: CardResponse[] = cards.map((card) => ({
       id: card.id,

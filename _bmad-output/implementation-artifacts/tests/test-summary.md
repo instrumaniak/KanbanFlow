@@ -1,52 +1,43 @@
-# Test Automation Summary - Story 2-2: Board Archiving
+# Test Automation Summary
 
 ## Generated Tests
 
-### Backend Tests
-- ✅ `backend/src/boards/boards.service.spec.ts` - Service tests for archive/restore/permanentDelete
-- ✅ `backend/src/boards/boards.controller.spec.ts` - Controller tests for archive/restore/permanentDelete
+### Backend Tests (Jest - NestJS)
+- ✅ `backend/src/cards/cards.service.spec.ts` - 13 tests covering:
+  - `create`: card creation with auto-position, column validation, error handling
+  - `findAllByColumnId`: fetching cards, column validation
+  - `update`: title, column_id, position updates, error handling
+  - `remove`: card deletion, error handling
 
-### Frontend API Tests
-- ✅ `frontend/src/features/boards/boards.api.test.ts` - Added 8 new tests:
-  - archiveBoard() - success and error cases
-  - restoreBoard() - success and error cases
-  - permanentDeleteBoard() - success and validation error
-  - fetchArchivedBoards() - success and empty state
+- ✅ `backend/src/cards/cards.controller.spec.ts` - 5 tests covering:
+  - `findAll`: returning cards for a column
+  - `create`: creating card and returning response
+  - `update`: updating card and returning response
+  - `remove`: deleting card and returning message
 
-### Frontend Component Tests
-- ✅ `frontend/src/features/boards/archived-boards.test.tsx` - Existing tests for ArchivedBoards component
-
-### E2E Tests
-- ✅ `frontend/e2e/boards.spec.ts` - Added 4 new E2E tests:
-  - Archives a board from board card
-  - Views archived boards list
-  - Restores an archived board
-  - Permanently deletes an archived board
-
-## Test Results
-
-**Backend Tests:**
-```
-Test Suites: 2 passed, 2 total
-Tests: 31 passed, 31 total
-```
-
-**Frontend API Tests:**
-```
-Test Files: 1 passed (1)
-Tests: 15 passed (15)
-```
+### Frontend Tests (Vitest)
+- ✅ `frontend/src/features/cards/cards.api.test.ts` - 9 tests covering:
+  - `fetchCards`: fetching cards by column, error handling
+  - `createCard`: creating card, error handling
+  - `updateCard`: updating title, column, position; error handling
+  - `deleteCard`: deleting card, error handling
 
 ## Coverage
 
-| Feature | Backend | Frontend API | E2E |
-|---------|---------|--------------|-----|
-| Archive board | ✅ | ✅ | ✅ |
-| Restore board | ✅ | ✅ | ✅ |
-| Permanent delete | ✅ | ✅ | ✅ |
-| List archived | ✅ | ✅ | ✅ |
+| Module | Backend Service | Backend Controller | Frontend API |
+|--------|-----------------|-------------------|--------------|
+| Boards | ✅ (existing) | ✅ (existing) | ✅ (existing) |
+| Columns | ✅ (existing) | ✅ (existing) | ✅ (existing) |
+| Projects | ✅ (existing) | ✅ (existing) | ✅ (existing) |
+| Auth | ✅ (existing) | ✅ (existing) | ✅ (existing) |
+| Users | ✅ (existing) | ✅ (existing) | - |
+| **Cards** | ✅ (new) | ✅ (new) | ✅ (new) |
+
+## Test Results
+- **Backend**: 18 passed ✅
+- **Frontend**: 9 passed ✅
 
 ## Next Steps
-- Run E2E tests locally with `npm run test:e2e` (requires backend running)
-- Add undo functionality tests (toast interaction)
-- Consider adding test for error handling on network failures
+- Run full test suite: `npm test` (backend) / `npm test` (frontend)
+- Add more edge cases as needed
+- Consider E2E tests with Playwright for user workflows

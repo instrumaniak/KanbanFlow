@@ -32,10 +32,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       const type = options.type || 'default';
       setToasts((prev) => [...prev, { ...options, id, type }]);
 
-      if (type === 'error') {
-        return;
-      }
-
       const duration = type === 'destructive' && options.action ? 5000 : 3000;
       const timeoutId = setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -53,15 +49,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toasts, toast, dismiss }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2" data-testid="toast-container">
         {toasts.map((t) => (
           <div
             key={t.id}
+            data-testid={`toast-${t.type}`}
             className={`rounded-lg border p-4 shadow-lg transition-all ${
               t.type === 'destructive' || t.type === 'error'
                 ? 'border-destructive bg-destructive/10 text-destructive'
                 : t.type === 'success'
-                  ? 'border-green-500 bg-green-50 text-green-800'
+                  ? 'border-[var(--success)] bg-[var(--success)]/10 text-[var(--success)]'
                   : 'border-border bg-background text-foreground'
             }`}
           >

@@ -62,7 +62,9 @@ describe('ColumnsService', () => {
     save: jest.fn(),
     createQueryBuilder: jest.fn(),
     manager: {
-      transaction: jest.fn(async (callback: (mgr: unknown) => Promise<unknown>) => callback(mockCardRepository)),
+      transaction: jest.fn(async (callback: (mgr: unknown) => Promise<unknown>) =>
+        callback(mockCardRepository),
+      ),
     },
   } as unknown as {
     find: jest.Mock;

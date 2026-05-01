@@ -12,7 +12,12 @@ for (const key in testEnvConfig) {
 
 export default async function globalSetup() {
   console.log('[E2E Setup] Starting database setup (production-style with migrations)...');
-  console.log('[E2E Setup] Using DB:', process.env.DB_HOST, process.env.DB_USERNAME, process.env.DB_NAME);
+  console.log(
+    '[E2E Setup] Using DB:',
+    process.env.DB_HOST,
+    process.env.DB_USERNAME,
+    process.env.DB_NAME,
+  );
 
   const dataSource = new DataSource({
     type: 'mysql',

@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { toast } from '@/components/ui/toast';
 import { AddCardInput } from './add-card-input';
 
-vi.mock('@/components/ui/toast', () => ({
+vi.mock('@/components/ui/use-toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
-  toast: vi.fn(),
+}));
+
+vi.mock('./use-cards', () => ({
+  useCreateCard: () => ({
+    mutateAsync: vi.fn().mockResolvedValue({ data: { id: 1, title: 'Test', column_id: 1, position: 0, created_at: '', updated_at: '' } }),
+  }),
 }));
 
 const renderWithProviders = (component: React.ReactElement) => {

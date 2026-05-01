@@ -12,7 +12,12 @@ for (const key in testEnvConfig) {
 
 export default async function globalTeardown() {
   console.log('[E2E Teardown] Cleaning up test database...');
-  console.log('[E2E Teardown] Using DB:', process.env.DB_HOST, process.env.DB_USERNAME, process.env.DB_NAME);
+  console.log(
+    '[E2E Teardown] Using DB:',
+    process.env.DB_HOST,
+    process.env.DB_USERNAME,
+    process.env.DB_NAME,
+  );
 
   const dataSource = new DataSource({
     type: 'mysql',
