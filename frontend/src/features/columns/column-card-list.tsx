@@ -1,4 +1,5 @@
 import { type Card } from './columns.api';
+import { Card as CardComponent } from '../cards/card';
 
 interface ColumnCardListProps {
   cards: Card[];
@@ -13,9 +14,7 @@ export function ColumnCardList({ cards }: ColumnCardListProps) {
     <div className="flex-1 overflow-y-auto p-2">
       <div className="space-y-2">
         {cards.map((card) => (
-          <div key={card.id} className="rounded bg-card p-3 text-sm shadow-sm hover:bg-accent/50">
-            {card.title}
-          </div>
+          <CardComponent key={card.id} card={{ ...card, column_id: 0, position: 0, created_at: '', updated_at: '' }} />
         ))}
       </div>
     </div>
