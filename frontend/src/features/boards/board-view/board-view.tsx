@@ -17,7 +17,6 @@ export function BoardView() {
 
   const board = boardResponse?.data;
   const boardName = boardResponse?.data?.name;
-  const boardColor = boardResponse?.data?.background_color;
   const createColumnMutation = useCreateColumn();
   const { toast } = useToast();
 
@@ -51,24 +50,22 @@ export function BoardView() {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex flex-1 flex-col">
       <div
-        className="flex items-center gap-4 border-b px-6 py-4"
-        style={{ backgroundColor: boardColor }}
+        className="flex shrink-0 items-center gap-4 border-b bg-card px-6 py-4"
       >
         <Button
           variant="ghost"
           size="icon"
-          className="text-white hover:bg-white/20"
           onClick={() => navigate('/')}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-semibold text-white">{boardName}</h1>
+        <h1 className="text-xl font-semibold">{boardName}</h1>
       </div>
 
-      <div className="flex flex-1 overflow-x-auto scroll-smooth touch-pan-x p-6">
-        <div className="flex gap-6">
+      <div className="flex-1 overflow-x-auto">
+        <div className="flex h-full gap-6 p-6 pb-6">
           {columns?.map((column) => (
             <Column key={column.id} column={column} allColumns={columns} />
           ))}

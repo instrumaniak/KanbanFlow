@@ -1,7 +1,7 @@
 interface Board {
   id: number;
   name: string;
-  background_color: string;
+  background_color?: string;
   project_id: number | null;
   project?: { id: number; name: string } | null;
   created_at: string;

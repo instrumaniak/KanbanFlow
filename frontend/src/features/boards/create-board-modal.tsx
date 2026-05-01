@@ -15,17 +15,6 @@ import { useCreateBoard } from './use-boards';
 import { useProjects } from '../projects/use-projects';
 import { Plus } from 'lucide-react';
 
-const PRESET_COLORS = [
-  '#0079BF', // Trello Blue
-  '#D29034', // Orange
-  '#519839', // Green
-  '#B61C26', // Red
-  '#F5D6CC', // Peach
-  '#C0B6F2', // Purple
-  '#FFAB00', // Yellow
-  '#838C91', // Gray
-];
-
 interface CreateBoardModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -34,7 +23,6 @@ interface CreateBoardModalProps {
 
 export function CreateBoardModal({ open, onOpenChange, onSuccess }: CreateBoardModalProps) {
   const [name, setName] = useState('');
-  const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const { toast } = useToast();
   const createBoard = useCreateBoard();
@@ -44,7 +32,6 @@ export function CreateBoardModal({ open, onOpenChange, onSuccess }: CreateBoardM
   useEffect(() => {
     if (open) {
       setName('');
-      setSelectedColor(PRESET_COLORS[0]);
       setSelectedProjectId(null);
     }
   }, [open]);
@@ -57,7 +44,6 @@ export function CreateBoardModal({ open, onOpenChange, onSuccess }: CreateBoardM
     try {
       const response = await createBoard.mutateAsync({
         name: trimmed,
-        background_color: selectedColor,
         project_id: selectedProjectId,
       });
       toast({ title: 'Board created', type: 'success' });
@@ -82,7 +68,7 @@ export function CreateBoardModal({ open, onOpenChange, onSuccess }: CreateBoardM
           <DialogHeader>
             <DialogTitle>Create new board</DialogTitle>
             <DialogDescription>
-              Give your board a name and choose a background color
+              Give your board a name
             </DialogDescription>
           </DialogHeader>
 
@@ -99,26 +85,6 @@ export function CreateBoardModal({ open, onOpenChange, onSuccess }: CreateBoardM
                 disabled={createBoard.isPending}
                 autoFocus
               />
-            </div>
-
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Background color</label>
-              <div className="flex gap-2 flex-wrap">
-                {PRESET_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setSelectedColor(color)}
-                    className={`h-8 w-8 rounded-md border-2 transition-all ${
-                      selectedColor === color
-                        ? 'border-foreground scale-110'
-                        : 'border-transparent hover:border-muted-foreground/50'
-                    }`}
-                    style={{ backgroundColor: color }}
-                    aria-label={`Select ${color} background`}
-                  />
-                ))}
-              </div>
             </div>
 
             <div className="grid gap-2">

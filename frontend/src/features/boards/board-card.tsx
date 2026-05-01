@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { useUpdateBoard, useArchiveBoard, usePermanentDeleteBoard, type Board } from './use-boards';
-import { Pencil, Trash2, Layout } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -25,17 +25,16 @@ export function BoardCard({ board, onEdit, onDelete }: BoardCardProps) {
 
   return (
     <div
-      className="group relative flex h-28 cursor-pointer flex-col justify-between rounded-lg p-4 text-white transition-transform hover:scale-[1.02]"
-      style={{ backgroundColor: board.background_color }}
+      className="group relative flex h-28 cursor-pointer flex-col justify-between rounded-lg border border-border bg-card p-4 transition-transform hover:scale-[1.02]"
       onClick={() => navigate(`/board/${board.id}`)}
     >
       <div className="flex items-start justify-between">
-        <div className="flex-1 truncate font-semibold">{board.name}</div>
+        <div className="flex-1 truncate font-semibold text-foreground">{board.name}</div>
         <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           <Button
             variant="ghost"
             size="icon-sm"
-            className="h-7 w-7 text-white/80 hover:bg-white/20 hover:text-white"
+            className="h-7 w-7"
             onClick={(e) => {
               e.stopPropagation();
               onEdit(board.id, board.name);
@@ -47,7 +46,7 @@ export function BoardCard({ board, onEdit, onDelete }: BoardCardProps) {
           <Button
             variant="ghost"
             size="icon-sm"
-            className="h-7 w-7 text-white/80 hover:bg-white/20 hover:text-white"
+            className="h-7 w-7"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(board.id, board.name);
@@ -59,9 +58,8 @@ export function BoardCard({ board, onEdit, onDelete }: BoardCardProps) {
         </div>
       </div>
       {board.project && (
-        <div className="text-xs text-white/70">{board.project.name}</div>
+        <div className="text-xs text-muted-foreground">{board.project.name}</div>
       )}
-      <Layout className="absolute bottom-2 right-2 h-6 w-6 opacity-30" />
     </div>
   );
 }
@@ -69,7 +67,6 @@ export function BoardCard({ board, onEdit, onDelete }: BoardCardProps) {
 interface InlineEditFormProps {
   initialValue: string;
   boardId: number;
-  backgroundColor: string;
   projectId: number | null;
   projects: Array<{ id: number; name: string }>;
   onSave: () => void;
@@ -79,16 +76,13 @@ interface InlineEditFormProps {
 export function InlineEditForm({
   initialValue,
   boardId,
-  backgroundColor,
   projectId,
   projects,
   onSave,
   onCancel,
 }: InlineEditFormProps) {
   const [name, setName] = useState(initialValue);
-  const [selectedColor, setSelectedColor] = useState(backgroundColor);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(projectId);
-  const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const updateMutation = useUpdateBoard();
   const { toast } = useToast();
@@ -98,28 +92,8 @@ export function InlineEditForm({
     inputRef.current?.select();
   }, []);
 
-  const handleColorChange = (color: string) => {
-    setSelectedColor(color);
-    setIsSaving(true);
-    updateMutation.mutateAsync({
-      id: boardId,
-      data: { background_color: color },
-    }).then(() => {
-      toast({ title: 'Board updated', type: 'success' });
-    }).catch((err) => {
-      setSelectedColor(backgroundColor);
-      toast({
-        title: 'Failed to update board',
-        description: err instanceof Error ? err.message : 'Something went wrong',
-        type: 'error',
-      });
-    }).finally(() => {
-      setIsSaving(false);
-    });
-  };
-
   const handleSave = async () => {
-    if (updateMutation.isPending || isSaving) return;
+    if (updateMutation.isPending) return;
 
     const trimmed = name.trim();
     if (!trimmed || (trimmed === initialValue && selectedProjectId !== projectId)) {
@@ -154,11 +128,6 @@ export function InlineEditForm({
     }
   };
 
-  const PRESET_COLORS = [
-    '#0079BF', '#D29034', '#519839', '#B61C26',
-    '#F5D6CC', '#C0B6F2', '#FFAB00', '#838C91',
-  ];
-
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-3">
@@ -172,26 +141,6 @@ export function InlineEditForm({
           className="font-semibold"
           disabled={updateMutation.isPending}
         />
-      </div>
-
-      <div className="mb-3">
-        <label className="text-sm font-medium">Background</label>
-        <div className="mt-1 flex gap-1">
-          {PRESET_COLORS.map((color) => (
-            <button
-              key={color}
-              type="button"
-              onClick={() => handleColorChange(color)}
-              disabled={isSaving}
-              className={`h-6 w-6 rounded border transition-all ${
-                selectedColor === color
-                  ? 'border-foreground scale-110'
-                  : 'border-transparent'
-              } ${isSaving ? 'opacity-50' : ''}`}
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
       </div>
 
       <div>

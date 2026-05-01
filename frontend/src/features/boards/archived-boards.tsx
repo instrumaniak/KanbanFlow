@@ -110,7 +110,6 @@ export function ArchivedBoards() {
             <div
               key={board.id}
               className="relative overflow-hidden rounded-lg border bg-card p-4 shadow-sm"
-              style={{ backgroundColor: board.background_color + '20' }}
             >
               <h3 className="mb-3 truncate font-semibold">{board.name}</h3>
               {board.project && (

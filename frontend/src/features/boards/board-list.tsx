@@ -135,7 +135,6 @@ export function BoardList() {
               key={board.id}
               initialValue={editingBoard.name}
               boardId={board.id}
-              backgroundColor={board.background_color}
               projectId={board.project_id}
               projects={projects}
               onSave={handleEditSave}
