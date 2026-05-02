@@ -27,7 +27,7 @@ export function CardDraggable({ card, index, isDragDisabled = false, children }:
     transition,
     isDragging,
   } = useSortable({
-    id: card.id,
+    id: `card-${card.id}`,
     disabled: isDragDisabled,
     data: {
       cardId: card.id,

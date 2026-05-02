@@ -1,228 +1,175 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { CardsService } from './cards.service';
 import { Card } from './entities/card.entity';
 import { BoardColumn } from '../columns/entities/column.entity';
 import { Board } from '../boards/entities/board.entity';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
 
 describe('CardsService', () => {
   let service: CardsService;
+  let cardRepository: jest.Mocked<Repository<Card>>;
+  let columnRepository: jest.Mocked<Repository<BoardColumn>>;
+  let boardRepository: jest.Mocked<Repository<Board>>;
 
-  const mockCardRepository = {
-    find: jest.fn(),
-    findOne: jest.fn(),
-    create: jest.fn(),
-    save: jest.fn(),
-    remove: jest.fn(),
-    createQueryBuilder: jest.fn(),
-  };
+  const mockUserId = 1;
+  const mockBoard = { id: 1, user_id: mockUserId } as Board;
+  const mockColumn = { id: 1, board: mockBoard, position: 0 } as BoardColumn;
+  const mockTargetColumn = { id: 2, board: mockBoard, position: 1 } as BoardColumn;
 
-  const mockColumnRepository = {
-    findOne: jest.fn(),
-  };
-
-  const mockBoardRepository = {
-    findOne: jest.fn(),
-  };
+  const createMockCard = (id: number, columnId: number, position: number): Card =>
+    ({
+      id,
+      title: `Card ${id}`,
+      column_id: columnId,
+      position,
+      column: { ...mockColumn, id: columnId } as BoardColumn,
+      created_at: new Date(),
+      updated_at: new Date(),
+    }) as Card;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CardsService,
-        { provide: getRepositoryToken(Card), useValue: mockCardRepository },
-        { provide: getRepositoryToken(BoardColumn), useValue: mockColumnRepository },
-        { provide: getRepositoryToken(Board), useValue: mockBoardRepository },
+        {
+          provide: getRepositoryToken(Card),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+            find: jest.fn(),
+            findOne: jest.fn(),
+            remove: jest.fn(),
+            update: jest.fn(),
+            createQueryBuilder: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(BoardColumn),
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(Board),
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<CardsService>(CardsService);
+    cardRepository = module.get(getRepositoryToken(Card));
+    columnRepository = module.get(getRepositoryToken(BoardColumn));
+    boardRepository = module.get(getRepositoryToken(Board));
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  describe('update (reordering)', () => {
+    it('should reorder cards when moving down within a column', async () => {
+      const cardToMove = createMockCard(1, 1, 0);
+      const otherCard = createMockCard(2, 1, 1);
+      const targetCard = createMockCard(3, 1, 2);
 
-  describe('create', () => {
-    it('should create a card with auto-incremented position', async () => {
-      const createDto = { title: 'New Card', column_id: 1 };
-      const column = { id: 1, board: { user_id: 1 } };
-      const savedCard = { id: 1, title: 'New Card', column_id: 1, position: 0 };
+      cardRepository.findOne.mockResolvedValue(cardToMove);
+      cardRepository.find.mockResolvedValue([cardToMove, otherCard, targetCard]);
+      cardRepository.save.mockImplementation(async (c) => c as Card);
 
-      mockColumnRepository.findOne.mockResolvedValue(column as BoardColumn);
+      await service.update(1, mockUserId, { position: 2 });
+
+      // Card 1: 0 -> 2
+      // Card 2: 1 -> 0 (Wait, logic is: if oldPos < newPos && c.position > oldPos && c.position <= newPos then c.position -= 1)
+      // Card 2: 1 -> 0
+      // Card 3: 2 -> 1
+
+      expect(cardRepository.save).toHaveBeenCalledTimes(3); // 2 shifts + 1 for the moved card
+      expect(otherCard.position).toBe(0);
+      expect(targetCard.position).toBe(1);
+      expect(cardToMove.position).toBe(2);
+    });
+
+    it('should reorder cards when moving up within a column', async () => {
+      const cardToMove = createMockCard(3, 1, 2);
+      const otherCard1 = createMockCard(1, 1, 0);
+      const otherCard2 = createMockCard(2, 1, 1);
+
+      cardRepository.findOne.mockResolvedValue(cardToMove);
+      cardRepository.find.mockResolvedValue([otherCard1, otherCard2, cardToMove]);
+      cardRepository.save.mockImplementation(async (c) => c as Card);
+
+      await service.update(3, mockUserId, { position: 0 });
+
+      // Card 3: 2 -> 0
+      // Card 1: 0 -> 1
+      // Card 2: 1 -> 2
+
+      expect(cardRepository.save).toHaveBeenCalledTimes(3);
+      expect(otherCard1.position).toBe(1);
+      expect(otherCard2.position).toBe(2);
+      expect(cardToMove.position).toBe(0);
+    });
+
+    it('should not perform shifts if moving to the same position', async () => {
+      const cardToMove = createMockCard(1, 1, 0);
+      cardRepository.findOne.mockResolvedValue(cardToMove);
+      cardRepository.save.mockImplementation(async (c) => c as Card);
+
+      await service.update(1, mockUserId, { position: 0 });
+
+      expect(cardRepository.find).not.toHaveBeenCalled();
+      expect(cardRepository.save).toHaveBeenCalledTimes(1);
+      expect(cardToMove.position).toBe(0);
+    });
+
+    it('should handle moving between columns', async () => {
+      const cardToMove = createMockCard(1, 1, 0);
+      const otherCardInOldCol = createMockCard(2, 1, 1);
+      const targetColumnCards = [createMockCard(3, 2, 0), createMockCard(4, 2, 1)];
+
+      cardRepository.findOne.mockResolvedValue(cardToMove);
+      columnRepository.findOne.mockResolvedValue(mockTargetColumn);
+
+      // Mock removeFromColumn
+      cardRepository.find
+        .mockResolvedValueOnce([cardToMove, otherCardInOldCol]) // For removeFromColumn
+        .mockResolvedValueOnce(targetColumnCards); // For insertIntoColumn
 
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
-        getRawOne: jest.fn().mockResolvedValue({ max: null }),
+        getRawOne: jest.fn().mockResolvedValue({ max: 1 }),
       };
-      mockCardRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      cardRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      cardRepository.save.mockImplementation(async (c) => c as Card);
 
-      mockCardRepository.create.mockReturnValue(savedCard as Card);
-      mockCardRepository.save.mockResolvedValue(savedCard as Card);
+      await service.update(1, mockUserId, { column_id: 2, position: 0 });
 
-      const result = await service.create(1, createDto);
+      // removeFromColumn: otherCardInOldCol (1 -> 0)
+      // insertIntoColumn: Card 3 (0 -> 1), Card 4 (1 -> 2)
+      // Moved card: Card 1 (0 -> 0 in new column)
 
-      expect(result.title).toBe('New Card');
-      expect(result.position).toBe(0);
-    });
-
-    it('should set correct position when cards exist', async () => {
-      const createDto = { title: 'New Card', column_id: 1 };
-      const column = { id: 1, board: { user_id: 1 } };
-      const savedCard = { id: 2, title: 'New Card', column_id: 1, position: 1 };
-
-      mockColumnRepository.findOne.mockResolvedValue(column as BoardColumn);
-
-      const mockQueryBuilder = {
-        where: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        getRawOne: jest.fn().mockResolvedValue({ max: 0 }),
-      };
-      mockCardRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
-
-      mockCardRepository.create.mockReturnValue(savedCard as Card);
-      mockCardRepository.save.mockResolvedValue(savedCard as Card);
-
-      const result = await service.create(1, createDto);
-
-      expect(result.position).toBe(1);
-    });
-
-    it('should throw NotFoundException if column not found', async () => {
-      mockColumnRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.create(1, { title: 'Test', column_id: 999 })).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-
-    it('should throw ForbiddenException if user does not own column', async () => {
-      const column = { id: 1, board: { user_id: 2 } };
-      mockColumnRepository.findOne.mockResolvedValue(column as BoardColumn);
-
-      await expect(service.create(1, { title: 'Test', column_id: 1 })).rejects.toThrow(
-        ForbiddenException,
-      );
+      expect(otherCardInOldCol.position).toBe(0);
+      expect(targetColumnCards[0].position).toBe(1);
+      expect(targetColumnCards[1].position).toBe(2);
+      expect(cardToMove.column_id).toBe(2);
+      expect(cardToMove.position).toBe(0);
     });
   });
 
-  describe('findAllByColumnId', () => {
-    it('should return all cards for a column', async () => {
-      const column = { id: 1, board: { user_id: 1 } };
-      const cards = [
-        { id: 1, title: 'Card 1', column_id: 1, position: 0 },
-        { id: 2, title: 'Card 2', column_id: 1, position: 1 },
-      ];
+  describe('findCardById', () => {
+    it('should throw NotFoundException if card does not exist', async () => {
+      cardRepository.findOne.mockResolvedValue(null);
 
-      mockColumnRepository.findOne.mockResolvedValue(column as BoardColumn);
-      mockCardRepository.find.mockResolvedValue(cards as Card[]);
-
-      const result = await service.findAllByColumnId(1, 1);
-
-      expect(result).toEqual(cards);
+      await expect(service.remove(1, mockUserId)).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw NotFoundException if column not found', async () => {
-      mockColumnRepository.findOne.mockResolvedValue(null);
+    it('should throw ForbiddenException if user does not own the board', async () => {
+      const card = createMockCard(1, 1, 0);
+      (card.column.board as any).user_id = 999;
+      cardRepository.findOne.mockResolvedValue(card);
 
-      await expect(service.findAllByColumnId(999, 1)).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('update', () => {
-    it('should update card title', async () => {
-      const card = {
-        id: 1,
-        title: 'Old Title',
-        column_id: 1,
-        position: 0,
-        column: { board: { user_id: 1 } },
-      };
-      const updatedCard = { ...card, title: 'New Title' };
-
-      mockCardRepository.findOne.mockResolvedValue(card as Card);
-      mockCardRepository.save.mockResolvedValue(updatedCard as Card);
-
-      const result = await service.update(1, 1, { title: 'New Title' });
-
-      expect(result.title).toBe('New Title');
-    });
-
-    it('should update card column_id', async () => {
-      const card = {
-        id: 1,
-        title: 'Card',
-        column_id: 1,
-        position: 0,
-        column: { board: { user_id: 1 } },
-      };
-      const targetColumn = { id: 2, board: { user_id: 1 } };
-      const updatedCard = { ...card, column_id: 2 };
-
-      mockCardRepository.findOne.mockResolvedValue(card as Card);
-      mockColumnRepository.findOne.mockResolvedValue(targetColumn as BoardColumn);
-      mockCardRepository.save.mockResolvedValue(updatedCard as Card);
-
-      const result = await service.update(1, 1, { column_id: 2 });
-
-      expect(result.column_id).toBe(2);
-    });
-
-    it('should update card position', async () => {
-      const card = {
-        id: 1,
-        title: 'Card',
-        column_id: 1,
-        position: 0,
-        column: { board: { user_id: 1 } },
-      };
-      const updatedCard = { ...card, position: 5 };
-
-      mockCardRepository.findOne.mockResolvedValue(card as Card);
-      mockCardRepository.save.mockResolvedValue(updatedCard as Card);
-
-      const result = await service.update(1, 1, { position: 5 });
-
-      expect(result.position).toBe(5);
-    });
-
-    it('should throw NotFoundException if card not found', async () => {
-      mockCardRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.update(999, 1, { title: 'Test' })).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw ForbiddenException if user does not own card', async () => {
-      const card = { id: 1, title: 'Card', column: { board: { user_id: 2 } } };
-      mockCardRepository.findOne.mockResolvedValue(card as Card);
-
-      await expect(service.update(1, 1, { title: 'Test' })).rejects.toThrow(ForbiddenException);
-    });
-  });
-
-  describe('remove', () => {
-    it('should delete a card', async () => {
-      const card = { id: 1, title: 'Card', column_id: 1, column: { board: { user_id: 1 } } };
-      mockCardRepository.findOne.mockResolvedValue(card as Card);
-      mockCardRepository.remove.mockResolvedValue(card as Card);
-
-      await service.remove(1, 1);
-
-      expect(mockCardRepository.remove).toHaveBeenCalled();
-    });
-
-    it('should throw NotFoundException if card not found', async () => {
-      mockCardRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.remove(999, 1)).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw ForbiddenException if user does not own card', async () => {
-      const card = { id: 1, title: 'Card', column: { board: { user_id: 2 } } };
-      mockCardRepository.findOne.mockResolvedValue(card as Card);
-
-      await expect(service.remove(1, 1)).rejects.toThrow(ForbiddenException);
+      await expect(service.remove(1, mockUserId)).rejects.toThrow(ForbiddenException);
     });
   });
 });

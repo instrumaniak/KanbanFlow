@@ -10,7 +10,7 @@ interface ColumnDroppableProps {
 
 export function ColumnDroppable({ columnId, children }: ColumnDroppableProps) {
   const { isOver, setNodeRef } = useDroppable({
-    id: columnId,
+    id: `column-${columnId}`,
     data: {
       columnId,
     },

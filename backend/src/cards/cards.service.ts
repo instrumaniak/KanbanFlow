@@ -53,16 +53,16 @@ export class CardsService {
     const oldPosition = card.position;
 
     if (dto.title !== undefined) {
-      card.title = dto.title;
+      await this.cardRepository.update(id, { title: dto.title });
     }
 
     if (dto.column_id !== undefined) {
       await this.findColumnById(dto.column_id, userId);
-      card.column_id = dto.column_id;
+      await this.cardRepository.update(id, { column_id: dto.column_id });
     }
 
     if (dto.position !== undefined) {
-      const targetColumnId = card.column_id;
+      const targetColumnId = dto.column_id ?? oldColumnId;
       const newPosition = dto.position;
 
       if (oldColumnId === targetColumnId && oldPosition !== newPosition) {
@@ -72,13 +72,15 @@ export class CardsService {
         const maxPosition = await this.getMaxPositionInColumn(targetColumnId);
         const targetPosition = Math.min(newPosition, maxPosition + 1);
         await this.insertIntoColumn(targetColumnId, targetPosition);
-        card.position = targetPosition;
-      } else {
-        card.position = newPosition;
       }
+      await this.cardRepository.update(id, { position: dto.position });
     }
 
-    return this.cardRepository.save(card);
+    const updated = await this.cardRepository.findOne({ where: { id } });
+    if (!updated) {
+      throw new NotFoundException('Card not found after update');
+    }
+    return updated;
   }
 
   private async reorderWithinColumn(columnId: number, oldPos: number, newPos: number): Promise<void> {

@@ -8,6 +8,16 @@ import type { DragData } from './use-cards';
 import { useToast } from '@/components/ui/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
+function getCardIdFromDndId(id: string | number): number | undefined {
+  if (typeof id === 'number') return id;
+  if (id.startsWith('card-')) {
+    const parsed = Number(id.slice(5));
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+  const parsed = Number(id);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
 const dropAnimation: DropAnimation = {
   sideEffects: defaultDropAnimationSideEffects({
     styles: {
@@ -58,8 +68,8 @@ export function DragDropContext({ children }: { children: React.ReactNode }) {
 
     if (!activeData || !activeData.card) return;
 
-    const activeId = active.id as number;
-    const overId = over.id as number;
+    const activeId = activeData.cardId;
+    const overId = overData.card?.id ?? getCardIdFromDndId(over.id as string | number);
 
     const sourceColumnId = activeData.card.column_id;
     let targetColumnId: number | undefined;
@@ -83,7 +93,8 @@ export function DragDropContext({ children }: { children: React.ReactNode }) {
       let newIndex: number;
 
       if (isOverACard) {
-        newIndex = newCards.findIndex((c) => c.id === overId);
+        const targetIndex = overId !== undefined ? newCards.findIndex((c) => c.id === overId) : -1;
+        newIndex = targetIndex >= 0 ? targetIndex : newCards.length;
       } else {
         newIndex = newCards.length;
       }
@@ -110,9 +121,7 @@ export function DragDropContext({ children }: { children: React.ReactNode }) {
     const activeData = active.data.current as DragData;
     if (!activeData || !activeData.card) return;
 
-    const cardId = active.id as number;
-    const overId = over.id as number;
-    
+    const cardId = activeData.cardId;
     // 1. Determine final column and position
     const allCardsQueries = queryClient.getQueriesData<Card[]>({ queryKey: ['cards'] });
     let finalColumnId: number | undefined;
@@ -141,7 +150,7 @@ export function DragDropContext({ children }: { children: React.ReactNode }) {
         
         let newIndex: number;
         if (overData.card) {
-          newIndex = cards.findIndex((c) => c.id === overId);
+          newIndex = cards.findIndex((c) => c.id === overData.card.id);
         } else {
           newIndex = cards.length - 1;
         }

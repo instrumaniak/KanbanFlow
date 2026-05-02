@@ -12,6 +12,8 @@ describe('ColumnsController', () => {
     create: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    sortCards: jest.fn(),
+    moveAllCards: jest.fn(),
   };
 
   const mockSession = { userId: 1 };
@@ -109,6 +111,43 @@ describe('ColumnsController', () => {
 
       expect(result.message).toBe('Column deleted');
       expect(mockColumnsService.remove).toHaveBeenCalledWith(1, 1);
+    });
+  });
+
+  describe('sort', () => {
+    it('should sort cards in a column', async () => {
+      const mockColumn = {
+        id: 1,
+        name: 'To Do',
+        position: 0,
+        board_id: 1,
+        cards: [{ id: 1, title: 'Card 1' }],
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
+      mockColumnsService.sortCards.mockResolvedValue(mockColumn);
+
+      const result = await controller.sort(mockSession, 1, { order: 'asc' });
+
+      expect(result.data.id).toBe(1);
+      expect(result.message).toBe('Cards sorted');
+      expect(mockColumnsService.sortCards).toHaveBeenCalledWith(1, 1, 'asc');
+    });
+  });
+
+  describe('moveAll', () => {
+    it('should move all cards to another column', async () => {
+      mockColumnsService.moveAllCards.mockResolvedValue({
+        movedCount: 2,
+        targetName: 'In Progress',
+      });
+
+      const result = await controller.moveAll(mockSession, 1, { targetColumnId: 2 });
+
+      expect(result.data.movedCount).toBe(2);
+      expect(result.message).toBe('2 cards moved to In Progress');
+      expect(mockColumnsService.moveAllCards).toHaveBeenCalledWith(1, 2, 1);
     });
   });
 });

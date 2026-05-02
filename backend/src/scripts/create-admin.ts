@@ -222,7 +222,11 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-main().catch((err) => {
-  console.error('Fatal error:', err);
-  process.exit(1);
-});
+const isDirectRun = process.argv[1]?.endsWith('create-admin.ts');
+
+if (isDirectRun) {
+  main().catch((err) => {
+    console.error('Fatal error:', err);
+    process.exit(1);
+  });
+}

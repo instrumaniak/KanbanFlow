@@ -152,7 +152,7 @@ export class ColumnsService {
 
     await this.cardRepository.manager.transaction(async (manager) => {
       const maxPositionResult = await manager
-        .createQueryBuilder('card', 'card')
+        .createQueryBuilder(Card, 'card')
         .where('card.column_id = :targetId', { targetId })
         .select('MAX(card.position)', 'max')
         .getRawOne();
