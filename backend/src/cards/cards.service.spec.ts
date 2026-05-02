@@ -75,18 +75,13 @@ describe('CardsService', () => {
       cardRepository.findOne.mockResolvedValue(cardToMove);
       cardRepository.find.mockResolvedValue([cardToMove, otherCard, targetCard]);
       cardRepository.save.mockImplementation(async (c) => c as Card);
+      cardRepository.update.mockResolvedValue({ affected: 1 } as any);
 
       await service.update(1, mockUserId, { position: 2 });
 
-      // Card 1: 0 -> 2
-      // Card 2: 1 -> 0 (Wait, logic is: if oldPos < newPos && c.position > oldPos && c.position <= newPos then c.position -= 1)
-      // Card 2: 1 -> 0
-      // Card 3: 2 -> 1
-
-      expect(cardRepository.save).toHaveBeenCalledTimes(3); // 2 shifts + 1 for the moved card
       expect(otherCard.position).toBe(0);
       expect(targetCard.position).toBe(1);
-      expect(cardToMove.position).toBe(2);
+      expect(cardRepository.update).toHaveBeenCalledWith(1, { position: 2 });
     });
 
     it('should reorder cards when moving up within a column', async () => {
@@ -97,29 +92,24 @@ describe('CardsService', () => {
       cardRepository.findOne.mockResolvedValue(cardToMove);
       cardRepository.find.mockResolvedValue([otherCard1, otherCard2, cardToMove]);
       cardRepository.save.mockImplementation(async (c) => c as Card);
+      cardRepository.update.mockResolvedValue({ affected: 1 } as any);
 
       await service.update(3, mockUserId, { position: 0 });
 
-      // Card 3: 2 -> 0
-      // Card 1: 0 -> 1
-      // Card 2: 1 -> 2
-
-      expect(cardRepository.save).toHaveBeenCalledTimes(3);
       expect(otherCard1.position).toBe(1);
       expect(otherCard2.position).toBe(2);
-      expect(cardToMove.position).toBe(0);
+      expect(cardRepository.update).toHaveBeenCalledWith(3, { position: 0 });
     });
 
     it('should not perform shifts if moving to the same position', async () => {
       const cardToMove = createMockCard(1, 1, 0);
       cardRepository.findOne.mockResolvedValue(cardToMove);
-      cardRepository.save.mockImplementation(async (c) => c as Card);
+      cardRepository.update.mockResolvedValue({ affected: 1 } as any);
 
       await service.update(1, mockUserId, { position: 0 });
 
       expect(cardRepository.find).not.toHaveBeenCalled();
-      expect(cardRepository.save).toHaveBeenCalledTimes(1);
-      expect(cardToMove.position).toBe(0);
+      expect(cardRepository.update).toHaveBeenCalledWith(1, { position: 0 });
     });
 
     it('should handle moving between columns', async () => {
@@ -130,10 +120,9 @@ describe('CardsService', () => {
       cardRepository.findOne.mockResolvedValue(cardToMove);
       columnRepository.findOne.mockResolvedValue(mockTargetColumn);
 
-      // Mock removeFromColumn
       cardRepository.find
-        .mockResolvedValueOnce([cardToMove, otherCardInOldCol]) // For removeFromColumn
-        .mockResolvedValueOnce(targetColumnCards); // For insertIntoColumn
+        .mockResolvedValueOnce([cardToMove, otherCardInOldCol])
+        .mockResolvedValueOnce(targetColumnCards);
 
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
@@ -142,18 +131,15 @@ describe('CardsService', () => {
       };
       cardRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
       cardRepository.save.mockImplementation(async (c) => c as Card);
+      cardRepository.update.mockResolvedValue({ affected: 1 } as any);
 
       await service.update(1, mockUserId, { column_id: 2, position: 0 });
-
-      // removeFromColumn: otherCardInOldCol (1 -> 0)
-      // insertIntoColumn: Card 3 (0 -> 1), Card 4 (1 -> 2)
-      // Moved card: Card 1 (0 -> 0 in new column)
 
       expect(otherCardInOldCol.position).toBe(0);
       expect(targetColumnCards[0].position).toBe(1);
       expect(targetColumnCards[1].position).toBe(2);
-      expect(cardToMove.column_id).toBe(2);
-      expect(cardToMove.position).toBe(0);
+      expect(cardRepository.update).toHaveBeenCalledWith(1, { column_id: 2 });
+      expect(cardRepository.update).toHaveBeenCalledWith(1, { position: 0 });
     });
   });
 

@@ -83,18 +83,30 @@ export class CardsService {
     return updated;
   }
 
-  private async reorderWithinColumn(columnId: number, oldPos: number, newPos: number): Promise<void> {
+  private async reorderWithinColumn(
+    columnId: number,
+    oldPos: number,
+    newPos: number,
+  ): Promise<void> {
+    if (oldPos === newPos) return;
+
     const cards = await this.cardRepository.find({
       where: { column_id: columnId },
       order: { position: 'ASC' },
     });
 
+    const maxPos = cards.length - 1;
+    const safeOldPos = Math.max(0, Math.min(oldPos, maxPos));
+    const safeNewPos = Math.max(0, Math.min(newPos, maxPos));
+
+    if (safeOldPos === safeNewPos) return;
+
     const updates: Promise<Card>[] = [];
     for (const c of cards) {
-      if (oldPos < newPos && c.position > oldPos && c.position <= newPos) {
+      if (safeOldPos < safeNewPos && c.position > safeOldPos && c.position <= safeNewPos) {
         c.position -= 1;
         updates.push(this.cardRepository.save(c));
-      } else if (oldPos > newPos && c.position >= newPos && c.position < oldPos) {
+      } else if (safeOldPos > safeNewPos && c.position >= safeNewPos && c.position < safeOldPos) {
         c.position += 1;
         updates.push(this.cardRepository.save(c));
       }
