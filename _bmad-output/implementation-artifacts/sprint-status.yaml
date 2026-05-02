@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19T19:27:21.000Z
-last_updated: 2026-04-30T22:35:00.000Z
+last_updated: 2026-05-02T15:35:00.000Z
 project: trello-clone
 project_key: NOKEY
 tracking_system: file-system
@@ -67,7 +67,7 @@ development_status:
   # Epic 3: Task Capture & Card Management
   epic-3: in-progress
   3-1-card-creation: done
-  3-2-card-editing: backlog
+  3-2-card-editing: done
   3-3-drag-drop-between-columns: backlog
   3-4-drag-drop-within-column: backlog
   3-5-card-deletion: backlog
