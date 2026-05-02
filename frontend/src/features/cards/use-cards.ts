@@ -64,3 +64,9 @@ export function useDeleteCard() {
 }
 
 export type { Card };
+
+export interface DragData {
+  cardId: number;
+  sourceColumnId: number;
+  card: Card;
+}

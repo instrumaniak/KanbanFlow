@@ -1,17 +1,15 @@
-import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
-import { useCallback } from 'react';
-import { useMoveCard } from './use-cards';
+import { useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useMoveCard, type Card } from './use-cards';
+import type { DragData } from './use-cards';
 import { useToast } from '@/components/ui/use-toast';
-
-interface DragData {
-  cardId: number;
-  sourceColumnId: number;
-}
 
 export function DragDropContext({ children }: { children: React.ReactNode }) {
   const moveCardMutation = useMoveCard();
   const { toast } = useToast();
+  const [activeCard, setActiveCard] = useState<Card | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -27,18 +25,24 @@ export function DragDropContext({ children }: { children: React.ReactNode }) {
     })
   );
 
-  const handleDragStart = useCallback((_event: DragStartEvent) => {
-    // Optional: track active card for visual feedback
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const activeData = event.active.data.current as DragData;
+    if (activeData?.card) {
+      setActiveCard(activeData.card);
+    }
   }, []);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveCard(null);
 
     if (!over) {
       return;
     }
 
-    const activeData = active.data.current as DragData;
+    const activeData = active.data.current as DragData | undefined;
+    if (!activeData) return;
+    
     const targetColumnId = over.id as number;
     const cardId = active.id as number;
 
@@ -62,7 +66,7 @@ export function DragDropContext({ children }: { children: React.ReactNode }) {
   }, [moveCardMutation, toast]);
 
   const handleDragCancel = useCallback(() => {
-    // Optional: cleanup on cancel
+    setActiveCard(null);
   }, []);
 
   return (
@@ -73,8 +77,24 @@ export function DragDropContext({ children }: { children: React.ReactNode }) {
       onDragCancel={handleDragCancel}
     >
       {children}
+      {createPortal(
+        <DragOverlay>
+          {activeCard ? (
+            <div
+              style={{
+                position: 'fixed',
+                zIndex: 9999,
+                pointerEvents: 'none',
+              }}
+            >
+              <div className="rounded bg-card p-3 text-sm shadow-lg scale-[1.02]">
+                {activeCard.title}
+              </div>
+            </div>
+          ) : null}
+        </DragOverlay>,
+        document.body
+      )}
     </DndContext>
   );
 }
-
-export type { DragData };

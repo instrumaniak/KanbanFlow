@@ -1,11 +1,10 @@
 import { useDraggable } from '@dnd-kit/core';
 import type { DraggableAttributes } from '@dnd-kit/core';
-import { type Card } from './use-cards';
-import { type DragData } from './drag-drop-context';
+import { type Card as CardType, type DragData } from './use-cards';
 import { useState } from 'react';
 
 interface CardDraggableProps {
-  card: Card;
+  card: CardType;
   isDragDisabled?: boolean;
   children: (props: {
     isDragging: boolean;
@@ -29,6 +28,7 @@ export function CardDraggable({ card, isDragDisabled = false, children }: CardDr
     data: {
       cardId: card.id,
       sourceColumnId: card.column_id ?? undefined,
+      card: card,
     } as DragData,
   });
 
