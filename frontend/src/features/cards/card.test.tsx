@@ -32,12 +32,12 @@ describe('Card', () => {
   });
 
   it('renders card title', () => {
-    renderWithProviders(<Card card={mockCard} />);
+    renderWithProviders(<Card card={mockCard} index={0} />);
     expect(screen.getByText('Test Card')).toBeInTheDocument();
   });
 
   it('enters edit mode when clicked', () => {
-    renderWithProviders(<Card card={mockCard} />);
+    renderWithProviders(<Card card={mockCard} index={0} />);
 
     fireEvent.click(screen.getByText('Test Card'));
 
@@ -45,7 +45,7 @@ describe('Card', () => {
   });
 
   it('cancels and reverts on Escape key', () => {
-    renderWithProviders(<Card card={mockCard} />);
+    renderWithProviders(<Card card={mockCard} index={0} />);
 
     fireEvent.click(screen.getByText('Test Card'));
     fireEvent.change(screen.getByDisplayValue('Test Card'), { target: { value: 'Changed Title' } });
@@ -56,7 +56,7 @@ describe('Card', () => {
   });
 
   it('reverts empty title on blur', () => {
-    renderWithProviders(<Card card={mockCard} />);
+    renderWithProviders(<Card card={mockCard} index={0} />);
 
     fireEvent.click(screen.getByText('Test Card'));
     fireEvent.change(screen.getByDisplayValue('Test Card'), { target: { value: '' } });
@@ -66,7 +66,7 @@ describe('Card', () => {
   });
 
   it('calls mutate with correct payload on save', () => {
-    renderWithProviders(<Card card={mockCard} />);
+    renderWithProviders(<Card card={mockCard} index={0} />);
 
     fireEvent.click(screen.getByText('Test Card'));
     fireEvent.change(screen.getByDisplayValue('Test Card'), { target: { value: 'New Title' } });
@@ -82,7 +82,7 @@ describe('Card', () => {
   });
 
   it('optimistically updates UI immediately on save', () => {
-    renderWithProviders(<Card card={mockCard} />);
+    renderWithProviders(<Card card={mockCard} index={0} />);
 
     fireEvent.click(screen.getByText('Test Card'));
     fireEvent.change(screen.getByDisplayValue('Test Card'), { target: { value: 'New Title' } });
@@ -97,7 +97,7 @@ describe('Card', () => {
       errorCallback = opts?.onError;
     });
 
-    renderWithProviders(<Card card={mockCard} />);
+    renderWithProviders(<Card card={mockCard} index={0} />);
 
     fireEvent.click(screen.getByText('Test Card'));
     fireEvent.change(screen.getByDisplayValue('Test Card'), { target: { value: 'New Title' } });
@@ -107,18 +107,18 @@ describe('Card', () => {
   });
 
   it('triggers edit mode via keyboard Enter', () => {
-    renderWithProviders(<Card card={mockCard} />);
+    renderWithProviders(<Card card={mockCard} index={0} />);
 
-    const cardDiv = screen.getByRole('button');
+    const cardDiv = screen.getByRole('button', { name: /edit card title/i });
     fireEvent.keyDown(cardDiv, { key: 'Enter', code: 'Enter' });
 
     expect(screen.getByDisplayValue('Test Card')).toBeInTheDocument();
   });
 
   it('triggers edit mode via keyboard Space', () => {
-    renderWithProviders(<Card card={mockCard} />);
+    renderWithProviders(<Card card={mockCard} index={0} />);
 
-    const cardDiv = screen.getByRole('button');
+    const cardDiv = screen.getByRole('button', { name: /edit card title/i });
     fireEvent.keyDown(cardDiv, { key: ' ', code: 'Space' });
 
     expect(screen.getByDisplayValue('Test Card')).toBeInTheDocument();

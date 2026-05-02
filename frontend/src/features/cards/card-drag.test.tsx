@@ -24,21 +24,21 @@ describe('Card with Drag', () => {
   const mockCard = { id: 1, title: 'Test Card', column_id: 1, position: 0, created_at: '2024-01-01', updated_at: '2024-01-01' };
 
   it('renders card title', () => {
-    renderWithProviders(<Card card={mockCard} />);
+    renderWithProviders(<Card card={mockCard} index={0} />);
     expect(screen.getByText('Test Card')).toBeInTheDocument();
   });
 
   it('renders card with role button', () => {
-    renderWithProviders(<Card card={mockCard} />);
+    renderWithProviders(<Card card={mockCard} index={0} />);
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 });
 
 describe('CardDraggable', () => {
-  it('has activationConstraint for drag conflict resolution', async () => {
+  it('uses useSortable for within-column reordering', async () => {
     const fs = await import('fs');
     const content = fs.readFileSync('./src/features/cards/card-draggable.tsx', 'utf-8');
-    expect(content).toContain('activationConstraint');
+    expect(content).toContain('useSortable');
   });
 });
 

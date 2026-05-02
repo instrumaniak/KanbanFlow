@@ -5,6 +5,7 @@ import { DragDropContext } from './drag-drop-context';
 
 vi.mock('./use-cards', () => ({
   useMoveCard: () => ({ mutateAsync: vi.fn().mockResolvedValue({}) }),
+  useReorderCard: () => ({ mutateAsync: vi.fn().mockResolvedValue({}) }),
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({

@@ -1,40 +1,47 @@
-import { useDraggable } from '@dnd-kit/core';
-import type { DraggableAttributes } from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import type { CSSProperties } from 'react';
 import { type Card as CardType, type DragData } from './use-cards';
 import { useState } from 'react';
 
 interface CardDraggableProps {
   card: CardType;
+  index: number;
   isDragDisabled?: boolean;
   children: (props: {
     isDragging: boolean;
-    transform: { x: number; y: number } | null;
-    attributes: DraggableAttributes;
+    transform: CSSProperties['transform'] | null;
+    attributes: Record<string, unknown>;
     listeners: Record<string, unknown>;
     setNodeRef: (node: HTMLElement | null) => void;
   }) => React.ReactNode;
 }
 
-export function CardDraggable({ card, isDragDisabled = false, children }: CardDraggableProps) {
+export function CardDraggable({ card, index, isDragDisabled = false, children }: CardDraggableProps) {
   const [isHovered, setIsHovered] = useState(false);
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
+    transition,
     isDragging,
-  } = useDraggable({
+  } = useSortable({
     id: card.id,
+    disabled: isDragDisabled,
     data: {
       cardId: card.id,
       sourceColumnId: card.column_id ?? undefined,
       card: card,
-    } as DragData,
+      index,
+    } as DragData & { index: number },
   });
 
-  const cssTransform = transform
-    ? `translate(${transform.x}px, ${transform.y}px)`
-    : undefined;
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   return (
     <div
@@ -42,25 +49,22 @@ export function CardDraggable({ card, isDragDisabled = false, children }: CardDr
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        transform: cssTransform,
-        opacity: isDragging ? 0.5 : 1,
-        transition: isDragging ? 'none' : 'transform 150ms ease-out, box-shadow 150ms ease-out',
+        ...style,
         boxShadow: isDragging
           ? '0 10px 20px rgba(0,0,0,0.15)'
           : isHovered
           ? '0 4px 6px rgba(0,0,0,0.1)'
           : '0 1px 3px rgba(0,0,0,0.1)',
-        cursor: isDragDisabled ? 'text' : isDragging ? 'grabbing' : isHovered ? 'grab' : 'pointer',
-        pointerEvents: isDragDisabled ? 'none' : 'auto',
+        cursor: isDragDisabled ? 'default' : isDragging ? 'grabbing' : isHovered ? 'grab' : 'pointer',
       }}
-      {...(isDragDisabled ? {} : listeners as Record<string, unknown>)}
-      {...(isDragDisabled ? {} : attributes)}
+      {...(isDragDisabled ? {} : listeners)}
+      {...(isDragDisabled ? {} : { ...attributes })}
     >
       {children({
         isDragging,
-        transform,
-        attributes,
-        listeners: listeners as Record<string, unknown>,
+        transform: transform ? CSS.Transform.toString(transform) : null,
+        attributes: { ...attributes } as Record<string, unknown>,
+        listeners: { ...listeners } as Record<string, unknown>,
         setNodeRef,
       })}
     </div>

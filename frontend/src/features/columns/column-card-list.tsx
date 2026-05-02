@@ -1,3 +1,4 @@
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { Card } from '../cards/use-cards';
 import { Card as CardComponent } from '../cards/card';
 
@@ -7,17 +8,27 @@ interface ColumnCardListProps {
 }
 
 export function ColumnCardList({ cards, newCardId }: ColumnCardListProps) {
-  if (cards.length === 0) {
+  if (!cards || cards.length === 0) {
     return null;
   }
 
   return (
     <div className="flex-1 overflow-y-auto p-2">
-      <div className="space-y-2">
-        {cards.map((card) => (
-          <CardComponent key={card.id} card={card} isNew={card.id === newCardId} />
-        ))}
-      </div>
+      <SortableContext
+        items={cards.map((c) => c.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div className="space-y-2" data-card-count={cards.length}>
+          {cards.map((card, index) => (
+            <CardComponent
+              key={card.id}
+              card={card}
+              index={index}
+              isNew={card.id === newCardId}
+            />
+          ))}
+        </div>
+      </SortableContext>
     </div>
   );
 }

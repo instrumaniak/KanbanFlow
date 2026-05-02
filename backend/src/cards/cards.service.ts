@@ -49,6 +49,8 @@ export class CardsService {
 
   async update(id: number, userId: number, dto: UpdateCardDto): Promise<Card> {
     const card = await this.findCardById(id, userId);
+    const oldColumnId = card.column_id;
+    const oldPosition = card.position;
 
     if (dto.title !== undefined) {
       card.title = dto.title;
@@ -60,10 +62,83 @@ export class CardsService {
     }
 
     if (dto.position !== undefined) {
-      card.position = dto.position;
+      const targetColumnId = card.column_id;
+      const newPosition = dto.position;
+
+      if (oldColumnId === targetColumnId && oldPosition !== newPosition) {
+        await this.reorderWithinColumn(targetColumnId, oldPosition, newPosition);
+      } else if (oldColumnId !== targetColumnId) {
+        await this.removeFromColumn(oldColumnId, oldPosition);
+        const maxPosition = await this.getMaxPositionInColumn(targetColumnId);
+        const targetPosition = Math.min(newPosition, maxPosition + 1);
+        await this.insertIntoColumn(targetColumnId, targetPosition);
+        card.position = targetPosition;
+      } else {
+        card.position = newPosition;
+      }
     }
 
     return this.cardRepository.save(card);
+  }
+
+  private async reorderWithinColumn(columnId: number, oldPos: number, newPos: number): Promise<void> {
+    const cards = await this.cardRepository.find({
+      where: { column_id: columnId },
+      order: { position: 'ASC' },
+    });
+
+    const updates: Promise<Card>[] = [];
+    for (const c of cards) {
+      if (oldPos < newPos && c.position > oldPos && c.position <= newPos) {
+        c.position -= 1;
+        updates.push(this.cardRepository.save(c));
+      } else if (oldPos > newPos && c.position >= newPos && c.position < oldPos) {
+        c.position += 1;
+        updates.push(this.cardRepository.save(c));
+      }
+    }
+    await Promise.all(updates);
+  }
+
+  private async removeFromColumn(columnId: number, position: number): Promise<void> {
+    const cards = await this.cardRepository.find({
+      where: { column_id: columnId },
+      order: { position: 'ASC' },
+    });
+
+    const updates: Promise<Card>[] = [];
+    for (const c of cards) {
+      if (c.position > position) {
+        c.position -= 1;
+        updates.push(this.cardRepository.save(c));
+      }
+    }
+    await Promise.all(updates);
+  }
+
+  private async insertIntoColumn(columnId: number, position: number): Promise<void> {
+    const cards = await this.cardRepository.find({
+      where: { column_id: columnId },
+      order: { position: 'ASC' },
+    });
+
+    const updates: Promise<Card>[] = [];
+    for (const c of cards) {
+      if (c.position >= position) {
+        c.position += 1;
+        updates.push(this.cardRepository.save(c));
+      }
+    }
+    await Promise.all(updates);
+  }
+
+  private async getMaxPositionInColumn(columnId: number): Promise<number> {
+    const result = await this.cardRepository
+      .createQueryBuilder('card')
+      .where('card.column_id = :columnId', { columnId })
+      .select('MAX(card.position)', 'max')
+      .getRawOne();
+    return result?.max ?? -1;
   }
 
   async remove(id: number, userId: number): Promise<void> {

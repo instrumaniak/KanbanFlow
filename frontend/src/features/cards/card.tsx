@@ -4,10 +4,11 @@ import { CardDraggable } from './card-draggable';
 
 interface CardProps {
   card: CardType;
+  index: number;
   isNew?: boolean;
 }
 
-export function Card({ card, isNew }: CardProps) {
+export function Card({ card, index, isNew }: CardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(card.title);
   const [isSaving, setIsSaving] = useState(false);
@@ -76,7 +77,7 @@ export function Card({ card, isNew }: CardProps) {
   };
 
   return (
-    <CardDraggable card={card} isDragDisabled={isDragDisabled}>
+    <CardDraggable card={card} index={index} isDragDisabled={isDragDisabled}>
       {({ isDragging }) => (
         <div
           role="button"
