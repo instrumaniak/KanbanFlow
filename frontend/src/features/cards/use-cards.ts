@@ -40,6 +40,18 @@ export function useUpdateCard() {
   });
 }
 
+export function useMoveCard() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateCardData }) =>
+      updateCard(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+    },
+  });
+}
+
 export function useDeleteCard() {
   const queryClient = useQueryClient();
   return useMutation({

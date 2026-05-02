@@ -1,8 +1,8 @@
-import { type Card as CardType } from './columns.api';
+import type { Card } from '../cards/use-cards';
 import { Card as CardComponent } from '../cards/card';
 
 interface ColumnCardListProps {
-  cards: CardType[];
+  cards: Card[];
   newCardId?: number;
 }
 

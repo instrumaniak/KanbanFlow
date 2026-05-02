@@ -6,6 +6,7 @@ import { useColumns, useCreateColumn } from '../../columns/use-columns';
 import { Column } from '../../columns/column';
 import { AddColumnButton } from '../../columns/add-column-button';
 import { useToast } from '@/components/ui/use-toast';
+import { DragDropContext } from '../../cards/drag-drop-context';
 
 export function BoardView() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -59,12 +60,14 @@ export function BoardView() {
       </div>
 
       <div className="flex-1 overflow-x-auto">
-        <div className="flex h-full gap-6 p-6 pb-6">
-          {columns?.map((column) => (
-            <Column key={column.id} column={column} allColumns={columns} />
-          ))}
-          <AddColumnButton onClick={handleAddColumn} />
-        </div>
+        <DragDropContext>
+          <div className="flex h-full gap-6 p-6 pb-6">
+            {columns?.map((column) => (
+              <Column key={column.id} column={column} allColumns={columns} />
+            ))}
+            <AddColumnButton onClick={handleAddColumn} />
+          </div>
+        </DragDropContext>
       </div>
     </div>
   );

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { ColumnCardList } from './column-card-list';
 import { ColumnHeader } from './column-header';
+import { ColumnDroppable } from './column-droppable';
 import { AddCardInput } from '../cards/add-card-input';
 import { type Column as ColumnType } from './use-columns';
-import type { Card } from '../cards/use-cards';
+import type { Card as CardType2 } from '../cards/use-cards';
 
 interface ColumnProps {
   column: ColumnType;
@@ -16,7 +17,7 @@ export function Column({ column, allColumns = [], onDeleted }: ColumnProps) {
   const nextColumn = allColumns.find((c) => c.position === column.position + 1);
   const nextColumnId = nextColumn?.id;
 
-  const handleCardCreated = (card: Card) => {
+  const handleCardCreated = (card: CardType2) => {
     setNewCardId(card.id);
     setTimeout(() => setNewCardId(undefined), 500);
   };
@@ -25,7 +26,17 @@ export function Column({ column, allColumns = [], onDeleted }: ColumnProps) {
     <div className="flex h-full min-w-[320px] max-w-[320px] shrink-0 flex-col rounded-lg" data-column-id={column.id}>
       <ColumnHeader column={column} allColumns={allColumns} onDeleted={onDeleted} />
 
-      <ColumnCardList cards={column.cards || []} newCardId={newCardId} />
+      <ColumnDroppable columnId={column.id}>
+        {({ isOver }) => (
+          <div
+            className={`flex-1 overflow-y-auto p-2 transition-colors ${
+              isOver ? 'bg-teal-500/10' : ''
+            }`}
+          >
+            <ColumnCardList cards={column.cards as CardType2[]} newCardId={newCardId} />
+          </div>
+        )}
+      </ColumnDroppable>
 
       <div className="p-2">
         <AddCardInput columnId={column.id} nextColumnId={nextColumnId} onCardCreated={handleCardCreated} />

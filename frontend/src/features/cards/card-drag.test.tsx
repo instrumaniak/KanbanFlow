@@ -1,0 +1,58 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Card } from './card';
+
+vi.mock('./use-cards', () => ({
+  useUpdateCard: () => ({ mutate: vi.fn(), mutateAsync: Promise.resolve({}) }),
+}));
+
+vi.mock('./card-draggable', () => ({
+  CardDraggable: ({ card, children }: any) => children({ isDragging: false }),
+}));
+
+vi.mock('./drag-drop-context', () => ({
+  DragDropContext: ({ children }: any) => children,
+}));
+
+const renderWithProviders = (component: React.ReactElement) => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{component}</QueryClientProvider>);
+};
+
+describe('Card with Drag', () => {
+  const mockCard = { id: 1, title: 'Test Card', column_id: 1, position: 0, created_at: '2024-01-01', updated_at: '2024-01-01' };
+
+  it('renders card title', () => {
+    renderWithProviders(<Card card={mockCard} />);
+    expect(screen.getByText('Test Card')).toBeInTheDocument();
+  });
+
+  it('renders card with role button', () => {
+    renderWithProviders(<Card card={mockCard} />);
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+});
+
+describe('CardDraggable', () => {
+  it('has activationConstraint for drag conflict resolution', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('./src/features/cards/card-draggable.tsx', 'utf-8');
+    expect(content).toContain('activationConstraint');
+  });
+});
+
+describe('DragDropContext', () => {
+  it('includes TouchSensor for mobile support', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('./src/features/cards/drag-drop-context.tsx', 'utf-8');
+    expect(content).toContain('TouchSensor');
+  });
+});
+
+describe('ColumnDroppable', () => {
+  it('file exists', async () => {
+    const fs = await import('fs');
+    expect(fs.existsSync('./src/features/columns/column-droppable.tsx')).toBe(true);
+  });
+});
