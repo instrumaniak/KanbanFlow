@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { BoardCard, InlineEditForm, DeleteDialog } from './board-card';
 import { ToastProvider } from '@/components/ui/use-toast';
@@ -56,10 +56,11 @@ describe('BoardCard', () => {
     expect(screen.getByText('Test Board')).toBeInTheDocument();
   });
 
-  it('renders with background color', () => {
+  it('renders the board card container', () => {
     const { container } = renderWithToastAndRouter(<BoardCard board={mockBoard} onEdit={vi.fn()} onDelete={vi.fn()} />);
     const card = container.firstChild as HTMLElement;
-    expect(card.style.backgroundColor).toBe('rgb(0, 121, 191)');
+    expect(card).toBeInTheDocument();
+    expect(card).toHaveTextContent('Test Board');
   });
 
   it('shows edit button on hover', async () => {
@@ -120,7 +121,7 @@ describe('InlineEditForm', () => {
     expect(input).toHaveValue('Test Board');
   });
 
-  it('renders color buttons', () => {
+  it('renders project select', () => {
     renderWithToastAndRouter(
       <InlineEditForm
         initialValue="Test"
@@ -133,8 +134,8 @@ describe('InlineEditForm', () => {
       />
     );
     
-    const buttons = document.querySelectorAll('button[type="button"]');
-    expect(buttons.length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Board name')).toHaveValue('Test');
+    expect(screen.getByText('Project')).toBeInTheDocument();
   });
 
   it('calls onCancel on Escape key', () => {
@@ -160,31 +161,36 @@ describe('InlineEditForm', () => {
 describe('DeleteDialog', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it.skip('renders dialog when open', () => {
-    const { container } = renderWithToastAndRouter(
-      <DeleteDialog
-        boardName="Test Board"
-        boardId={1}
-        open={true}
-        onOpenChange={vi.fn()}
-        onDeleted={vi.fn()}
-      />
-    );
-    
-    expect(container.querySelector('[role="dialog"]')).toBeInTheDocument();
+  it('renders dialog when open', async () => {
+    await act(async () => {
+      renderWithToastAndRouter(
+        <DeleteDialog
+          boardName="Test Board"
+          boardId={1}
+          open={true}
+          onOpenChange={vi.fn()}
+          onDeleted={vi.fn()}
+        />
+      );
+    });
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Archive board')).toBeInTheDocument();
   });
 
-  it.skip('does not render dialog when closed', () => {
-    const { container } = renderWithToastAndRouter(
-      <DeleteDialog
-        boardName="Test Board"
-        boardId={1}
-        open={false}
-        onOpenChange={vi.fn()}
-        onDeleted={vi.fn()}
-      />
-    );
-    
-    expect(container.querySelector('[role="dialog"]')).not.toBeInTheDocument();
+  it('does not render dialog when closed', async () => {
+    await act(async () => {
+      renderWithToastAndRouter(
+        <DeleteDialog
+          boardName="Test Board"
+          boardId={1}
+          open={false}
+          onOpenChange={vi.fn()}
+          onDeleted={vi.fn()}
+        />
+      );
+    });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

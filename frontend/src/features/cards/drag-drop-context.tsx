@@ -7,6 +7,7 @@ import { useMoveCard, useReorderCard, type Card } from './use-cards';
 import type { DragData } from './use-cards';
 import { useToast } from '@/components/ui/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import type { Column } from '../columns/columns.api';
 
 function getCardIdFromDndId(id: string | number): number | undefined {
   if (typeof id === 'number') return id;
@@ -16,6 +17,15 @@ function getCardIdFromDndId(id: string | number): number | undefined {
   }
   const parsed = Number(id);
   return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function getColumnIdFromDndId(id: string | number): number | undefined {
+  if (typeof id === 'number') return id;
+  if (id.startsWith('column-')) {
+    const parsed = Number(id.slice(7));
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+  return undefined;
 }
 
 const dropAnimation: DropAnimation = {
@@ -28,7 +38,12 @@ const dropAnimation: DropAnimation = {
   }),
 };
 
-export function DragDropContext({ children }: { children: React.ReactNode }) {
+interface DragDropContextProps {
+  boardId: number;
+  children: React.ReactNode;
+}
+
+export function DragDropContext({ boardId, children }: DragDropContextProps) {
   const moveCardMutation = useMoveCard();
   const reorderCardMutation = useReorderCard();
   const queryClient = useQueryClient();
@@ -52,6 +67,17 @@ export function DragDropContext({ children }: { children: React.ReactNode }) {
     })
   );
 
+  const getColumns = useCallback((): Column[] | undefined => {
+    return queryClient.getQueryData<Column[]>(['columns', boardId]);
+  }, [queryClient, boardId]);
+
+  const setColumns = useCallback((updater: (old: Column[]) => Column[]): void => {
+    queryClient.setQueryData<Column[]>(['columns', boardId], (old) => {
+      if (!old) return old;
+      return updater(old);
+    });
+  }, [queryClient, boardId]);
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const activeData = event.active.data.current as DragData;
     if (activeData?.card) {
@@ -59,58 +85,13 @@ export function DragDropContext({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const handleDragOver = useCallback((event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeData = active.data.current as DragData;
-    const overData = over.data.current as { card?: Card; columnId?: number; index?: number };
-
-    if (!activeData || !activeData.card) return;
-
-    const activeId = activeData.cardId;
-    const overId = overData.card?.id ?? getCardIdFromDndId(over.id as string | number);
-
-    const sourceColumnId = activeData.card.column_id;
-    let targetColumnId: number | undefined;
-
-    if (overData.columnId !== undefined) {
-      targetColumnId = overData.columnId;
-    } else if (overData.card?.column_id !== undefined) {
-      targetColumnId = overData.card.column_id;
-    }
-
-    if (targetColumnId === undefined || sourceColumnId === targetColumnId) return;
-
-    // Moving between columns
-    queryClient.setQueryData<Card[]>(['cards', sourceColumnId], (old) => {
-      return old?.filter((c) => c.id !== activeId);
-    });
-
-    queryClient.setQueryData<Card[]>(['cards', targetColumnId], (old) => {
-      const newCards = [...(old || [])];
-      const isOverACard = overData.card !== undefined;
-      let newIndex: number;
-
-      if (isOverACard) {
-        const targetIndex = overId !== undefined ? newCards.findIndex((c) => c.id === overId) : -1;
-        newIndex = targetIndex >= 0 ? targetIndex : newCards.length;
-      } else {
-        newIndex = newCards.length;
-      }
-
-      const movedCard = { ...activeData.card, column_id: targetColumnId };
-      newCards.splice(newIndex, 0, movedCard);
-
-      // Update the active data to reflect the new column for future drag over events
-      active.data.current = {
-        ...activeData,
-        card: movedCard,
-      };
-
-      return newCards;
-    });
-  }, [queryClient]);
+  const handleDragOver = useCallback((_event: DragOverEvent) => {
+    // We intentionally do NOT update the React Query cache here.
+    // Updating the cache during drag causes React to unmount/remount
+    // card components between columns, which breaks dnd-kit's internal
+    // DOM tracking and prevents handleDragEnd from firing.
+    // The DragOverlay provides visual feedback during the drag instead.
+  }, []);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -122,81 +103,129 @@ export function DragDropContext({ children }: { children: React.ReactNode }) {
     if (!activeData || !activeData.card) return;
 
     const cardId = activeData.cardId;
-    // 1. Determine final column and position
-    const allCardsQueries = queryClient.getQueriesData<Card[]>({ queryKey: ['cards'] });
-    let finalColumnId: number | undefined;
-    let finalPosition: number | undefined;
-    const originalColumnId = activeData.sourceColumnId; // The column it started in
+    const originalColumnId = activeData.sourceColumnId;
+    const columns = getColumns();
+    if (!columns) return;
 
-    // Find which column the card is currently in (it might have moved during onDragOver)
-    for (const [queryKey, cards] of allCardsQueries) {
-      const index = cards?.findIndex((c) => c.id === cardId);
-      if (index !== -1 && index !== undefined) {
-        finalColumnId = queryKey[1] as number;
-        finalPosition = index;
+    // Find which column the card is in and its position
+    let sourceColumn: Column | undefined;
+    let sourceCardIndex = -1;
+
+    for (const col of columns) {
+      const idx = col.cards.findIndex((c) => c.id === cardId);
+      if (idx !== -1) {
+        sourceColumn = col;
+        sourceCardIndex = idx;
         break;
       }
     }
 
-    if (finalColumnId === undefined || finalPosition === undefined) return;
+    if (!sourceColumn || sourceCardIndex === -1) return;
 
-    // 2. If it's the same column, dnd-kit sortable might have moved it visually but we need the actual new index
-    // if onDragOver didn't handle it (which it doesn't for same-column).
-    if (originalColumnId === finalColumnId) {
-      const cards = queryClient.getQueryData<Card[]>(['cards', finalColumnId]);
-      if (cards) {
-        const oldIndex = cards.findIndex((c) => c.id === cardId);
-        const overData = over.data.current as { card?: Card; index?: number };
-        
-        let newIndex: number;
-        if (overData.card) {
-          newIndex = cards.findIndex((c) => c.id === overData.card.id);
-        } else {
-          newIndex = cards.length - 1;
-        }
+    const overId = over.id as string;
+    let targetColumnId: number;
 
-        if (oldIndex !== newIndex) {
-          finalPosition = newIndex;
-          // Optimistically update the cache for the reorder
-          queryClient.setQueryData<Card[]>(['cards', finalColumnId], (old) => {
-            if (!old) return [];
-            return arrayMove(old, oldIndex, newIndex).map((c, i) => ({ ...c, position: i }));
-          });
-        } else {
-          // No change in position
-          return;
+    // Determine target column from the 'over' item
+    const overColumnId = over.data.current
+      ? (over.data.current as { columnId?: number }).columnId
+      : undefined;
+
+    if (overColumnId !== undefined) {
+      targetColumnId = overColumnId;
+    } else {
+      // Find which column the 'over' item belongs to
+      const overCardId = getCardIdFromDndId(overId) ?? (over.data.current as { card?: Card })?.card?.id;
+      for (const col of columns) {
+        if (col.cards.some((c) => c.id === overCardId)) {
+          targetColumnId = col.id;
+          break;
         }
+      }
+      if (targetColumnId === undefined) {
+        // 'over' might be a column itself
+        targetColumnId = getColumnIdFromDndId(overId) ?? sourceColumn.id;
       }
     }
 
-    // 3. Persist the change
-    if (originalColumnId === finalColumnId) {
-      try {
-        await reorderCardMutation.mutateAsync({
-          id: cardId,
-          position: finalPosition,
+    const isSameColumn = sourceColumn.id === targetColumnId;
+
+    if (isSameColumn) {
+      // Same-column reorder
+      const overData = over.data.current as { card?: Card; index?: number };
+      const cards = sourceColumn.cards;
+
+      let newIndex: number;
+      if (overData?.card) {
+        newIndex = cards.findIndex((c) => c.id === overData.card.id);
+      } else {
+        newIndex = cards.length - 1;
+      }
+
+      if (sourceCardIndex === newIndex) return;
+
+      setColumns((columns) => {
+        return columns.map((col) => {
+          if (col.id !== sourceColumn.id) return col;
+          const reordered = arrayMove(col.cards, sourceCardIndex, newIndex).map((c, i) => ({
+            ...c,
+            position: i,
+          }));
+          return { ...col, cards: reordered };
         });
+      });
+
+      try {
+        await reorderCardMutation.mutateAsync({ id: cardId, position: newIndex });
         toast({ title: 'Card reordered', type: 'success' });
-      } catch (err) {
+      } catch {
         toast({ title: 'Failed to reorder card', type: 'error' });
+        queryClient.invalidateQueries({ queryKey: ['columns', boardId] });
       }
     } else {
-      try {
-        await moveCardMutation.mutateAsync({
-          id: cardId,
-          data: { column_id: finalColumnId, position: finalPosition },
+      // Cross-column move
+      const targetColumn = columns.find((col) => col.id === targetColumnId);
+      if (!targetColumn) return;
+
+      const overData = over.data.current as { card?: Card; index?: number };
+      const targetCards = targetColumn.cards;
+
+      let insertIndex: number;
+      if (overData?.card) {
+        insertIndex = targetCards.findIndex((c => c.id === overData.card.id));
+        if (insertIndex === -1) insertIndex = targetCards.length;
+      } else {
+        insertIndex = targetCards.length;
+      }
+
+      setColumns((columns) => {
+        return columns.map((col) => {
+          if (col.id === sourceColumn.id) {
+            return { ...col, cards: col.cards.filter((c) => c.id !== cardId) };
+          }
+          if (col.id === targetColumnId) {
+            const movedCard = { ...activeData.card, column_id: targetColumnId, position: insertIndex };
+            const newCards = [...col.cards];
+            newCards.splice(insertIndex, 0, movedCard);
+            return { ...col, cards: newCards.map((c, i) => ({ ...c, position: i })) };
+          }
+          return col;
         });
+      });
+
+      try {
+        await moveCardMutation.mutateAsync({ id: cardId, data: { column_id: targetColumnId, position: insertIndex } });
         toast({ title: 'Card moved', type: 'success' });
-      } catch (err) {
+      } catch {
         toast({ title: 'Failed to move card', type: 'error' });
+        queryClient.invalidateQueries({ queryKey: ['columns', boardId] });
       }
     }
-  }, [moveCardMutation, reorderCardMutation, queryClient, toast]);
+  }, [moveCardMutation, reorderCardMutation, queryClient, toast, boardId, getColumns, setColumns]);
 
   const handleDragCancel = useCallback(() => {
     setActiveCard(null);
-    queryClient.invalidateQueries({ queryKey: ['cards'] });
-  }, [queryClient]);
+    queryClient.invalidateQueries({ queryKey: ['columns', boardId] });
+  }, [queryClient, boardId]);
 
   return (
     <DndContext

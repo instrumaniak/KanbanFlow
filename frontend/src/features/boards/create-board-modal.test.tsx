@@ -41,7 +41,6 @@ describe('CreateBoardModal', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('Create new board')).toBeInTheDocument();
     expect(screen.getByLabelText(/Board name/i)).toBeInTheDocument();
-    expect(screen.getByText('Background color')).toBeInTheDocument();
     expect(screen.getByText('Project (optional)')).toBeInTheDocument();
   });
 
@@ -85,19 +84,11 @@ describe('CreateBoardModal', () => {
     expect(createButton).toBeEnabled();
   });
 
-  it('renders background color buttons', () => {
-    renderWithRouter(<CreateBoardModal open={true} onOpenChange={vi.fn()} />);
-
-    const colorButtons = document.querySelectorAll('button[aria-label^="Select"]');
-    expect(colorButtons.length).toBe(8);
-  });
-
   it('renders project dropdown with options', () => {
     renderWithRouter(<CreateBoardModal open={true} onOpenChange={vi.fn()} />);
 
-    const select = screen.getByRole('combobox');
-    expect(select).toBeInTheDocument();
     expect(screen.getByText('No project')).toBeInTheDocument();
     expect(screen.getByText('Project 1')).toBeInTheDocument();
+    expect(screen.getByText('Project 2')).toBeInTheDocument();
   });
 });

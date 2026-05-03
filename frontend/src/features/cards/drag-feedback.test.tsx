@@ -71,10 +71,7 @@ describe('UI Feedback', () => {
         </CardDraggable>
       );
 
-      const draggableContainer = screen.getByText('Card Content').parentElement?.parentElement;
-      if (draggableContainer) {
-        console.log('Container styles:', draggableContainer.style.opacity);
-      }
+      const draggableContainer = screen.getByText('Card Content').parentElement!;
       expect(draggableContainer).toHaveStyle({ opacity: '0.5' });
     });
 
@@ -87,7 +84,7 @@ describe('UI Feedback', () => {
         </CardDraggable>
       );
 
-      const draggableContainer = screen.getByText('Card Content').parentElement?.parentElement;
+      const draggableContainer = screen.getByText('Card Content').parentElement!;
       expect(draggableContainer).toHaveStyle('opacity: 1');
     });
   });

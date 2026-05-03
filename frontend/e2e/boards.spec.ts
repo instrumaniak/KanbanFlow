@@ -199,7 +199,26 @@ test.describe('Board Archiving', () => {
     await page.waitForTimeout(1000);
   });
 
-  test('permanently deletes an archived board', async ({ page }) => {
+  test('permanently deletes an archived board', async ({ page, request }) => {
+    // Create and archive a specific board for this test
+    const boardName = `Board to Permanent Delete ${Date.now()}`;
+    const loginRes = await request.post('http://localhost:3000/api/auth/login', {
+      data: { email: TEST_EMAIL, password: TEST_PASSWORD },
+    });
+    const cookies = loginRes.headers()['set-cookie'] || '';
+
+    const createRes = await request.post('http://localhost:3000/api/boards', {
+      data: { name: boardName },
+      headers: { Cookie: cookies },
+    });
+    const boardData = await createRes.json();
+    const boardId = boardData.data.id;
+
+    // Archive the board
+    await request.patch(`http://localhost:3000/api/boards/${boardId}/archive`, {
+      headers: { Cookie: cookies },
+    });
+
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
@@ -209,15 +228,11 @@ test.describe('Board Archiving', () => {
     await page.goto('/archived-boards');
     await page.waitForTimeout(500);
 
-    const boardCard = page.locator('.group').first();
-    const isVisible = await boardCard.isVisible().catch(() => false);
-    if (!isVisible) {
-      test.skip();
-    }
+    const boardNameLocator = page.getByText(boardName);
+    await expect(boardNameLocator).toBeVisible();
+    const boardCard = boardNameLocator.locator('..');
 
-    await expect(boardCard).toBeVisible();
-
-    const deleteButton = page.getByRole('button', { name: /delete/i }).first();
+    const deleteButton = boardCard.getByRole('button', { name: /delete/i });
     await deleteButton.click();
 
     // Verify the permanent delete dialog appears

@@ -71,6 +71,7 @@ interface InlineEditFormProps {
   projects: Array<{ id: number; name: string }>;
   onSave: () => void;
   onCancel: () => void;
+  backgroundColor?: string;
 }
 
 export function InlineEditForm({

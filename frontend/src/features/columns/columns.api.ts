@@ -1,6 +1,10 @@
 export interface Card {
   id: number;
   title: string;
+  column_id: number;
+  position: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Column {

@@ -13,6 +13,7 @@ export function Card({ card, index, isNew }: CardProps) {
   const [editValue, setEditValue] = useState(card.title);
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
   const updateCard = useUpdateCard();
 
   const isDragDisabled = isEditing || isSaving;
@@ -25,15 +26,27 @@ export function Card({ card, index, isNew }: CardProps) {
   }, [isEditing]);
 
   const handleClick = (e: React.MouseEvent) => {
+    if (pointerDownPos.current) {
+      const dx = e.clientX - pointerDownPos.current.x;
+      const dy = e.clientY - pointerDownPos.current.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      pointerDownPos.current = null;
+      if (distance > 5) return;
+    }
     e.stopPropagation();
     setEditValue(card.title);
     setIsEditing(true);
   };
 
+  const handlePointerDown = (e: React.PointerEvent) => {
+    pointerDownPos.current = { x: e.clientX, y: e.clientY };
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isEditing && (e.key === ' ' || e.key === 'Enter')) {
       e.preventDefault();
-      handleClick(e as unknown as React.MouseEvent);
+      setEditValue(card.title);
+      setIsEditing(true);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       (e.target as HTMLInputElement).blur();
@@ -85,6 +98,7 @@ export function Card({ card, index, isNew }: CardProps) {
           aria-label="Edit card title"
           className={`rounded bg-card p-3 text-sm shadow-sm hover:bg-accent/50 cursor-pointer ${isNew ? 'animate-slide-up' : ''} ${isDragging ? 'shadow-lg scale-[1.02]' : ''}`}
           onClick={handleClick}
+          onPointerDown={handlePointerDown}
           onKeyDown={handleKeyDown}
           style={{
             cursor: isDragging ? 'grabbing' : 'grab',

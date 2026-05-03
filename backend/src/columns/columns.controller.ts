@@ -29,7 +29,7 @@ interface ColumnResponse {
   name: string;
   position: number;
   board_id: number;
-  cards: { id: number; title: string }[];
+  cards: { id: number; title: string; column_id: number; position: number; created_at: string; updated_at: string }[];
   created_at: string;
   updated_at: string;
 }
@@ -51,7 +51,7 @@ export class ColumnsController {
       name: col.name,
       position: col.position,
       board_id: col.board_id,
-      cards: col.cards ? col.cards.map((c) => ({ id: c.id, title: c.title })) : [],
+      cards: col.cards ? [...col.cards].sort((a, b) => a.position - b.position).map((c) => ({ id: c.id, title: c.title, column_id: c.column_id, position: c.position, created_at: c.created_at.toISOString(), updated_at: c.updated_at.toISOString() })) : [],
       created_at: col.created_at.toISOString(),
       updated_at: col.updated_at.toISOString(),
     }));
@@ -129,7 +129,7 @@ export class ColumnsController {
       name: column.name,
       position: column.position,
       board_id: column.board_id,
-      cards: column.cards ? column.cards.map((c) => ({ id: c.id, title: c.title })) : [],
+      cards: column.cards ? [...column.cards].sort((a, b) => a.position - b.position).map((c) => ({ id: c.id, title: c.title, column_id: c.column_id, position: c.position, created_at: c.created_at.toISOString(), updated_at: c.updated_at.toISOString() })) : [],
       created_at: column.created_at.toISOString(),
       updated_at: column.updated_at.toISOString(),
     };

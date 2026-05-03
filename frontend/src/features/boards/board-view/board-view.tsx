@@ -60,7 +60,7 @@ export function BoardView() {
       </div>
 
       <div className="flex-1 overflow-x-auto">
-        <DragDropContext>
+        <DragDropContext boardId={id}>
           <div className="flex h-full gap-6 p-6 pb-6">
             {columns?.map((column) => (
               <Column key={column.id} column={column} allColumns={columns} />
