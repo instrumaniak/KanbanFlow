@@ -103,7 +103,6 @@ export function DragDropContext({ boardId, children }: DragDropContextProps) {
     if (!activeData || !activeData.card) return;
 
     const cardId = activeData.cardId;
-    const originalColumnId = activeData.sourceColumnId;
     const columns = getColumns();
     if (!columns) return;
 
@@ -123,7 +122,7 @@ export function DragDropContext({ boardId, children }: DragDropContextProps) {
     if (!sourceColumn || sourceCardIndex === -1) return;
 
     const overId = over.id as string;
-    let targetColumnId: number;
+    let targetColumnId: number | undefined;
 
     // Determine target column from the 'over' item
     const overColumnId = over.data.current
@@ -145,6 +144,8 @@ export function DragDropContext({ boardId, children }: DragDropContextProps) {
         // 'over' might be a column itself
         targetColumnId = getColumnIdFromDndId(overId) ?? sourceColumn.id;
       }
+
+      if (targetColumnId === undefined) return;
     }
 
     const isSameColumn = sourceColumn.id === targetColumnId;
@@ -156,7 +157,8 @@ export function DragDropContext({ boardId, children }: DragDropContextProps) {
 
       let newIndex: number;
       if (overData?.card) {
-        newIndex = cards.findIndex((c) => c.id === overData.card.id);
+        const cardIdx = cards.findIndex((c) => c.id === overData.card!.id);
+        newIndex = cardIdx !== -1 ? cardIdx : cards.length - 1;
       } else {
         newIndex = cards.length - 1;
       }
@@ -191,7 +193,8 @@ export function DragDropContext({ boardId, children }: DragDropContextProps) {
 
       let insertIndex: number;
       if (overData?.card) {
-        insertIndex = targetCards.findIndex((c => c.id === overData.card.id));
+        const cardIdx = targetCards.findIndex((c) => c.id === overData.card!.id);
+        insertIndex = cardIdx !== -1 ? cardIdx : targetCards.length;
         if (insertIndex === -1) insertIndex = targetCards.length;
       } else {
         insertIndex = targetCards.length;
