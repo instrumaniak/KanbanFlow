@@ -1,6 +1,6 @@
 # Story 3.4: Drag-Drop Within Column
 
-Status: review
+Status: done
 
 ---
 
