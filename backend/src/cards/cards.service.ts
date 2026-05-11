@@ -21,18 +21,22 @@ export class CardsService {
   async create(userId: number, dto: CreateCardDto): Promise<Card> {
     const column = await this.findColumnById(dto.column_id, userId);
 
-    const maxPositionResult = await this.cardRepository
-      .createQueryBuilder('card')
-      .where('card.column_id = :columnId', { columnId: dto.column_id })
-      .select('MAX(card.position)', 'max')
-      .getRawOne();
-
-    const maxPosition = maxPositionResult?.max ?? -1;
+    let position: number;
+    if (dto.position !== undefined) {
+      position = dto.position;
+    } else {
+      const maxPositionResult = await this.cardRepository
+        .createQueryBuilder('card')
+        .where('card.column_id = :columnId', { columnId: dto.column_id })
+        .select('MAX(card.position)', 'max')
+        .getRawOne();
+      position = (maxPositionResult?.max ?? -1) + 1;
+    }
 
     const card = this.cardRepository.create({
       title: dto.title,
       column_id: dto.column_id,
-      position: maxPosition + 1,
+      position,
     });
 
     return this.cardRepository.save(card);

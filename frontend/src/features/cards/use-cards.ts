@@ -9,9 +9,14 @@ import {
   type Card,
 } from './cards.api';
 
+const cardKeys = {
+  byColumn: (columnId: number) => ['cards', columnId] as const,
+  all: () => ['cards'] as const,
+};
+
 export function useCards(columnId: number) {
   return useQuery({
-    queryKey: ['cards', columnId],
+    queryKey: cardKeys.byColumn(columnId),
     queryFn: () => fetchCards(columnId).then((res) => res.data),
     enabled: !!columnId,
   });
@@ -22,7 +27,7 @@ export function useCreateCard() {
   return useMutation({
     mutationFn: (data: CreateCardData) => createCard(data),
     onSuccess: (_, { column_id }) => {
-      queryClient.invalidateQueries({ queryKey: ['cards', column_id] });
+      queryClient.invalidateQueries({ queryKey: cardKeys.byColumn(column_id) });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
   });
@@ -34,7 +39,7 @@ export function useUpdateCard() {
     mutationFn: ({ id, data }: { id: number; data: UpdateCardData }) =>
       updateCard(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      queryClient.invalidateQueries({ queryKey: cardKeys.all() });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
   });
@@ -153,7 +158,32 @@ export function useDeleteCard() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteCard(id),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['cards'] });
+      const allCardsQueries = queryClient.getQueriesData<Card[]>({ queryKey: ['cards'] });
+      const previousCards: { columnId: number; cards: Card[] | undefined }[] = [];
+
+      for (const [queryKey, cards] of allCardsQueries) {
+        const columnId = queryKey[1] as number;
+        const card = cards?.find((c) => c.id === id);
+        if (card) {
+          previousCards.push({ columnId, cards });
+          queryClient.setQueryData<Card[]>(['cards', columnId], (old) =>
+            old?.filter((c) => c.id !== id),
+          );
+        }
+      }
+
+      return { previousCards };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previousCards) {
+        context.previousCards.forEach(({ columnId, cards }) => {
+          queryClient.setQueryData(['cards', columnId], cards);
+        });
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['cards'] });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },

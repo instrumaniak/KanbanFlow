@@ -121,7 +121,16 @@ describe('ColumnsController', () => {
         name: 'To Do',
         position: 0,
         board_id: 1,
-        cards: [{ id: 1, title: 'Card 1', column_id: 1, position: 0, created_at: new Date(), updated_at: new Date() }],
+        cards: [
+          {
+            id: 1,
+            title: 'Card 1',
+            column_id: 1,
+            position: 0,
+            created_at: new Date(),
+            updated_at: new Date(),
+          },
+        ],
         created_at: new Date(),
         updated_at: new Date(),
       };

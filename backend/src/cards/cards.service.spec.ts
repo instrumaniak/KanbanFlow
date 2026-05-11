@@ -158,4 +158,33 @@ describe('CardsService', () => {
       await expect(service.remove(1, mockUserId)).rejects.toThrow(ForbiddenException);
     });
   });
+
+  describe('remove', () => {
+    it('should delete card when user has valid ownership', async () => {
+      const card = createMockCard(1, 1, 0);
+      (card.column.board as any).user_id = mockUserId;
+      cardRepository.findOne.mockResolvedValue(card);
+      cardRepository.remove.mockResolvedValue(card);
+
+      await service.remove(1, mockUserId);
+
+      expect(cardRepository.remove).toHaveBeenCalledWith(card);
+    });
+
+    it('should throw NotFoundException when deleting non-existent card', async () => {
+      cardRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.remove(999, mockUserId)).rejects.toThrow(NotFoundException);
+      expect(cardRepository.remove).not.toHaveBeenCalled();
+    });
+
+    it('should throw ForbiddenException when user does not own the board', async () => {
+      const card = createMockCard(1, 1, 0);
+      (card.column.board as any).user_id = 999;
+      cardRepository.findOne.mockResolvedValue(card);
+
+      await expect(service.remove(1, mockUserId)).rejects.toThrow(ForbiddenException);
+      expect(cardRepository.remove).not.toHaveBeenCalled();
+    });
+  });
 });

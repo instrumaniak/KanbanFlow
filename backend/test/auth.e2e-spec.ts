@@ -203,7 +203,8 @@ describe('Auth API (e2e)', () => {
         .send({ email: sessionEmail, password: sessionPassword })
         .expect(200);
 
-      const setCookieHeader = (loginRes.headers['set-cookie'] as unknown as string[] | undefined) ?? [];
+      const setCookieHeader =
+        (loginRes.headers['set-cookie'] as unknown as string[] | undefined) ?? [];
       expect(setCookieHeader.length).toBeGreaterThan(0);
       const sessionCookie = setCookieHeader[0].split(';')[0];
 

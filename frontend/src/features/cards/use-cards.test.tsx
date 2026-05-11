@@ -1,0 +1,138 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactNode } from 'react';
+import { useDeleteCard, useCreateCard, useCards } from './use-cards';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false },
+    mutations: { retry: false },
+  },
+});
+
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+);
+
+vi.mock('./cards.api', () => ({
+  fetchCards: vi.fn(),
+  createCard: vi.fn(),
+  updateCard: vi.fn(),
+  deleteCard: vi.fn(),
+}));
+
+import { fetchCards, createCard, deleteCard } from './cards.api';
+const mockFetchCards = fetchCards as ReturnType<typeof vi.fn>;
+const mockCreateCard = createCard as ReturnType<typeof vi.fn>;
+const mockDeleteCard = deleteCard as ReturnType<typeof vi.fn>;
+
+describe('useDeleteCard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient.clear();
+  });
+
+  it('optimistically removes card from cache on mutate', async () => {
+    const mockCards = [
+      { id: 1, title: 'Card 1', column_id: 1, position: 0, created_at: '2024-01-01', updated_at: '2024-01-01' },
+      { id: 2, title: 'Card 2', column_id: 1, position: 1, created_at: '2024-01-01', updated_at: '2024-01-01' },
+    ];
+
+    queryClient.setQueryData(['cards', 1], mockCards);
+    mockDeleteCard.mockResolvedValue({ message: 'Card deleted' });
+
+    const { result } = renderHook(() => useDeleteCard(), { wrapper });
+
+    result.current.mutate(1);
+
+    await waitFor(() => {
+      const cachedCards = queryClient.getQueryData<typeof mockCards>(['cards', 1]);
+      expect(cachedCards).toHaveLength(1);
+      expect(cachedCards?.[0].id).toBe(2);
+    });
+  });
+
+  it('rolls back cache on error', async () => {
+    const mockCards = [
+      { id: 1, title: 'Card 1', column_id: 1, position: 0, created_at: '2024-01-01', updated_at: '2024-01-01' },
+    ];
+
+    queryClient.setQueryData(['cards', 1], mockCards);
+    mockDeleteCard.mockRejectedValue(new Error('Delete failed'));
+
+    const { result } = renderHook(() => useDeleteCard(), { wrapper });
+
+    result.current.mutate(1);
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    const cachedCards = queryClient.getQueryData<typeof mockCards>(['cards', 1]);
+    expect(cachedCards).toEqual(mockCards);
+  });
+
+  it('invalidates queries on settled', async () => {
+    mockDeleteCard.mockResolvedValue({ message: 'Card deleted' });
+
+    const { result } = renderHook(() => useDeleteCard(), { wrapper });
+
+    result.current.mutate(1);
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(mockDeleteCard).toHaveBeenCalledWith(1);
+  });
+});
+
+describe('useCreateCard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient.clear();
+  });
+
+  it('creates card with position and invalidates queries', async () => {
+    mockCreateCard.mockResolvedValue({
+      data: { id: 3, title: 'New Card', column_id: 1, position: 2, created_at: '2024-01-01', updated_at: '2024-01-01' },
+    });
+
+    const { result } = renderHook(() => useCreateCard(), { wrapper });
+
+    await result.current.mutateAsync({
+      title: 'New Card',
+      column_id: 1,
+      position: 2,
+    });
+
+    expect(mockCreateCard).toHaveBeenCalledWith({
+      title: 'New Card',
+      column_id: 1,
+      position: 2,
+    });
+  });
+});
+
+describe('useCards', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient.clear();
+  });
+
+  it('fetches cards for a column', async () => {
+    const mockCards = [
+      { id: 1, title: 'Card 1', column_id: 1, position: 0, created_at: '2024-01-01', updated_at: '2024-01-01' },
+    ];
+
+    mockFetchCards.mockResolvedValue({ data: mockCards });
+
+    const { result } = renderHook(() => useCards(1), { wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data).toEqual(mockCards);
+    expect(mockFetchCards).toHaveBeenCalledWith(1);
+  });
+});

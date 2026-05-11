@@ -35,6 +35,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export interface CreateCardData {
   title: string;
   column_id: number;
+  position?: number;
 }
 
 export async function createCard(data: CreateCardData): Promise<ApiResponse<Card>> {

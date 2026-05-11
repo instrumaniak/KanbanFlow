@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, MaxLength, IsOptional } from 'class-validator';
 
 export class CreateCardDto {
   @ApiProperty({ example: 'Buy groceries' })
@@ -12,4 +12,9 @@ export class CreateCardDto {
   @IsNumber()
   @IsNotEmpty()
   column_id!: number;
+
+  @ApiProperty({ example: 0, required: false })
+  @IsOptional()
+  @IsNumber()
+  position?: number;
 }

@@ -1,13 +1,30 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Card } from './card';
 
 const mockMutate = vi.fn();
-const mockMutateObj = { mutate: mockMutate, mutateAsync: mockMutate };
+const mockMutateAsync = vi.fn();
+const mockMutateObj = { mutate: mockMutate, mutateAsync: mockMutateAsync, isPending: false };
+const mockDeleteMutate = vi.fn();
+const mockDeleteMutateAsync = vi.fn();
+const mockDeleteMutateObj = { mutate: mockDeleteMutate, mutateAsync: mockDeleteMutateAsync, isPending: false };
+const mockCreateMutateAsync = vi.fn();
+const mockCreateMutateObj = { mutate: vi.fn(), mutateAsync: mockCreateMutateAsync, isPending: false };
+
+const mockToast = vi.fn();
 
 vi.mock('./use-cards', () => ({
   useUpdateCard: () => mockMutateObj,
+  useDeleteCard: () => mockDeleteMutateObj,
+  useCreateCard: () => mockCreateMutateObj,
+}));
+
+vi.mock('@/components/ui/use-toast', () => ({
+  useToast: () => ({
+    toast: mockToast,
+  }),
 }));
 
 const renderWithProviders = (component: React.ReactElement) => {
@@ -122,5 +139,198 @@ describe('Card', () => {
     fireEvent.keyDown(cardDiv, { key: ' ', code: 'Space' });
 
     expect(screen.getByDisplayValue('Test Card')).toBeInTheDocument();
+  });
+
+  describe('Card menu and deletion', () => {
+    it('shows card menu trigger button', () => {
+      renderWithProviders(<Card card={mockCard} index={0} />);
+      const menuButton = screen.getByRole('button', { name: /card menu/i });
+      expect(menuButton).toBeInTheDocument();
+    });
+
+    it('calls delete mutation when confirming delete', async () => {
+      const user = userEvent.setup();
+      mockDeleteMutate.mockImplementation((id, opts) => {
+        opts?.onSuccess?.();
+      });
+
+      renderWithProviders(<Card card={mockCard} index={0} />);
+
+      const card = screen.getByText('Test Card').closest('div')!;
+      await user.hover(card);
+
+      const menuButton = screen.getByRole('button', { name: /card menu/i });
+      await user.click(menuButton);
+
+      const deleteItem = await screen.findByRole('menuitem', { name: /delete/i });
+      await user.click(deleteItem);
+
+      const confirmBtn = await screen.findByRole('button', { name: /^delete$/i });
+      await user.click(confirmBtn);
+
+      await waitFor(() => {
+        expect(mockDeleteMutate).toHaveBeenCalledWith(
+          mockCard.id,
+          expect.objectContaining({
+            onSuccess: expect.any(Function),
+            onError: expect.any(Function),
+          })
+        );
+      });
+    });
+
+    describe('Card deletion undo', () => {
+      it('shows undo action in toast after successful delete', async () => {
+        const user = userEvent.setup();
+        mockDeleteMutate.mockImplementation((id, opts) => {
+          opts?.onSuccess?.();
+        });
+
+        renderWithProviders(<Card card={mockCard} index={0} />);
+
+        const card = screen.getByText('Test Card').closest('div')!;
+        await user.hover(card);
+
+        const menuButton = screen.getByRole('button', { name: /card menu/i });
+        await user.click(menuButton);
+
+        const deleteItem = await screen.findByRole('menuitem', { name: /delete/i });
+        await user.click(deleteItem);
+
+        const confirmBtn = await screen.findByRole('button', { name: /^delete$/i });
+        await user.click(confirmBtn);
+
+        await waitFor(() => {
+          expect(mockToast).toHaveBeenCalledWith(
+            expect.objectContaining({
+              title: 'Card deleted',
+              type: 'destructive',
+              action: expect.objectContaining({
+                label: 'Undo',
+              }),
+            })
+          );
+        });
+      });
+
+      it('clicking Undo in toast calls createCardMutation with card data', async () => {
+        const user = userEvent.setup();
+        let undoAction: (() => void) | undefined;
+
+        mockDeleteMutate.mockImplementation((id, opts) => {
+          opts?.onSuccess?.();
+        });
+
+        mockToast.mockImplementation((args) => {
+          if (args.action?.onClick) {
+            undoAction = args.action.onClick;
+          }
+        });
+
+        mockCreateMutateAsync.mockResolvedValue({ data: { ...mockCard, id: 2 } });
+
+        renderWithProviders(<Card card={mockCard} index={0} />);
+
+        const card = screen.getByText('Test Card').closest('div')!;
+        await user.hover(card);
+
+        const menuButton = screen.getByRole('button', { name: /card menu/i });
+        await user.click(menuButton);
+
+        const deleteItem = await screen.findByRole('menuitem', { name: /delete/i });
+        await user.click(deleteItem);
+
+        const confirmBtn = await screen.findByRole('button', { name: /^delete$/i });
+        await user.click(confirmBtn);
+
+        await waitFor(() => {
+          expect(undoAction).toBeDefined();
+        });
+
+        await undoAction!();
+
+        await waitFor(() => {
+          expect(mockCreateMutateAsync).toHaveBeenCalledWith({
+            title: mockCard.title,
+            column_id: mockCard.column_id,
+            position: mockCard.position,
+          });
+        });
+
+        expect(mockToast).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'Card restored to original position', type: 'success' })
+        );
+      });
+
+      it('shows error toast when delete fails', async () => {
+        const user = userEvent.setup();
+        mockDeleteMutate.mockImplementation((id, opts) => {
+          opts?.onError?.(new Error('Delete failed'));
+        });
+
+        renderWithProviders(<Card card={mockCard} index={0} />);
+
+        const card = screen.getByText('Test Card').closest('div')!;
+        await user.hover(card);
+
+        const menuButton = screen.getByRole('button', { name: /card menu/i });
+        await user.click(menuButton);
+
+        const deleteItem = await screen.findByRole('menuitem', { name: /delete/i });
+        await user.click(deleteItem);
+
+        const confirmBtn = await screen.findByRole('button', { name: /^delete$/i });
+        await user.click(confirmBtn);
+
+        await waitFor(() => {
+          expect(mockToast).toHaveBeenCalledWith(
+            expect.objectContaining({ title: 'Failed to delete card', type: 'error' })
+          );
+        });
+      });
+
+      it('shows error toast when undo fails', async () => {
+        const user = userEvent.setup();
+        let undoAction: (() => void) | undefined;
+
+        mockDeleteMutate.mockImplementation((id, opts) => {
+          opts?.onSuccess?.();
+        });
+
+        mockToast.mockImplementation((args) => {
+          if (args.action?.onClick) {
+            undoAction = args.action.onClick;
+          }
+        });
+
+        mockCreateMutateAsync.mockRejectedValue(new Error('Create failed'));
+
+        renderWithProviders(<Card card={mockCard} index={0} />);
+
+        const card = screen.getByText('Test Card').closest('div')!;
+        await user.hover(card);
+
+        const menuButton = screen.getByRole('button', { name: /card menu/i });
+        await user.click(menuButton);
+
+        const deleteItem = await screen.findByRole('menuitem', { name: /delete/i });
+        await user.click(deleteItem);
+
+        const confirmBtn = await screen.findByRole('button', { name: /^delete$/i });
+        await user.click(confirmBtn);
+
+        await waitFor(() => {
+          expect(undoAction).toBeDefined();
+        });
+
+        await undoAction!();
+
+        await waitFor(() => {
+          expect(mockToast).toHaveBeenCalledWith(
+            expect.objectContaining({ title: 'Failed to restore card', type: 'error' })
+          );
+        });
+      });
+    });
   });
 });

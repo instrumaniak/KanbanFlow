@@ -1,6 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
-import { useUpdateCard, type Card as CardType } from './use-cards';
+import { useUpdateCard, useDeleteCard, useCreateCard, type Card as CardType } from './use-cards';
 import { CardDraggable } from './card-draggable';
+import { MoreHorizontal, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 interface CardProps {
   card: CardType;
@@ -12,9 +31,13 @@ export function Card({ card, index, isNew }: CardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(card.title);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
   const updateCard = useUpdateCard();
+  const deleteCard = useDeleteCard();
+  const createCardMutation = useCreateCard();
+  const { toast } = useToast();
 
   const isDragDisabled = isEditing || isSaving;
 
@@ -89,14 +112,47 @@ export function Card({ card, index, isNew }: CardProps) {
     setIsEditing(false);
   };
 
+  const handleDelete = () => {
+    const deletedCard = { ...card };
+    setShowDeleteDialog(false);
+    deleteCard.mutate(card.id, {
+      onSuccess: () => {
+        toast({
+          title: 'Card deleted',
+          type: 'destructive',
+          duration: 30000,
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              try {
+                await createCardMutation.mutateAsync({
+                  title: deletedCard.title,
+                  column_id: deletedCard.column_id,
+                  position: deletedCard.position,
+                });
+                toast({ title: 'Card restored to original position', type: 'success' });
+              } catch {
+                toast({ title: 'Failed to restore card', type: 'error' });
+              }
+            },
+          },
+        });
+      },
+      onError: () => {
+        toast({ title: 'Failed to delete card', type: 'error' });
+      },
+    });
+  };
+
   return (
+    <>
     <CardDraggable card={card} index={index} isDragDisabled={isDragDisabled}>
       {({ isDragging }) => (
         <div
           role="button"
           tabIndex={0}
           aria-label="Edit card title"
-          className={`rounded bg-card p-3 text-sm shadow-sm hover:bg-accent/50 cursor-pointer ${isNew ? 'animate-slide-up' : ''} ${isDragging ? 'shadow-lg scale-[1.02]' : ''}`}
+          className={`group rounded bg-card p-3 text-sm shadow-sm hover:bg-accent/50 cursor-pointer ${isNew ? 'animate-slide-up' : ''} ${isDragging ? 'shadow-lg scale-[1.02]' : ''}`}
           onClick={handleClick}
           onPointerDown={handlePointerDown}
           onKeyDown={handleKeyDown}
@@ -108,7 +164,7 @@ export function Card({ card, index, isNew }: CardProps) {
             <input
               ref={inputRef}
               type="text"
-              value={isSaving ? editValue : editValue}
+              value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               onBlur={handleSave}
               onKeyDown={handleKeyDown}
@@ -119,10 +175,62 @@ export function Card({ card, index, isNew }: CardProps) {
               className="w-full bg-transparent outline-none border-b border-primary disabled:opacity-50"
             />
           ) : (
-            <span className="block">{card.title}</span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex-1">{card.title}</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-1 h-auto opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    aria-label="Card menu"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDeleteDialog(true);
+                    }}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
       )}
     </CardDraggable>
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete card?</AlertDialogTitle>
+          <AlertDialogDescription>
+            The card &quot;{card.title || 'this card'}&quot; will be deleted. You can restore it from the notification.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            disabled={deleteCard.isPending}
+            className={deleteCard.isPending ? 'opacity-50 cursor-not-allowed' : ''}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete();
+            }}
+          >
+            {deleteCard.isPending ? 'Deleting...' : 'Delete'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

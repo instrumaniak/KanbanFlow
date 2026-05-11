@@ -5,6 +5,12 @@ import { Card } from './card';
 
 vi.mock('./use-cards', () => ({
   useUpdateCard: () => ({ mutate: vi.fn(), mutateAsync: Promise.resolve({}) }),
+  useDeleteCard: () => ({ mutate: vi.fn(), mutateAsync: Promise.resolve({}) }),
+  useCreateCard: () => ({ mutate: vi.fn(), mutateAsync: Promise.resolve({}) }),
+}));
+
+vi.mock('@/components/ui/use-toast', () => ({
+  useToast: () => ({ toast: vi.fn() }),
 }));
 
 vi.mock('./card-draggable', () => ({
@@ -30,7 +36,7 @@ describe('Card with Drag', () => {
 
   it('renders card with role button', () => {
     renderWithProviders(<Card card={mockCard} index={0} />);
-    expect(screen.getByRole('button')).toBeInTheDocument();
+    expect(screen.getAllByRole('button').length).toBeGreaterThan(0);
   });
 });
 
