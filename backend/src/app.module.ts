@@ -1,5 +1,5 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { DataSource } from 'typeorm';
@@ -17,6 +17,7 @@ import { Session } from './sessions/entities/session.entity';
 import * as cookieParser from 'cookie-parser';
 import session from 'express-session';
 import { TypeormStore } from 'connect-typeorm';
+import { buildDataSourceOptions } from './database/data-source-options';
 
 @Module({
   imports: [
@@ -26,20 +27,7 @@ import { TypeormStore } from 'connect-typeorm';
       validate,
     }),
     TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'mysql',
-        host: config.get<string>('database.host'),
-        port: config.get<number>('database.port'),
-        username: config.get<string>('database.username'),
-        password: config.get<string>('database.password'),
-        database: config.get<string>('database.name'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        migrations: [__dirname + '/migrations/*{.ts,.js}'],
-        migrationsTableName: 'typeorm_migrations',
-        migrationsRun: false,
-        synchronize: false,
-      }),
+      useFactory: () => buildDataSourceOptions(),
     }),
     ThrottlerModule.forRoot([
       {

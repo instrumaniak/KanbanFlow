@@ -3,23 +3,7 @@ import { DataSource } from 'typeorm';
 import bcrypt from 'bcrypt';
 import inquirer from 'inquirer';
 import { User } from '../users/entities/user.entity';
-import { Project } from '../projects/entities/project.entity';
-import { Board } from '../boards/entities/board.entity';
-import { BoardColumn } from '../columns/entities/column.entity';
-import { Card } from '../cards/entities/card.entity';
-
-const dataSourceOptions = {
-  type: 'mysql' as const,
-  host: process.env.DB_HOST ?? 'localhost',
-  port: Number(process.env.DB_PORT ?? '3306'),
-  username: process.env.DB_USERNAME ?? 'root',
-  password: process.env.DB_PASSWORD ?? '',
-  database: process.env.DB_NAME ?? 'kanbanflow_dev',
-  entities: [User, Project, Board, BoardColumn, Card],
-  migrations: [__dirname + '/migrations/*{.ts,.js}'],
-  migrationsTableName: 'typeorm_migrations',
-  synchronize: false,
-};
+import { buildDataSourceOptions } from '../database/data-source-options';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*\d|[!@#$%^&*])[a-zA-Z\d!@#$%^&*]{8,}$/;
@@ -66,7 +50,7 @@ export function parseArgs(args: string[]): CliArgs {
 
 function showHelp(): void {
   console.log(`
-Usage: npm run create-admin [options]
+Usage: node create-admin.js [options]
 
 Options:
   --email=<email>     Admin email address
@@ -74,9 +58,9 @@ Options:
   --help, -h          Show this help message
 
 Examples:
-  npm run create-admin                    # Interactive mode
-  npm run create-admin -- --email=admin@example.com  # Hybrid mode
-  npm run create-admin -- --email=admin@example.com --password=SecurePass123  # Scripted mode
+  node create-admin.js                    # Interactive mode
+  node create-admin.js --email=admin@example.com  # Hybrid mode
+  node create-admin.js --email=admin@example.com --password=SecurePass123  # Scripted mode
 
 Security Warning: Using --password exposes the value in shell history.
 Use interactive mode for better security.
@@ -133,11 +117,24 @@ interface DatabaseError {
 }
 
 async function main(): Promise<void> {
+  let exitCode = 0;
+  let dataSource: DataSource | undefined;
+
   try {
     await mainInternal();
   } catch (error) {
     console.error('Fatal error:', error);
-    process.exit(1);
+    exitCode = 1;
+  } finally {
+    if (dataSource?.isInitialized) {
+      try {
+        await dataSource.destroy();
+      } catch (destroyError) {
+        console.error('Failed to destroy data source:', destroyError);
+        exitCode = 1;
+      }
+    }
+    process.exitCode = exitCode;
   }
 }
 
@@ -146,87 +143,72 @@ export async function mainInternal(args = process.argv.slice(2)): Promise<void> 
 
   if (parsedArgs.help) {
     showHelp();
-    process.exit(0);
+    return;
   }
 
   if (!process.env.DB_HOST && !process.env.DB_PORT) {
     console.error(ERROR_MESSAGES.missingEnv);
-    process.exit(1);
+    throw new Error('Missing environment configuration');
   }
 
   let email = parsedArgs.email;
   let password = parsedArgs.password;
 
+  if (!email) {
+    email = await promptEmail();
+  }
+
+  if (!password) {
+    password = await promptPassword();
+  }
+
+  const emailError = validateEmail(email);
+  if (emailError) {
+    console.error(emailError);
+    throw new Error('Email validation failed');
+  }
+
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    console.error(passwordError);
+    throw new Error('Password validation failed');
+  }
+
+  const dataSource = new DataSource(buildDataSourceOptions());
+  await dataSource.initialize();
+
   try {
-    if (!email) {
-      email = await promptEmail();
+    const userRepo = dataSource.getRepository(User);
+
+    const existingAdmin = await userRepo.findOne({
+      where: { role: 'admin' },
+    });
+
+    if (existingAdmin) {
+      console.error(ERROR_MESSAGES.duplicateAdmin);
+      throw new Error('Admin already exists');
     }
 
-    if (!password) {
-      password = await promptPassword();
-    }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const emailError = validateEmail(email);
-    if (emailError) {
-      console.error(emailError);
-      process.exit(1);
-    }
+    await userRepo.insert({
+      email,
+      password: hashedPassword,
+      role: 'admin',
+    });
 
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      console.error(passwordError);
-      process.exit(1);
-    }
-
-    const dataSource = new DataSource(dataSourceOptions);
-    await dataSource.initialize();
-
-    try {
-      const userRepo = dataSource.getRepository(User);
-
-      const existingAdmin = await userRepo.findOne({
-        where: { role: 'admin' },
-      });
-
-      if (existingAdmin) {
-        console.error(ERROR_MESSAGES.duplicateAdmin);
-        process.exit(1);
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      await userRepo.insert({
-        email,
-        password: hashedPassword,
-        role: 'admin',
-      });
-
-      console.log(`✅ Admin user created successfully: ${email}`);
-      process.exit(0);
-    } finally {
+    console.log(`Admin user created successfully: ${email}`);
+  } finally {
+    if (dataSource.isInitialized) {
       await dataSource.destroy();
     }
-  } catch (error: unknown) {
-    const dbError = error as DatabaseError;
-    if (dbError.code === 'ER_ACCESS_DENIED_ERROR' || dbError.code === 'ECONNREFUSED') {
-      console.error(ERROR_MESSAGES.databaseError);
-    } else {
-      console.error('Error:', dbError.message || 'Unknown error occurred');
-    }
-    process.exit(1);
   }
 }
 
 process.on('SIGINT', () => {
   console.log('\nOperation cancelled.');
-  process.exit(0);
+  process.exitCode = 0;
 });
 
-const isDirectRun = process.argv[1]?.endsWith('create-admin.ts');
-
-if (isDirectRun) {
-  main().catch((err) => {
-    console.error('Fatal error:', err);
-    process.exit(1);
-  });
-}
+// This script is always executed directly as a CLI tool.
+main();

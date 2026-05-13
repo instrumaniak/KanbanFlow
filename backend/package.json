@@ -25,7 +25,12 @@
     "migration:revert": "npm run typeorm migration:revert -- -d src/data-source.ts",
     "migration:show": "npm run typeorm migration:show -- -d src/data-source.ts",
     "db:sync": "npm run migration:run",
-    "create-admin": "ts-node -r tsconfig-paths/register src/scripts/create-admin.ts"
+    "create-admin": "ts-node -r tsconfig-paths/register src/scripts/create-admin.ts",
+    "build:release": "rm -rf release/ && nest build --webpack && npm run release:install",
+    "release:install": "node src/scripts/prepare-release.js",
+    "migrate:release": "node release/migrate.js",
+    "create-admin:release": "node release/create-admin.js",
+    "test:release": "node src/scripts/verify-release.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
