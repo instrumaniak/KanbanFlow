@@ -14,11 +14,28 @@ vi.mock('@/components/ui/use-toast', () => ({
 }));
 
 vi.mock('./card-draggable', () => ({
-  CardDraggable: ({ card, children }: any) => children({ isDragging: false }),
+  CardDraggable: ({
+    children,
+  }: {
+    children: (props: {
+      isDragging: boolean;
+      transform: null;
+      attributes: Record<string, unknown>;
+      listeners: Record<string, unknown>;
+      setNodeRef: () => void;
+    }) => React.ReactNode;
+  }) =>
+    children({
+      isDragging: false,
+      transform: null,
+      attributes: {},
+      listeners: {},
+      setNodeRef: vi.fn(),
+    }),
 }));
 
 vi.mock('./drag-drop-context', () => ({
-  DragDropContext: ({ children }: any) => children,
+  DragDropContext: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 const renderWithProviders = (component: React.ReactElement) => {

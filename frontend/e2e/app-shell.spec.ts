@@ -59,7 +59,6 @@ test.describe('App shell & navigation', () => {
   });
 
   test('sidebar shows "No projects yet" when empty', async ({ page }) => {
-    const sidebar = page.locator('aside');
     const headerToggle = page.locator('header').getByRole('button', { name: 'Toggle sidebar' });
 
     await headerToggle.click();

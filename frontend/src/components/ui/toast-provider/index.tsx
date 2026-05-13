@@ -1,27 +1,5 @@
 import * as React from 'react';
-
-type ToastType = 'default' | 'success' | 'error' | 'destructive';
-
-interface ToastAction {
-  label: string;
-  onClick: () => void;
-}
-
-interface Toast {
-  id: string;
-  title: string;
-  description?: string;
-  type: ToastType;
-  action?: ToastAction;
-}
-
-interface ToastContextType {
-  toasts: Toast[];
-  toast: (options: { title: string; description?: string; type?: ToastType; action?: ToastAction }) => void;
-  dismiss: (id: string) => void;
-}
-
-const ToastContext = React.createContext<ToastContextType | undefined>(undefined);
+import { ToastContext, type Toast, type ToastAction, type ToastType } from '../use-toast/context';
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<Toast[]>([]);
@@ -92,12 +70,4 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  const context = React.useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
 }

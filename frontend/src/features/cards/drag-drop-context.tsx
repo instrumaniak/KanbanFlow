@@ -1,6 +1,6 @@
 import { DndContext, MouseSensor, TouchSensor, KeyboardSensor, useSensor, useSensors, DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
-import type { DragEndEvent, DragStartEvent, DragOverEvent, DropAnimation } from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent, DropAnimation } from '@dnd-kit/core';
 import { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMoveCard, useReorderCard, type Card } from './use-cards';
@@ -85,7 +85,7 @@ export function DragDropContext({ boardId, children }: DragDropContextProps) {
     }
   }, []);
 
-  const handleDragOver = useCallback((_event: DragOverEvent) => {
+  const handleDragOver = useCallback(() => {
     // We intentionally do NOT update the React Query cache here.
     // Updating the cache during drag causes React to unmount/remount
     // card components between columns, which breaks dnd-kit's internal

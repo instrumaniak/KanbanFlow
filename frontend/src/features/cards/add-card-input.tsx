@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type KeyboardEvent, type FocusEvent, type ChangeEvent } from 'react';
+import { useState, useRef, type KeyboardEvent, type FocusEvent, type ChangeEvent } from 'react';
 import { useCreateCard, type Card } from './use-cards';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -16,12 +16,6 @@ export function AddCardInput({ columnId, nextColumnId, onCardCreated, onCardCrea
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const createCard = useCreateCard();
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isOpen]);
 
   const adjustTextareaHeight = (textarea: HTMLTextAreaElement) => {
     textarea.style.height = 'auto';
@@ -143,6 +137,7 @@ export function AddCardInput({ columnId, nextColumnId, onCardCreated, onCardCrea
         onBlur={handleBlur}
         placeholder="Enter a title..."
         rows={1}
+        autoFocus
         className="w-full resize-none rounded bg-card p-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary"
         style={{ minHeight: '2.5rem', height: 'auto' }}
         data-column-id={columnId}

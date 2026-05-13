@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useUpdateCard, useDeleteCard, useCreateCard, type Card as CardType } from './use-cards';
 import { CardDraggable } from './card-draggable';
 import { MoreHorizontal, Trash2 } from 'lucide-react';
@@ -32,7 +32,6 @@ export function Card({ card, index, isNew }: CardProps) {
   const [editValue, setEditValue] = useState(card.title);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
   const updateCard = useUpdateCard();
   const deleteCard = useDeleteCard();
@@ -40,13 +39,6 @@ export function Card({ card, index, isNew }: CardProps) {
   const { toast } = useToast();
 
   const isDragDisabled = isEditing || isSaving;
-
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditing]);
 
   const handleClick = (e: React.MouseEvent) => {
     if (pointerDownPos.current) {
@@ -162,7 +154,6 @@ export function Card({ card, index, isNew }: CardProps) {
         >
           {isEditing || isSaving ? (
             <input
-              ref={inputRef}
               type="text"
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
@@ -171,6 +162,8 @@ export function Card({ card, index, isNew }: CardProps) {
               onClick={(e) => e.stopPropagation()}
               maxLength={500}
               aria-label="Card title"
+              autoFocus
+              onFocus={(e) => e.currentTarget.select()}
               disabled={isSaving}
               className="w-full bg-transparent outline-none border-b border-primary disabled:opacity-50"
             />

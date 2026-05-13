@@ -108,8 +108,6 @@ test.describe('Boards CRUD', () => {
 
 test.describe('Board Archiving', () => {
   const boardNameToArchive = `Board to Archive ${Date.now()}`;
-  let createdBoardId: number;
-
   test.beforeAll(async ({ request }) => {
     const res = await request.post('http://localhost:3000/api/auth/register', {
       data: { email: TEST_EMAIL, password: TEST_PASSWORD },
@@ -128,8 +126,7 @@ test.describe('Board Archiving', () => {
       data: { name: boardNameToArchive },
       headers: { Cookie: cookies },
     });
-    const boardData = await createRes.json();
-    createdBoardId = boardData.data.id;
+    await createRes.json();
   });
 
   test('archives a board from board card', async ({ page }) => {

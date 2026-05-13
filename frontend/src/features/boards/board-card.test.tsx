@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { BoardCard, InlineEditForm, DeleteDialog } from './board-card';
-import { ToastProvider } from '@/components/ui/use-toast';
+import { ToastProvider } from '@/components/ui/toast-provider';
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');

@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './features/auth/use-auth';
-import { ToastProvider } from './components/ui/use-toast';
+import { AuthProvider } from './features/auth/auth-provider';
+import { ToastProvider } from './components/ui/toast-provider';
 import { RegisterForm } from './features/auth/register-form';
 import { LoginForm } from './features/auth/login-form';
 import { ProjectList } from './features/projects/project-list';
@@ -10,15 +11,6 @@ import { ArchivedBoards } from './features/boards/archived-boards';
 import { BoardView } from './features/boards/board-view/board-view';
 import { useProjects } from './features/projects/use-projects';
 import { AppLayout } from './layouts/app-layout';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      retry: false,
-    },
-  },
-});
 
 function ForgotPasswordPage() {
   return (
@@ -37,6 +29,18 @@ function AppLayoutRoute() {
 }
 
 function App() {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 5 * 60 * 1000,
+            retry: false,
+          },
+        },
+      }),
+  );
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>

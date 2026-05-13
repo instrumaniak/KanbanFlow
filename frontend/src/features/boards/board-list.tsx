@@ -40,15 +40,6 @@ export function BoardList() {
     setDeleteTarget({ id, name });
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-6xl">
-        <h1 className="mb-6 text-2xl font-bold">My Boards</h1>
-        <LoadingSkeleton />
-      </div>
-    );
-  }
-
   if (isError) {
     return (
       <div className="mx-auto max-w-6xl">
@@ -64,7 +55,9 @@ export function BoardList() {
     );
   }
 
-  if (boards.length === 0 && !showCreateModal) {
+  const showEmptyState = boards.length === 0 && !showCreateModal && !isLoading;
+
+  if (showEmptyState) {
     return (
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between">
@@ -117,6 +110,10 @@ export function BoardList() {
           </Button>
         </div>
       </div>
+
+      {isLoading ? (
+        <LoadingSkeleton />
+      ) : null}
 
       {showCreateModal && (
         <div className="mb-6">

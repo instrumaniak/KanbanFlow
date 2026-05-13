@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LoginForm } from './login-form';
 import { AuthProvider } from './auth-provider';
-import { ToastProvider } from '@/components/ui/use-toast';
+import { ToastProvider } from '@/components/ui/toast-provider';
 
 vi.mock('./auth.api', () => ({
   registerApi: vi.fn(),

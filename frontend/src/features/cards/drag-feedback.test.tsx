@@ -12,7 +12,7 @@ const mockSortableState = {
 
 // Mock dnd-kit hooks
 vi.mock('@dnd-kit/sortable', async (importOriginal) => {
-  const actual = await importOriginal<any>();
+  const actual = await importOriginal<typeof import('@dnd-kit/sortable')>();
   return {
     ...actual,
     useSortable: vi.fn(() => ({

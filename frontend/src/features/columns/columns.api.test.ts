@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchColumns, createColumn, updateColumn, deleteColumn, type Column, type CreateColumnData, type UpdateColumnData } from './columns.api';
+import { fetchColumns, createColumn, updateColumn, deleteColumn, type Column } from './columns.api';
 
 global.fetch = vi.fn();
 

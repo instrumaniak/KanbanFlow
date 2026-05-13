@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { CreateBoardModal } from './create-board-modal';
-import { ToastProvider } from '@/components/ui/use-toast';
+import { ToastProvider } from '@/components/ui/toast-provider';
 
 vi.mock('./use-boards', () => ({
   useCreateBoard: () => ({

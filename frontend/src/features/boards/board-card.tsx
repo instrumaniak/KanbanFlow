@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -84,14 +84,8 @@ export function InlineEditForm({
 }: InlineEditFormProps) {
   const [name, setName] = useState(initialValue);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(projectId);
-  const inputRef = useRef<HTMLInputElement>(null);
   const updateMutation = useUpdateBoard();
   const { toast } = useToast();
-
-  useEffect(() => {
-    inputRef.current?.focus();
-    inputRef.current?.select();
-  }, []);
 
   const handleSave = async () => {
     if (updateMutation.isPending) return;
@@ -133,12 +127,13 @@ export function InlineEditForm({
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-3">
         <Input
-          ref={inputRef}
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleSave}
           aria-label="Board name"
+          autoFocus
+          onFocus={(e) => e.currentTarget.select()}
           className="font-semibold"
           disabled={updateMutation.isPending}
         />
