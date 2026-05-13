@@ -51,7 +51,10 @@ export class ColumnsController {
   @ApiOperation({ summary: 'Get all columns for a board' })
   @ApiParam({ name: 'boardId', type: Number })
   @ApiResponse({ status: 200, description: 'List of columns' })
-  async findAll(@Session() session: SessionData, @Param('boardId', ParseIntPipe) boardId: number) {
+  async findAll(
+    @Session() session: SessionData,
+    @Param('boardId', ParseIntPipe) boardId: number,
+  ): Promise<{ data: ColumnResponse[] }> {
     const columns = await this.columnsService.findAllByBoardId(boardId, session.userId);
     const data: ColumnResponse[] = columns.map((col) => ({
       id: col.id,
@@ -85,7 +88,7 @@ export class ColumnsController {
     @Session() session: SessionData,
     @Param('boardId', ParseIntPipe) boardId: number,
     @Body() dto: CreateColumnDto,
-  ) {
+  ): Promise<{ data: ColumnResponse; message: string }> {
     const column = await this.columnsService.create(boardId, session.userId, dto);
     const data: ColumnResponse = {
       id: column.id,
@@ -108,7 +111,7 @@ export class ColumnsController {
     @Session() session: SessionData,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateColumnDto,
-  ) {
+  ): Promise<{ data: ColumnResponse; message: string }> {
     const column = await this.columnsService.update(id, session.userId, dto);
     const data: ColumnResponse = {
       id: column.id,
@@ -126,7 +129,10 @@ export class ColumnsController {
   @ApiOperation({ summary: 'Delete a column and all its cards' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Column deleted' })
-  async remove(@Session() session: SessionData, @Param('id', ParseIntPipe) id: number) {
+  async remove(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ message: string }> {
     await this.columnsService.remove(id, session.userId);
     return { message: 'Column deleted' };
   }
@@ -140,7 +146,7 @@ export class ColumnsController {
     @Session() session: SessionData,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: SortCardsDto,
-  ) {
+  ): Promise<{ data: ColumnResponse; message: string }> {
     const column = await this.columnsService.sortCards(id, session.userId, dto.order);
     const data: ColumnResponse = {
       id: column.id,
@@ -174,7 +180,7 @@ export class ColumnsController {
     @Session() session: SessionData,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: MoveCardsDto,
-  ) {
+  ): Promise<{ data: { movedCount: number }; message: string }> {
     const result = await this.columnsService.moveAllCards(id, dto.targetColumnId, session.userId);
     return {
       data: { movedCount: result.movedCount },

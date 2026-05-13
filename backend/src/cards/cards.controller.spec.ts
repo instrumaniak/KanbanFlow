@@ -5,9 +5,22 @@ import { Card } from './entities/card.entity';
 
 describe('CardsController', () => {
   let controller: CardsController;
-  let cardsService: jest.Mocked<CardsService>;
 
-  const mockCardsService = {
+  type CardPayload = {
+    id: number;
+    title: string;
+    column_id: number;
+    position: number;
+    created_at: string;
+    updated_at: string;
+  };
+
+  type CardListResponse = { data: CardPayload[] };
+  type CardMutationResponse = { data: CardPayload; message: string };
+
+  const mockCardsService: jest.Mocked<
+    Pick<CardsService, 'create' | 'findAllByColumnId' | 'update' | 'remove'>
+  > = {
     create: jest.fn(),
     findAllByColumnId: jest.fn(),
     update: jest.fn(),
@@ -21,7 +34,6 @@ describe('CardsController', () => {
     }).compile();
 
     controller = module.get<CardsController>(CardsController);
-    cardsService = module.get(CardsService);
   });
 
   afterEach(() => {
@@ -48,16 +60,17 @@ describe('CardsController', () => {
           updated_at: new Date(),
         },
       ];
-      cardsService.findAllByColumnId.mockResolvedValue(cards as Card[]);
+      mockCardsService.findAllByColumnId.mockResolvedValue(cards as Card[]);
 
-      const result = await controller.findAll({ userId: 1 }, 1);
+      const result = (await controller.findAll({ userId: 1 }, 1)) as CardListResponse;
 
-      expect(result).toEqual({
-        data: expect.arrayContaining([
+      expect(result.data).toHaveLength(2);
+      expect(result.data).toEqual(
+        expect.arrayContaining([
           expect.objectContaining({ id: 1, title: 'Card 1' }),
           expect.objectContaining({ id: 2, title: 'Card 2' }),
         ]),
-      });
+      );
     });
   });
 
@@ -71,21 +84,22 @@ describe('CardsController', () => {
         created_at: new Date(),
         updated_at: new Date(),
       };
-      cardsService.create.mockResolvedValue(card as Card);
+      mockCardsService.create.mockResolvedValue(card as Card);
 
-      const result = await controller.create({ userId: 1 }, { title: 'New Card', column_id: 1 });
+      const result = (await controller.create(
+        { userId: 1 },
+        { title: 'New Card', column_id: 1 },
+      )) as CardMutationResponse;
 
-      expect(result).toEqual({
-        data: {
-          id: 1,
-          title: 'New Card',
-          column_id: 1,
-          position: 0,
-          created_at: expect.any(String),
-          updated_at: expect.any(String),
-        },
-        message: 'Card created',
+      expect(result.data).toMatchObject({
+        id: 1,
+        title: 'New Card',
+        column_id: 1,
+        position: 0,
       });
+      expect(result.message).toBe('Card created');
+      expect(result.data.created_at).toEqual(expect.any(String));
+      expect(result.data.updated_at).toEqual(expect.any(String));
     });
   });
 
@@ -99,27 +113,27 @@ describe('CardsController', () => {
         created_at: new Date(),
         updated_at: new Date(),
       };
-      cardsService.update.mockResolvedValue(card as Card);
+      mockCardsService.update.mockResolvedValue(card as Card);
 
-      const result = await controller.update({ userId: 1 }, 1, { title: 'Updated Card' });
+      const result = (await controller.update({ userId: 1 }, 1, {
+        title: 'Updated Card',
+      })) as CardMutationResponse;
 
-      expect(result).toEqual({
-        data: {
-          id: 1,
-          title: 'Updated Card',
-          column_id: 1,
-          position: 0,
-          created_at: expect.any(String),
-          updated_at: expect.any(String),
-        },
-        message: 'Card updated',
+      expect(result.data).toMatchObject({
+        id: 1,
+        title: 'Updated Card',
+        column_id: 1,
+        position: 0,
       });
+      expect(result.message).toBe('Card updated');
+      expect(result.data.created_at).toEqual(expect.any(String));
+      expect(result.data.updated_at).toEqual(expect.any(String));
     });
   });
 
   describe('remove', () => {
     it('should delete a card and return message', async () => {
-      cardsService.remove.mockResolvedValue();
+      mockCardsService.remove.mockResolvedValue();
 
       const result = await controller.remove({ userId: 1 }, 1);
 

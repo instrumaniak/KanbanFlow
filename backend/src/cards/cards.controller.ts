@@ -44,7 +44,7 @@ export class CardsController {
   async findAll(
     @Session() session: SessionData,
     @Param('columnId', ParseIntPipe) columnId: number,
-  ) {
+  ): Promise<{ data: CardResponse[] }> {
     const cards = await this.cardsService.findAllByColumnId(columnId, session.userId);
     const data: CardResponse[] = cards.map((card) => ({
       id: card.id,
@@ -61,7 +61,10 @@ export class CardsController {
   @ApiOperation({ summary: 'Create a new card' })
   @ApiResponse({ status: 201, description: 'Card created' })
   @UsePipes(new ValidationPipe({ transform: true }))
-  async create(@Session() session: SessionData, @Body() dto: CreateCardDto) {
+  async create(
+    @Session() session: SessionData,
+    @Body() dto: CreateCardDto,
+  ): Promise<{ data: CardResponse; message: string }> {
     const card = await this.cardsService.create(session.userId, dto);
     const data: CardResponse = {
       id: card.id,
@@ -83,7 +86,7 @@ export class CardsController {
     @Session() session: SessionData,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCardDto,
-  ) {
+  ): Promise<{ data: CardResponse; message: string }> {
     const card = await this.cardsService.update(id, session.userId, dto);
     const data: CardResponse = {
       id: card.id,
@@ -100,7 +103,10 @@ export class CardsController {
   @ApiOperation({ summary: 'Delete a card' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Card deleted' })
-  async remove(@Session() session: SessionData, @Param('id', ParseIntPipe) id: number) {
+  async remove(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ message: string }> {
     await this.cardsService.remove(id, session.userId);
     return { message: 'Card deleted' };
   }

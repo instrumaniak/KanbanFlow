@@ -50,7 +50,7 @@ export class BoardsController {
     @Session() session: SessionData,
     @Query('projectId') projectId?: string,
     @Query('archived') archived?: string,
-  ) {
+  ): Promise<{ data: BoardResponse[]; total: number }> {
     const projectIdNum = projectId ? parseInt(projectId, 10) : undefined;
     const includeArchived = archived === 'true';
     const boards = await this.boardsService.findAllByUserId(
@@ -74,7 +74,9 @@ export class BoardsController {
   @Get('archived')
   @ApiOperation({ summary: 'Get all archived boards for the authenticated user' })
   @ApiResponse({ status: 200, description: 'List of archived boards' })
-  async findArchived(@Session() session: SessionData) {
+  async findArchived(
+    @Session() session: SessionData,
+  ): Promise<{ data: BoardResponse[]; total: number }> {
     const boards = await this.boardsService.findAllArchivedByUserId(session.userId);
     const data: BoardResponse[] = boards.map((b) => ({
       id: b.id,
@@ -93,7 +95,10 @@ export class BoardsController {
   @ApiOperation({ summary: 'Create a new board with default columns' })
   @ApiResponse({ status: 201, description: 'Board created' })
   @UsePipes(new ValidationPipe({ transform: true }))
-  async create(@Session() session: SessionData, @Body() dto: CreateBoardDto) {
+  async create(
+    @Session() session: SessionData,
+    @Body() dto: CreateBoardDto,
+  ): Promise<{ data: BoardResponse; message: string }> {
     const board = await this.boardsService.create(session.userId, dto);
     const data: BoardResponse = {
       id: board.id,
@@ -117,7 +122,10 @@ export class BoardsController {
   @ApiOperation({ summary: 'Get a single board' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Board details' })
-  async findOne(@Session() session: SessionData, @Param('id', ParseIntPipe) id: number) {
+  async findOne(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ data: BoardResponse }> {
     const board = await this.boardsService.findOne(id, session.userId);
     const data: BoardResponse = {
       id: board.id,
@@ -146,7 +154,7 @@ export class BoardsController {
     @Session() session: SessionData,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateBoardDto,
-  ) {
+  ): Promise<{ data: BoardResponse; message: string }> {
     const board = await this.boardsService.update(id, session.userId, dto);
     const data: BoardResponse = {
       id: board.id,
@@ -165,7 +173,10 @@ export class BoardsController {
   @ApiOperation({ summary: 'Delete a board and all its columns/cards' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Board deleted' })
-  async remove(@Session() session: SessionData, @Param('id', ParseIntPipe) id: number) {
+  async remove(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ message: string }> {
     await this.boardsService.remove(id, session.userId);
     return { message: 'Board deleted' };
   }
@@ -174,7 +185,10 @@ export class BoardsController {
   @ApiOperation({ summary: 'Archive a board' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Board archived' })
-  async archive(@Session() session: SessionData, @Param('id', ParseIntPipe) id: number) {
+  async archive(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ data: BoardResponse; message: string }> {
     const board = await this.boardsService.archive(id, session.userId);
     const data: BoardResponse = {
       id: board.id,
@@ -193,7 +207,10 @@ export class BoardsController {
   @ApiOperation({ summary: 'Restore an archived board' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Board restored' })
-  async restore(@Session() session: SessionData, @Param('id', ParseIntPipe) id: number) {
+  async restore(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ data: BoardResponse; message: string }> {
     const board = await this.boardsService.restore(id, session.userId);
     const data: BoardResponse = {
       id: board.id,
@@ -212,7 +229,10 @@ export class BoardsController {
   @ApiOperation({ summary: 'Permanently delete an archived board' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Board permanently deleted' })
-  async permanentDelete(@Session() session: SessionData, @Param('id', ParseIntPipe) id: number) {
+  async permanentDelete(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ message: string }> {
     await this.boardsService.permanentDelete(id, session.userId);
     return { message: 'Board permanently deleted' };
   }

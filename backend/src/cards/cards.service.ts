@@ -5,7 +5,6 @@ import { Card } from './entities/card.entity';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
 import { BoardColumn } from '../columns/entities/column.entity';
-import { Board } from '../boards/entities/board.entity';
 
 @Injectable()
 export class CardsService {
@@ -14,12 +13,10 @@ export class CardsService {
     private readonly cardRepository: Repository<Card>,
     @InjectRepository(BoardColumn)
     private readonly columnRepository: Repository<BoardColumn>,
-    @InjectRepository(Board)
-    private readonly boardRepository: Repository<Board>,
   ) {}
 
   async create(userId: number, dto: CreateCardDto): Promise<Card> {
-    const column = await this.findColumnById(dto.column_id, userId);
+    await this.findColumnById(dto.column_id, userId);
 
     let position: number;
     if (dto.position !== undefined) {
@@ -29,8 +26,8 @@ export class CardsService {
         .createQueryBuilder('card')
         .where('card.column_id = :columnId', { columnId: dto.column_id })
         .select('MAX(card.position)', 'max')
-        .getRawOne();
-      position = (maxPositionResult?.max ?? -1) + 1;
+        .getRawOne<{ max: string | number | null }>();
+      position = Number(maxPositionResult?.max ?? -1) + 1;
     }
 
     const card = this.cardRepository.create({
@@ -155,8 +152,8 @@ export class CardsService {
       .createQueryBuilder('card')
       .where('card.column_id = :columnId', { columnId })
       .select('MAX(card.position)', 'max')
-      .getRawOne();
-    return result?.max ?? -1;
+      .getRawOne<{ max: string | number | null }>();
+    return Number(result?.max ?? -1);
   }
 
   async remove(id: number, userId: number): Promise<void> {

@@ -1,23 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ColumnsService } from './columns.service';
 import { BoardColumn } from './entities/column.entity';
 import { Board } from '../boards/entities/board.entity';
 import { Card } from '../cards/entities/card.entity';
-import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
 
 describe('ColumnsService', () => {
   let service: ColumnsService;
-  let columnRepository: Repository<BoardColumn>;
-  let boardRepository: Repository<Board>;
-  let cardRepository: Repository<Card>;
+
+  type MockColumnFindOptions = {
+    where?: { id?: number };
+    relations?: string[];
+  };
+
+  type MockCardManager = {
+    createQueryBuilder: jest.Mock;
+    save: jest.Mock;
+    transaction: jest.Mock;
+  };
 
   const mockColumnRepository = {
     find: jest.fn(),
-    findOne: jest.fn().mockImplementation((opts) => {
+    findOne: jest.fn().mockImplementation((opts?: MockColumnFindOptions) => {
       if (!opts || !opts.where || !opts.where.id) return Promise.resolve(null);
-      const id = opts.where.id as number;
+      const id = opts.where.id;
       if (id === 1) {
         return Promise.resolve({
           id: 1,
@@ -51,8 +58,12 @@ describe('ColumnsService', () => {
     findOne: jest.fn(),
   };
 
-  const mockDataSource = {
-    transaction: jest.fn((callback) => callback()),
+  const mockCardManager: MockCardManager = {
+    createQueryBuilder: jest.fn(),
+    save: jest.fn(),
+    transaction: jest.fn(async (callback: (mgr: MockCardManager) => Promise<unknown>) =>
+      callback(mockCardManager),
+    ),
   };
 
   const mockCardRepository = {
@@ -61,20 +72,7 @@ describe('ColumnsService', () => {
     create: jest.fn(),
     save: jest.fn(),
     createQueryBuilder: jest.fn(),
-    manager: {
-      transaction: jest.fn(async (callback: (mgr: unknown) => Promise<unknown>) =>
-        callback(mockCardRepository),
-      ),
-    },
-  } as unknown as {
-    find: jest.Mock;
-    findOne: jest.Mock;
-    create: jest.Mock;
-    save: jest.Mock;
-    createQueryBuilder: jest.Mock;
-    manager: {
-      transaction: jest.Mock;
-    };
+    manager: mockCardManager,
   };
 
   beforeEach(async () => {
@@ -97,9 +95,6 @@ describe('ColumnsService', () => {
     }).compile();
 
     service = module.get<ColumnsService>(ColumnsService);
-    columnRepository = module.get<Repository<BoardColumn>>(getRepositoryToken(BoardColumn));
-    boardRepository = module.get<Repository<Board>>(getRepositoryToken(Board));
-    cardRepository = module.get<Repository<Card>>(getRepositoryToken(Card));
   });
 
   afterEach(() => {
@@ -281,7 +276,7 @@ describe('ColumnsService', () => {
       mockCardRepository.find.mockResolvedValue(mockColumn.cards);
       mockCardRepository.save.mockResolvedValue([]);
 
-      const result = await service.sortCards(1, 1, 'asc');
+      await service.sortCards(1, 1, 'asc');
 
       expect(mockCardRepository.find).toHaveBeenCalledWith({
         where: { column_id: 1 },
@@ -360,18 +355,18 @@ describe('ColumnsService', () => {
         .mockResolvedValueOnce(sourceColumn)
         .mockResolvedValueOnce(targetColumn);
       mockCardRepository.find.mockResolvedValue(sourceColumn.cards);
-      mockCardRepository.createQueryBuilder.mockReturnValue({
+      mockCardManager.createQueryBuilder.mockReturnValue({
         where: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
         getRawOne: jest.fn().mockResolvedValue({ max: 0 }),
       });
-      mockCardRepository.save.mockResolvedValue([]);
+      mockCardManager.save.mockResolvedValue([]);
 
       const result = await service.moveAllCards(1, 2, 1);
 
       expect(result.movedCount).toBe(2);
       expect(result.targetName).toBe('In Progress');
-      expect(mockCardRepository.save).toHaveBeenCalledTimes(1);
+      expect(mockCardManager.save).toHaveBeenCalledTimes(1);
     });
 
     it('should throw BadRequestException when source and target are the same', async () => {

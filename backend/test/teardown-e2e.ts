@@ -35,9 +35,10 @@ export default async function globalTeardown() {
   await dataSource.initialize();
 
   await dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
-  const tables = await dataSource.query('SHOW TABLES');
+  const rawTables: unknown = await dataSource.query('SHOW TABLES');
+  const tables = rawTables as Array<Record<string, string>>;
   for (const row of tables) {
-    const tableName = Object.values(row)[0];
+    const tableName = String(Object.values(row)[0]);
     await dataSource.query(`DROP TABLE IF EXISTS ${tableName}`);
   }
   await dataSource.query('SET FOREIGN_KEY_CHECKS = 1');

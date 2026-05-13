@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { SelectQueryBuilder, UpdateResult } from 'typeorm';
 import { CardsService } from './cards.service';
 import { Card } from './entities/card.entity';
 import { BoardColumn } from '../columns/entities/column.entity';
@@ -9,14 +9,25 @@ import { NotFoundException, ForbiddenException } from '@nestjs/common';
 
 describe('CardsService', () => {
   let service: CardsService;
-  let cardRepository: jest.Mocked<Repository<Card>>;
-  let columnRepository: jest.Mocked<Repository<BoardColumn>>;
-  let boardRepository: jest.Mocked<Repository<Board>>;
 
   const mockUserId = 1;
   const mockBoard = { id: 1, user_id: mockUserId } as Board;
   const mockColumn = { id: 1, board: mockBoard, position: 0 } as BoardColumn;
   const mockTargetColumn = { id: 2, board: mockBoard, position: 1 } as BoardColumn;
+
+  const mockCardRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+    findOne: jest.fn(),
+    remove: jest.fn(),
+    update: jest.fn(),
+    createQueryBuilder: jest.fn(),
+  };
+
+  const mockColumnRepository = {
+    findOne: jest.fn(),
+  };
 
   const createMockCard = (id: number, columnId: number, position: number): Card =>
     ({
@@ -35,21 +46,11 @@ describe('CardsService', () => {
         CardsService,
         {
           provide: getRepositoryToken(Card),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-            find: jest.fn(),
-            findOne: jest.fn(),
-            remove: jest.fn(),
-            update: jest.fn(),
-            createQueryBuilder: jest.fn(),
-          },
+          useValue: mockCardRepository,
         },
         {
           provide: getRepositoryToken(BoardColumn),
-          useValue: {
-            findOne: jest.fn(),
-          },
+          useValue: mockColumnRepository,
         },
         {
           provide: getRepositoryToken(Board),
@@ -61,9 +62,10 @@ describe('CardsService', () => {
     }).compile();
 
     service = module.get<CardsService>(CardsService);
-    cardRepository = module.get(getRepositoryToken(Card));
-    columnRepository = module.get(getRepositoryToken(BoardColumn));
-    boardRepository = module.get(getRepositoryToken(Board));
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('update (reordering)', () => {
@@ -72,16 +74,16 @@ describe('CardsService', () => {
       const otherCard = createMockCard(2, 1, 1);
       const targetCard = createMockCard(3, 1, 2);
 
-      cardRepository.findOne.mockResolvedValue(cardToMove);
-      cardRepository.find.mockResolvedValue([cardToMove, otherCard, targetCard]);
-      cardRepository.save.mockImplementation(async (c) => c as Card);
-      cardRepository.update.mockResolvedValue({ affected: 1 } as any);
+      mockCardRepository.findOne.mockResolvedValue(cardToMove);
+      mockCardRepository.find.mockResolvedValue([cardToMove, otherCard, targetCard]);
+      mockCardRepository.save.mockImplementation((c: Card) => c);
+      mockCardRepository.update.mockResolvedValue({ affected: 1 } as UpdateResult);
 
       await service.update(1, mockUserId, { position: 2 });
 
       expect(otherCard.position).toBe(0);
       expect(targetCard.position).toBe(1);
-      expect(cardRepository.update).toHaveBeenCalledWith(1, { position: 2 });
+      expect(mockCardRepository.update).toHaveBeenCalledWith(1, { position: 2 });
     });
 
     it('should reorder cards when moving up within a column', async () => {
@@ -89,27 +91,27 @@ describe('CardsService', () => {
       const otherCard1 = createMockCard(1, 1, 0);
       const otherCard2 = createMockCard(2, 1, 1);
 
-      cardRepository.findOne.mockResolvedValue(cardToMove);
-      cardRepository.find.mockResolvedValue([otherCard1, otherCard2, cardToMove]);
-      cardRepository.save.mockImplementation(async (c) => c as Card);
-      cardRepository.update.mockResolvedValue({ affected: 1 } as any);
+      mockCardRepository.findOne.mockResolvedValue(cardToMove);
+      mockCardRepository.find.mockResolvedValue([otherCard1, otherCard2, cardToMove]);
+      mockCardRepository.save.mockImplementation((c: Card) => c);
+      mockCardRepository.update.mockResolvedValue({ affected: 1 } as UpdateResult);
 
       await service.update(3, mockUserId, { position: 0 });
 
       expect(otherCard1.position).toBe(1);
       expect(otherCard2.position).toBe(2);
-      expect(cardRepository.update).toHaveBeenCalledWith(3, { position: 0 });
+      expect(mockCardRepository.update).toHaveBeenCalledWith(3, { position: 0 });
     });
 
     it('should not perform shifts if moving to the same position', async () => {
       const cardToMove = createMockCard(1, 1, 0);
-      cardRepository.findOne.mockResolvedValue(cardToMove);
-      cardRepository.update.mockResolvedValue({ affected: 1 } as any);
+      mockCardRepository.findOne.mockResolvedValue(cardToMove);
+      mockCardRepository.update.mockResolvedValue({ affected: 1 } as UpdateResult);
 
       await service.update(1, mockUserId, { position: 0 });
 
-      expect(cardRepository.find).not.toHaveBeenCalled();
-      expect(cardRepository.update).toHaveBeenCalledWith(1, { position: 0 });
+      expect(mockCardRepository.find).not.toHaveBeenCalled();
+      expect(mockCardRepository.update).toHaveBeenCalledWith(1, { position: 0 });
     });
 
     it('should handle moving between columns', async () => {
@@ -117,43 +119,45 @@ describe('CardsService', () => {
       const otherCardInOldCol = createMockCard(2, 1, 1);
       const targetColumnCards = [createMockCard(3, 2, 0), createMockCard(4, 2, 1)];
 
-      cardRepository.findOne.mockResolvedValue(cardToMove);
-      columnRepository.findOne.mockResolvedValue(mockTargetColumn);
+      mockCardRepository.findOne.mockResolvedValue(cardToMove);
+      mockColumnRepository.findOne.mockResolvedValue(mockTargetColumn);
 
-      cardRepository.find
+      mockCardRepository.find
         .mockResolvedValueOnce([cardToMove, otherCardInOldCol])
         .mockResolvedValueOnce(targetColumnCards);
 
-      const mockQueryBuilder = {
+      const mockQueryBuilder: Pick<SelectQueryBuilder<Card>, 'where' | 'select' | 'getRawOne'> = {
         where: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
         getRawOne: jest.fn().mockResolvedValue({ max: 1 }),
       };
-      cardRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
-      cardRepository.save.mockImplementation(async (c) => c as Card);
-      cardRepository.update.mockResolvedValue({ affected: 1 } as any);
+      mockCardRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as SelectQueryBuilder<Card>,
+      );
+      mockCardRepository.save.mockImplementation((c: Card) => c);
+      mockCardRepository.update.mockResolvedValue({ affected: 1 } as UpdateResult);
 
       await service.update(1, mockUserId, { column_id: 2, position: 0 });
 
       expect(otherCardInOldCol.position).toBe(0);
       expect(targetColumnCards[0].position).toBe(1);
       expect(targetColumnCards[1].position).toBe(2);
-      expect(cardRepository.update).toHaveBeenCalledWith(1, { column_id: 2 });
-      expect(cardRepository.update).toHaveBeenCalledWith(1, { position: 0 });
+      expect(mockCardRepository.update).toHaveBeenCalledWith(1, { column_id: 2 });
+      expect(mockCardRepository.update).toHaveBeenCalledWith(1, { position: 0 });
     });
   });
 
   describe('findCardById', () => {
     it('should throw NotFoundException if card does not exist', async () => {
-      cardRepository.findOne.mockResolvedValue(null);
+      mockCardRepository.findOne.mockResolvedValue(null);
 
       await expect(service.remove(1, mockUserId)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ForbiddenException if user does not own the board', async () => {
       const card = createMockCard(1, 1, 0);
-      (card.column.board as any).user_id = 999;
-      cardRepository.findOne.mockResolvedValue(card);
+      card.column.board.user_id = 999;
+      mockCardRepository.findOne.mockResolvedValue(card);
 
       await expect(service.remove(1, mockUserId)).rejects.toThrow(ForbiddenException);
     });
@@ -162,29 +166,29 @@ describe('CardsService', () => {
   describe('remove', () => {
     it('should delete card when user has valid ownership', async () => {
       const card = createMockCard(1, 1, 0);
-      (card.column.board as any).user_id = mockUserId;
-      cardRepository.findOne.mockResolvedValue(card);
-      cardRepository.remove.mockResolvedValue(card);
+      card.column.board.user_id = mockUserId;
+      mockCardRepository.findOne.mockResolvedValue(card);
+      mockCardRepository.remove.mockResolvedValue(card);
 
       await service.remove(1, mockUserId);
 
-      expect(cardRepository.remove).toHaveBeenCalledWith(card);
+      expect(mockCardRepository.remove).toHaveBeenCalledWith(card);
     });
 
     it('should throw NotFoundException when deleting non-existent card', async () => {
-      cardRepository.findOne.mockResolvedValue(null);
+      mockCardRepository.findOne.mockResolvedValue(null);
 
       await expect(service.remove(999, mockUserId)).rejects.toThrow(NotFoundException);
-      expect(cardRepository.remove).not.toHaveBeenCalled();
+      expect(mockCardRepository.remove).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when user does not own the board', async () => {
       const card = createMockCard(1, 1, 0);
-      (card.column.board as any).user_id = 999;
-      cardRepository.findOne.mockResolvedValue(card);
+      card.column.board.user_id = 999;
+      mockCardRepository.findOne.mockResolvedValue(card);
 
       await expect(service.remove(1, mockUserId)).rejects.toThrow(ForbiddenException);
-      expect(cardRepository.remove).not.toHaveBeenCalled();
+      expect(mockCardRepository.remove).not.toHaveBeenCalled();
     });
   });
 });

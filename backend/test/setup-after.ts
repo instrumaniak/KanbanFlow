@@ -1,5 +1,6 @@
 import * as path from 'path';
+import dotenv from 'dotenv';
 
 beforeAll(() => {
-  require('dotenv').config({ path: path.resolve(__dirname, '../.env.test') });
+  dotenv.config({ path: path.resolve(__dirname, '../.env.test') });
 });

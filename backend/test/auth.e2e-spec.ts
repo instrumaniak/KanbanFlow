@@ -221,7 +221,7 @@ describe('Auth API (e2e)', () => {
       const moduleFixture2: TestingModule = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
-      const app2 = moduleFixture2.createNestApplication();
+      const app2: INestApplication<App> = moduleFixture2.createNestApplication();
       app2.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
       await app2.init();
 

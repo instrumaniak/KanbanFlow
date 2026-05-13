@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { BoardsService } from './boards.service';
 import { Board } from './entities/board.entity';
@@ -8,8 +7,6 @@ import { BoardColumn } from '../columns/entities/column.entity';
 
 describe('BoardsService', () => {
   let service: BoardsService;
-  let boardRepository: jest.Mocked<Repository<Board>>;
-  let columnRepository: jest.Mocked<Repository<BoardColumn>>;
 
   const mockBoardRepository = {
     find: jest.fn(),
@@ -35,8 +32,6 @@ describe('BoardsService', () => {
     }).compile();
 
     service = module.get<BoardsService>(BoardsService);
-    boardRepository = module.get(getRepositoryToken(Board));
-    columnRepository = module.get(getRepositoryToken(BoardColumn));
   });
 
   afterEach(() => {
@@ -166,7 +161,10 @@ describe('BoardsService', () => {
       const mockManager = {
         findOne: jest.fn().mockResolvedValue(null),
       };
-      (mockBoardRepository as any).manager = mockManager;
+      const repositoryWithManager = mockBoardRepository as typeof mockBoardRepository & {
+        manager: typeof mockManager;
+      };
+      repositoryWithManager.manager = mockManager;
 
       mockBoardRepository.findOne.mockResolvedValue(board as Board);
 
