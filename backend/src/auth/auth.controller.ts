@@ -9,7 +9,6 @@ import {
   UnauthorizedException,
   Res,
 } from '@nestjs/common';
-import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -60,7 +59,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout(
     @Session() session: Record<string, unknown>,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: any,
   ) {
     await this.authService.logout(session);
     res.clearCookie('connect.sid');

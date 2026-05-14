@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { FastifyAdapter } from '@nestjs/platform-fastify';
 import request, { SuperAgentTest } from 'supertest';
-import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { setupFastifySession } from './test-utils';
 
 type CardResponse = {
   id: number;
@@ -19,7 +20,8 @@ type ApiResponse<T> = {
 };
 
 describe('Cards API (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
+  let url: string;
   let agent: SuperAgentTest;
   let boardId: number;
   let projectId: number;
@@ -33,11 +35,14 @@ describe('Cards API (e2e)', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication(new FastifyAdapter());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    await setupFastifySession(app);
     await app.init();
+    await app.listen(0);
+    url = await app.getUrl();
 
-    agent = request.agent(app.getHttpServer());
+    agent = request.agent(url);
 
     // Register and Login
     await agent.post('/api/auth/register').send({ email: testEmail, password: testPassword });

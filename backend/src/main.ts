@@ -1,12 +1,58 @@
 import { NestFactory } from '@nestjs/core';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AppModule } from './app.module';
-import * as express from 'express';
 import { join } from 'path';
-import { Request, Response, NextFunction } from 'express';
+import { DataSource } from 'typeorm';
+import { Session } from './sessions/entities/session.entity';
+import { TypeormStore } from 'connect-typeorm';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter(),
+  );
+
+  // --- Session store setup (must be before app.init() for routes to have session) ---
+  const dataSource = app.get(DataSource);
+  const sessionRepository = dataSource.getRepository(Session);
+
+  const fastifyCookie = (await import('@fastify/cookie')).default;
+  const fastifySession = (await import('@fastify/session')).default;
+
+  await app.register(fastifyCookie as any);
+  await app.register(fastifySession as any, {
+    store: new TypeormStore({
+      ttl: 86400,
+      cleanupLimit: 10,
+      limitSubquery: false,
+      onError: (store, error: Error) => console.error('Session store error:', error),
+    }).connect(sessionRepository),
+    secret: getSessionSecret(),
+    cookieName: 'connect.sid',
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 86400000,
+    },
+  });
+
+  // --- Security headers ---
+  const fastifyHelmet = (await import('@fastify/helmet')).default;
+  await app.register(fastifyHelmet as any, {
+    contentSecurityPolicy: false,
+  });
+
+  // --- Response compression ---
+  const fastifyCompress = (await import('@fastify/compress')).default;
+  await app.register(fastifyCompress as any, {
+    global: true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('KanbanFlow API')
@@ -30,20 +76,31 @@ async function bootstrap() {
     process.exit(1);
   }
 
-  app.use(express.static(publicPath));
-
-  // SPA fallback: serve index.html for all non-API routes
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.path.startsWith('/api/')) {
-      return next();
-    }
-    // Don't interfere with actual static files — let express.static handle those first
-    if (req.path.includes('.')) {
-      return next();
-    }
-    res.sendFile(join(publicPath, 'index.html'));
+  const fastifyStatic = (await import('@fastify/static')).default;
+  await app.register(fastifyStatic as any, {
+    root: publicPath,
+    wildcard: false,
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  // SPA fallback: serve index.html for all non-API routes
+  const fastify = app.getHttpAdapter().getInstance();
+  fastify.setNotFoundHandler((req: FastifyRequest, res: FastifyReply) => {
+    if (req.url?.startsWith('/api/')) {
+      res.code(404).send({ message: 'Not Found' });
+      return;
+    }
+    res.sendFile('index.html', publicPath);
+  });
+
+  await app.listen({ port: Number(process.env.PORT ?? 3000), host: '0.0.0.0' });
 }
+
+function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('SESSION_SECRET environment variable is required in production.');
+  }
+  return secret || 'kanbanflow-dev-secret-key-must-be-32-chars';
+}
+
 void bootstrap();

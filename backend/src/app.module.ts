@@ -1,8 +1,7 @@
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { DataSource } from 'typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { validate } from './config/env.validation';
@@ -13,10 +12,6 @@ import { ProjectsModule } from './projects/projects.module';
 import { BoardsModule } from './boards/boards.module';
 import { ColumnsModule } from './columns/columns.module';
 import { CardsModule } from './cards/cards.module';
-import { Session } from './sessions/entities/session.entity';
-import * as cookieParser from 'cookie-parser';
-import session from 'express-session';
-import { TypeormStore } from 'connect-typeorm';
 import { buildDataSourceOptions } from './database/data-source-options';
 
 @Module({
@@ -45,42 +40,4 @@ import { buildDataSourceOptions } from './database/data-source-options';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule implements NestModule {
-  constructor(private readonly dataSource: DataSource) {}
-
-  configure(consumer: MiddlewareConsumer) {
-    const sessionRepository = this.dataSource.getRepository(Session);
-
-    consumer
-      .apply(
-        cookieParser.default(),
-        session({
-          store: new TypeormStore({
-            ttl: 86400,
-            cleanupLimit: 10,
-            limitSubquery: false,
-            onError: (store: TypeormStore, error: Error) =>
-              console.error('Session store error:', error),
-          }).connect(sessionRepository),
-          secret: this.getSessionSecret(),
-          resave: false,
-          saveUninitialized: false,
-          cookie: {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 86400000,
-          },
-        }),
-      )
-      .forRoutes('*');
-  }
-
-  private getSessionSecret(): string {
-    const secret = process.env.SESSION_SECRET;
-    if (!secret && process.env.NODE_ENV === 'production') {
-      throw new Error('SESSION_SECRET environment variable is required in production.');
-    }
-    return secret || 'kanbanflow-dev-secret';
-  }
-}
+export class AppModule {}
