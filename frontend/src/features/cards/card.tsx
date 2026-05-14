@@ -112,7 +112,6 @@ export function Card({ card, index, isNew }: CardProps) {
         toast({
           title: 'Card deleted',
           type: 'destructive',
-          duration: 30000,
           action: {
             label: 'Undo',
             onClick: async () => {

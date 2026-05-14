@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import inquirer from 'inquirer';
 import { User } from '../users/entities/user.entity';
 import { buildDataSourceOptions } from '../database/data-source-options';

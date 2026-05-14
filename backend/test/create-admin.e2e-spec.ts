@@ -52,7 +52,7 @@ describe('create-admin CLI E2E Tests', () => {
       async () => {
         const { stdout, code } = await runCli(['--help']);
 
-        expect(stdout).toContain('Usage: npm run create-admin');
+        expect(stdout).toContain('Usage: node create-admin.js');
         expect(stdout).toContain('--email=<email>');
         expect(stdout).toContain('--password=<pwd>');
         expect(code).toBe(0);
@@ -131,7 +131,7 @@ describe('create-admin CLI E2E Tests', () => {
       async () => {
         const { stdout, code } = await runCli(['-h']);
 
-        expect(stdout).toContain('Usage: npm run create-admin');
+        expect(stdout).toContain('Usage: node create-admin.js');
         expect(code).toBe(0);
       },
       timeout,

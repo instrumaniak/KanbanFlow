@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const releaseDir = path.resolve(__dirname, '../../release');
-const requiredFiles = ['app.js', 'migrate.js', 'create-admin.js', 'common.js', 'package.json'];
-const requiredDirs = ['node_modules/bcrypt'];
+const requiredFiles = ['app.js', 'migrate.js', 'create-admin.js', 'common.js'];
+const requiredDirs = ['public'];
 
 let failed = false;
 
@@ -36,6 +36,19 @@ for (const dir of requiredDirs) {
   const dirPath = path.join(releaseDir, dir);
   if (!fs.existsSync(dirPath)) {
     console.error(`Missing required directory: ${dir}`);
+    failed = true;
+  }
+}
+
+// Hard requirement: public/index.html must exist and be non-empty
+const indexHtmlPath = path.join(releaseDir, 'public', 'index.html');
+if (!fs.existsSync(indexHtmlPath)) {
+  console.error('Missing required file: public/index.html');
+  failed = true;
+} else {
+  const stats = fs.statSync(indexHtmlPath);
+  if (stats.size === 0) {
+    console.error('Empty file: public/index.html');
     failed = true;
   }
 }

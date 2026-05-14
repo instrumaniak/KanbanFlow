@@ -213,3 +213,136 @@ Skipped by design:
 - The minimal runtime `node_modules` should stay intentionally small; only native or runtime-externalized packages should remain there.
 - If the native addon strategy becomes unstable across deployment platforms, the fallback is to rebuild `bcrypt` in the same target environment as the release artifact.
 - Deduplication via `splitChunks` requires all bundles to be present in the same directory at runtime so they can `require()` the shared chunks. This is guaranteed by the release build process.
+
+---
+
+## Update: Deployment-Ready Enhancements (2026-05-15)
+
+### Overview
+
+Following the initial single-file deployment build, three additional requirements were identified to make the artifact truly deployment-ready for a shared cPanel hosting workflow:
+
+1. **Eliminate native runtime dependencies** so the release folder contains zero `node_modules`.
+2. **Serve the frontend SPA from the backend bundle** so a single artifact handles both API and UI.
+3. **Enforce strict `/api` routing separation** so frontend routes and API routes never collide.
+
+### Changes Summary
+
+#### 1. Replace `bcrypt` with `bcryptjs` (Pure JavaScript)
+
+**Motivation:** `bcrypt` contains a native C++ addon that must be compiled for the target platform. This forces the release artifact to carry a `node_modules/` folder with platform-specific binaries. `bcryptjs` is a pure-JavaScript implementation with identical API surface, eliminating the native dependency entirely.
+
+**Files modified:**
+| File | Change |
+|---|---|
+| `backend/package.json` | Removed `bcrypt` and `@types/bcrypt`. Added `bcryptjs` `^3.0.2` and `@types/bcryptjs` `^2.4.6`. |
+| `backend/src/auth/auth.service.ts` | `import * as bcrypt from 'bcrypt'` → `import * as bcrypt from 'bcryptjs'` |
+| `backend/src/auth/auth.service.spec.ts` | Same import change; `jest.mock('bcrypt')` → `jest.mock('bcryptjs')` |
+| `backend/src/scripts/create-admin.ts` | `import bcrypt from 'bcrypt'` → `import bcrypt from 'bcryptjs'` |
+| `backend/webpack.config.js` | Removed `bcrypt` externalization block (`externals` now empty array). `bcryptjs` bundles inline. |
+| `backend/src/scripts/prepare-release.js` | Removed all `bcrypt`-specific logic and `npm install --production`. No `package.json` generation needed. |
+| `backend/src/scripts/verify-release.js` | Removed `node_modules/bcrypt` from `requiredDirs`. |
+
+**Result:** The `backend/release/` folder no longer contains any `node_modules/` directory. The release artifact is purely JavaScript bundles + frontend static assets.
+
+#### 2. Enforce `/api` Prefix for All Backend Routes
+
+**Motivation:** To create deterministic, collision-free routing, every API endpoint must live under `/api/*`. This allows the static file serving and SPA fallback to cleanly own every non-API path without complex exclusion lists.
+
+**Files modified:**
+| File | Change |
+|---|---|
+| `backend/src/users/users.controller.ts` | `@Controller('users')` → `@Controller('api/users')` |
+| `backend/src/app.controller.ts` | Removed `@Get()` root route (`Hello World!`). Controller class retained for module wiring. |
+
+**Result:** All functional API routes are now strictly under `/api/*`. No backend route competes with frontend paths.
+
+#### 3. Add Health Check Endpoint
+
+**Motivation:** After removing the root `GET /` endpoint, there was no lightweight endpoint to verify the API is running. A dedicated health check is useful for monitoring and quick validation.
+
+**Files modified:**
+| File | Change |
+|---|---|
+| `backend/src/app.controller.ts` | Added `@Get('api/health')` returning `{ status: 'ok' }`. |
+| `backend/src/app.controller.spec.ts` | Updated test to assert `getHealth()` returns `{ status: 'ok' }`. |
+| `backend/test/app.e2e-spec.ts` | Updated e2e test to hit `/api/health` instead of `/`. |
+
+#### 4. Serve Frontend Static Build from Backend
+
+**Motivation:** The deployment workflow is: build backend → build frontend → copy frontend `dist/` into backend release folder → zip the release folder → upload to cPanel. The backend bundle must serve the frontend SPA so a single Node.js process handles both API and UI.
+
+**How it works:**
+1. `backend/src/main.ts` checks for a `public/` folder relative to the bundle at startup.
+2. If `public/` is missing, the app logs a fatal error and exits immediately. This prevents deploying an API-only bundle when a full-stack deployment was intended.
+3. If `public/` exists, `express.static()` serves all static files (JS, CSS, images) directly.
+4. An `app.use()` middleware registered after `express.static()` catches all non-API routes and serves `public/index.html`. This handles React Router's `BrowserRouter` client-side routes (`/login`, `/board/123`, etc.).
+5. API routes (`/api/*`) are excluded from the fallback via a path prefix check.
+
+**Files modified:**
+| File | Change |
+|---|---|
+| `backend/src/main.ts` | Added `express.static()` serving + SPA fallback middleware. Fatal error if `public/` missing. |
+| `backend/src/scripts/prepare-release.js` | **Always builds the frontend first** (`npm run build` in `../../frontend/`), then copies `frontend/dist/` contents into `release/public/`. If frontend build fails, exits with code 1. |
+| `backend/src/scripts/verify-release.js` | Added `public/` to `requiredDirs`. Added hard requirement for `public/index.html` — verification fails if missing or empty. |
+
+**Request routing determinism after changes:**
+
+| Path Pattern | Handler |
+|---|---|
+| `/api/*` | NestJS API controllers |
+| `/api/docs` | SwaggerModule |
+| `/api/health` | Health check (AppController) |
+| Any file in `public/` matching the path | `express.static()` |
+| Any other path | SPA fallback → `public/index.html` |
+
+#### 5. Frontend Build Fixes (Blocking Release Build)
+
+During the implementation, two pre-existing TypeScript errors in the frontend blocked the release build because `prepare-release.js` now always builds the frontend. These were fixed:
+
+| File | Issue | Fix |
+|---|---|---|
+| `frontend/src/features/cards/card.tsx` | `duration` property not defined in toast type | Removed `duration: 30000` from toast call |
+| `frontend/src/features/columns/column-header.tsx` | `boardId` property not defined in move mutation type | Removed `boardId: column.board_id` from mutation call |
+
+#### 6. E2E Test Fixes
+
+| File | Change |
+|---|---|
+| `backend/test/create-admin.e2e-spec.ts` | Updated expected help text from `"Usage: npm run create-admin"` to `"Usage: node create-admin.js"` to match actual CLI output. |
+
+### Updated Release Folder Structure
+
+```
+backend/release/
+  app.js                 # API server bundle
+  migrate.js             # Migration runner bundle
+  create-admin.js        # Admin bootstrap bundle
+  common.js              # Shared chunks (TypeORM, entities, etc.)
+  4.js, 5.js             # Additional webpack split chunks
+  public/                # Frontend build output
+    index.html
+    assets/
+      index-xxx.js
+      index-xxx.css
+    favicon.svg
+    icons.svg
+```
+
+**No `node_modules/` directory.**
+
+### Updated Acceptance Criteria
+
+9. **Given** the backend release build completes, **When** the deployment artifact is inspected, **Then** it contains JS bundles, shared chunks, and a `public/` folder with `index.html`, and **no** `node_modules/` directory.
+10. **Given** the bundled API starts with its `public/` folder present, **When** a request is made to a non-API path (e.g., `/login` or `/board/123`), **Then** the backend serves `public/index.html` so React Router can handle client-side routing.
+11. **Given** the bundled API starts without a `public/` folder, **When** the process initializes, **Then** it logs a fatal error and exits with code 1.
+12. **Given** any backend controller, **When** its route prefix is inspected, **Then** it is under `/api/*` (with the exception of Swagger docs, also under `/api/docs`).
+13. **Given** the health endpoint is called, **When** `GET /api/health` is requested, **Then** it returns `{ status: 'ok' }` with HTTP 200.
+
+### Testing Results
+
+All tests pass after the enhancements:
+- **Backend unit tests:** 172 passed / 172 total
+- **Backend e2e tests:** 49 passed / 49 total
+- **Frontend unit tests:** 223 passed / 223 total
+- **Release build verification:** `npm run test:release` passes with all required files and `public/index.html` present.

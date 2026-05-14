@@ -15,14 +15,7 @@ module.exports = function (options) {
       filename: '[name].js',
       chunkFilename: '[name].js',
     },
-    externals: [
-      ({ request }, callback) => {
-        if (request === 'bcrypt') {
-          return callback(null, 'commonjs bcrypt');
-        }
-        callback();
-      },
-    ],
+    externals: [],
     optimization: {
       ...options.optimization,
       minimize: true,

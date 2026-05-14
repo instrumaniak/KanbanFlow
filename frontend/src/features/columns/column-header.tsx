@@ -116,7 +116,7 @@ export function ColumnHeader({ column, allColumns = [], onDeleted }: ColumnHeade
 
   const handleMoveAll = async (targetColumnId: number) => {
     try {
-      const result = await moveMutation.mutateAsync({ sourceColumnId: column.id, targetColumnId, boardId: column.board_id });
+      const result = await moveMutation.mutateAsync({ sourceColumnId: column.id, targetColumnId });
       toast({ title: `${result.data.movedCount} cards moved`, type: 'success' });
       setShowMoveMenu(false);
       setShowMenu(false);
