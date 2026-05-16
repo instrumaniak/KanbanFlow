@@ -32,17 +32,11 @@ describe('Projects API (e2e)', () => {
     });
 
     it('POST /api/projects returns 401 without session', async () => {
-      await request(url)
-        .post('/api/projects')
-        .send({ name: 'Test Project' })
-        .expect(401);
+      await request(url).post('/api/projects').send({ name: 'Test Project' }).expect(401);
     });
 
     it('PATCH /api/projects/:id returns 401 without session', async () => {
-      await request(url)
-        .patch('/api/projects/1')
-        .send({ name: 'Updated' })
-        .expect(401);
+      await request(url).patch('/api/projects/1').send({ name: 'Updated' }).expect(401);
     });
 
     it('DELETE /api/projects/:id returns 401 without session', async () => {
@@ -60,10 +54,7 @@ describe('Projects API (e2e)', () => {
     });
 
     it('PATCH /api/projects/invalid returns 401 for non-numeric id', async () => {
-      await request(url)
-        .patch('/api/projects/invalid')
-        .send({ name: 'Updated' })
-        .expect(401);
+      await request(url).patch('/api/projects/invalid').send({ name: 'Updated' }).expect(401);
     });
 
     it('DELETE /api/projects/invalid returns 401 for non-numeric id', async () => {

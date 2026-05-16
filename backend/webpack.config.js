@@ -33,6 +33,7 @@ module.exports = function (options) {
             },
             format: {
               comments: false,
+              max_line_len: 120,
             },
           },
           extractComments: false,

@@ -57,10 +57,7 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Logout current user' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
-  async logout(
-    @Session() session: Record<string, unknown>,
-    @Res({ passthrough: true }) res: any,
-  ) {
+  async logout(@Session() session: Record<string, unknown>, @Res({ passthrough: true }) res: any) {
     await this.authService.logout(session);
     res.clearCookie('connect.sid');
     return { message: 'Logout successful' };

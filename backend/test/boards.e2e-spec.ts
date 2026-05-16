@@ -32,10 +32,7 @@ describe('Boards API (e2e)', () => {
     });
 
     it('POST /api/boards returns 401 without session', async () => {
-      await request(url)
-        .post('/api/boards')
-        .send({ name: 'Test Board' })
-        .expect(401);
+      await request(url).post('/api/boards').send({ name: 'Test Board' }).expect(401);
     });
 
     it('GET /api/boards/:id returns 401 without session', async () => {
@@ -43,10 +40,7 @@ describe('Boards API (e2e)', () => {
     });
 
     it('PATCH /api/boards/:id returns 401 without session', async () => {
-      await request(url)
-        .patch('/api/boards/1')
-        .send({ name: 'Updated' })
-        .expect(401);
+      await request(url).patch('/api/boards/1').send({ name: 'Updated' }).expect(401);
     });
 
     it('DELETE /api/boards/:id returns 401 without session', async () => {
@@ -64,10 +58,7 @@ describe('Boards API (e2e)', () => {
     });
 
     it('PATCH /api/boards/invalid returns 401 for non-numeric id', async () => {
-      await request(url)
-        .patch('/api/boards/invalid')
-        .send({ name: 'Updated' })
-        .expect(401);
+      await request(url).patch('/api/boards/invalid').send({ name: 'Updated' }).expect(401);
     });
 
     it('DELETE /api/boards/invalid returns 401 for non-numeric id', async () => {

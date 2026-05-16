@@ -51,10 +51,7 @@ describe('Auth API (e2e)', () => {
     });
 
     it('returns 400 for missing email', async () => {
-      await request(url)
-        .post('/api/auth/register')
-        .send({ password: testPassword })
-        .expect(400);
+      await request(url).post('/api/auth/register').send({ password: testPassword }).expect(400);
     });
 
     it('returns 400 for invalid email format', async () => {
