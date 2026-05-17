@@ -103,16 +103,12 @@ test.describe('App shell & navigation', () => {
       await page.getByLabel('Email').fill(TEST_EMAIL);
       await page.getByLabel('Password').fill(TEST_PASSWORD);
       await page.getByRole('button', { name: 'Sign In' }).click();
-      await page.waitForURL('/');
+      await page.waitForURL((url) => url.pathname !== '/login', { timeout: 10000 });
     }
-    
-    await page.waitForTimeout(500);
+
     const boardsHeading = page.getByRole('heading', { name: 'My Boards' });
     const projectsHeading = page.getByRole('heading', { name: 'My Projects' });
-    
-    const isBoardsVisible = await boardsHeading.isVisible().catch(() => false);
-    const isProjectsVisible = await projectsHeading.isVisible().catch(() => false);
-    
-    expect(isBoardsVisible || isProjectsVisible).toBe(true);
+
+    await expect(boardsHeading.or(projectsHeading)).toBeVisible();
   });
 });

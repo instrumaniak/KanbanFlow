@@ -36,15 +36,11 @@ test.describe('Boards CRUD', () => {
 
     // Navigate to root which shows boards
     await page.goto('/');
-    await page.waitForTimeout(500);
-    
+
     const emptyStateButton = page.getByRole('button', { name: 'Create your first board' });
     const createButton = page.getByRole('button', { name: 'Create Board' });
 
-    const isEmptyVisible = await emptyStateButton.isVisible().catch(() => false);
-    const isCreateVisible = await createButton.isVisible().catch(() => false);
-
-    expect(isEmptyVisible || isCreateVisible).toBe(true);
+    await expect(emptyStateButton.or(createButton)).toBeVisible();
   });
 
   test('creates a board via Create Board button', async ({ page }) => {

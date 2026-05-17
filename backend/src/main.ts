@@ -1,25 +1,34 @@
+import fs from 'node:fs';
+import { join } from 'node:path';
 import { NestFactory } from '@nestjs/core';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AppModule } from './app.module';
-import { join } from 'path';
 import { DataSource } from 'typeorm';
 import { Session } from './sessions/entities/session.entity';
 import { TypeormStore } from 'connect-typeorm';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
+import fastifyCompress from '@fastify/compress';
+import fastifyHelmet from '@fastify/helmet';
+import fastifyCookie from '@fastify/cookie';
+import fastifySession from '@fastify/session';
+import fastifyStatic from '@fastify/static';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter({
+      trustProxy: true,
+    }),
+  );
 
   // --- Session store setup (must be before app.init() for routes to have session) ---
   const dataSource = app.get(DataSource);
   const sessionRepository = dataSource.getRepository(Session);
 
-  const fastifyCookie = (await import('@fastify/cookie')).default;
-  const fastifySession = (await import('@fastify/session')).default;
+  await app.register(fastifyCookie);
 
-  await app.register(fastifyCookie as any);
-  await app.register(fastifySession as any, {
+  await app.register(fastifySession, {
     store: new TypeormStore({
       ttl: 86400,
       cleanupLimit: 10,
@@ -31,21 +40,18 @@ async function bootstrap() {
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       maxAge: 86400000,
     },
   });
 
-  // --- Security headers ---
-  const fastifyHelmet = (await import('@fastify/helmet')).default;
-  await app.register(fastifyHelmet as any, {
+  await app.register(fastifyHelmet, {
     contentSecurityPolicy: false,
   });
 
-  // --- Response compression ---
-  const fastifyCompress = (await import('@fastify/compress')).default;
-  await app.register(fastifyCompress as any, {
+  await app.register(fastifyCompress, {
     global: true,
+    threshold: 1024,
   });
 
   const config = new DocumentBuilder()
@@ -61,18 +67,17 @@ async function bootstrap() {
 
   // --- Static file serving + SPA fallback (release only) ---
   const publicPath = join(__dirname, 'public');
-  const hasPublicFolder = require('fs').existsSync(publicPath);
+  const hasPublicFolder = fs.existsSync(publicPath);
 
   if (hasPublicFolder) {
-    const fastifyStatic = (await import('@fastify/static')).default;
-    await app.register(fastifyStatic as any, {
+    await app.register(fastifyStatic, {
       root: publicPath,
       wildcard: false,
     });
 
     // SPA fallback: serve index.html for all non-API routes
     const fastify = app.getHttpAdapter().getInstance();
-    fastify.setNotFoundHandler((req: FastifyRequest, res: FastifyReply) => {
+    fastify.get('*', (req: FastifyRequest, res: FastifyReply) => {
       if (req.url?.startsWith('/api/')) {
         res.code(404).send({ message: 'Not Found' });
         return;

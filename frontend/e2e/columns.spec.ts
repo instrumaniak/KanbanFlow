@@ -55,14 +55,18 @@ test.describe('Column CRUD', () => {
     await page.waitForURL('/projects');
 
     await page.goto('/');
-    await page.waitForTimeout(500);
 
+    const emptyStateButton = page.getByRole('button', { name: 'Create your first board' });
     const createButton = page.getByRole('button', { name: 'Create Board' });
-    if (await createButton.isVisible().catch(() => false)) {
+
+    if (await emptyStateButton.isVisible().catch(() => false)) {
+      await emptyStateButton.click();
+    } else {
       await createButton.click();
     }
 
     const nameInput = page.getByLabel('Board name');
+    await expect(nameInput).toBeVisible();
     await nameInput.fill(`Test Board ${Date.now()}`);
     await page.getByRole('button', { name: 'Create' }).click();
 
