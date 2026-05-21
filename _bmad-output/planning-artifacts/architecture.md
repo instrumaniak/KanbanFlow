@@ -148,6 +148,7 @@ npx @nestjs/cli new backend --package-manager npm
 | Database | MySQL | 8.x | Specified by PRD, widely supported |
 | Migrations | TypeORM migrations | — | Auto-generated from entity changes |
 | Caching | None (MVP) | — | Low complexity, single user, defer to post-MVP |
+| Markdown rendering | react-markdown + rehype-highlight + mermaid | Latest | Rich markdown support for notes and card descriptions |
 
 ### Authentication & Security
 
@@ -196,14 +197,168 @@ npx @nestjs/cli new backend --package-manager npm
 4. Core CRUD (Projects → Boards → Columns → Cards)
 5. Frontend components (feature-based structure)
 6. Drag-drop (dnd-kit integration)
-7. Admin panel
-8. Polish (dark mode, accessibility, search/filter)
+7. Notes & Tags (rich markdown notes, generic tag system)
+8. Admin panel
+9. Polish (dark mode, accessibility, search/filter)
 
 **Cross-Component Dependencies:**
 - Auth module protects all API endpoints — must be built first after DB
 - Board/Column/Card share cascade delete logic — TypeORM relations handle this. Project deletion sets board.project_id to NULL (no cascade).
+- Notes cascade delete when linked board/project/card is deleted — TypeORM `onDelete: 'CASCADE'` handles this.
+- Tags are cross-cutting — notes use `note_tags` join table. Cards/projects/boards can adopt tags later with their own join tables.
 - Drag-drop requires optimistic UI updates — React Query mutations
 - Dark mode requires CSS variables established early in frontend setup
+
+## Core Entities
+
+### Board Entity
+
+```typescript
+// backend/src/boards/entities/board.entity.ts
+@Entity('boards')
+export class Board {
+  @PrimaryGeneratedColumn('increment')
+  id: number;
+
+  @Column({ type: 'varchar', length: 255 })
+  name: string;
+
+  @Column({ type: 'varchar', length: 20, default: '#f1f5f9' })
+  background_color: string;
+
+  @Column({ type: 'enum', enum: ['kanban', 'list'], default: 'kanban' })
+  view_mode: 'kanban' | 'list';
+
+  @Column({ type: 'int', nullable: true })
+  project_id: number;
+
+  @ManyToOne(() => Project, (project) => project.boards, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'project_id' })
+  project: Project;
+
+  @Column({ type: 'int' })
+  user_id: number;
+
+  @ManyToOne(() => User, (user) => user.boards, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @OneToMany(() => Column, (column) => column.board, { cascade: true })
+  columns: Column[];
+
+  @OneToMany(() => Note, (note) => note.board, { cascade: true })
+  notes: Note[];
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}
+```
+
+**Notes:** `view_mode` persists the user's preferred view per board (`'kanban'` for column-based workflow, `'list'` for flat issue-tracker style). Default is `'kanban'`. Project deletion sets `project_id` to NULL (no cascade).
+
+## Notes & Tags Data Model
+
+### Notes Entity
+
+```typescript
+// backend/src/notes/entities/note.entity.ts
+@Entity('notes')
+export class Note {
+  @PrimaryGeneratedColumn('increment')
+  id: number;
+
+  @Column({ type: 'varchar', length: 255 })
+  title: string;
+
+  @Column({ type: 'text' })
+  content: string; // Markdown content
+
+  @Column({ type: 'int', nullable: true })
+  board_id: number;
+
+  @ManyToOne(() => Board, (board) => board.notes, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'board_id' })
+  board: Board;
+
+  @Column({ type: 'int', nullable: true })
+  project_id: number;
+
+  @ManyToOne(() => Project, (project) => project.notes, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'project_id' })
+  project: Project;
+
+  @Column({ type: 'int', nullable: true })
+  card_id: number;
+
+  @ManyToOne(() => Card, (card) => card.notes, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'card_id' })
+  card: Card;
+
+  @Column({ type: 'int' })
+  user_id: number;
+
+  @ManyToOne(() => User, (user) => user.notes, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @ManyToMany(() => Tag, (tag) => tag.notes, { cascade: true })
+  @JoinTable({
+    name: 'note_tags',
+    joinColumn: { name: 'note_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'tag_id', referencedColumnName: 'id' },
+  })
+  tags: Tag[];
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}
+```
+
+**Notes:** Top-level notes have all FKs (`board_id`, `project_id`, `card_id`) as `NULL`. Cascade deletes ensure linked notes are removed when the parent entity is deleted.
+
+### Tags Entity (Cross-Cutting)
+
+```typescript
+// backend/src/tags/entities/tag.entity.ts
+@Entity('tags')
+export class Tag {
+  @PrimaryGeneratedColumn('increment')
+  id: number;
+
+  @Column({ type: 'varchar', length: 50 })
+  name: string;
+
+  @Column({ type: 'varchar', length: 20, nullable: true, default: 'teal' })
+  color: string; // Visual consistency: "teal", "rose", "amber", "slate", etc.
+
+  @Column({ type: 'int' })
+  user_id: number;
+
+  @ManyToOne(() => User, (user) => user.tags, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @ManyToMany(() => Note, (note) => note.tags)
+  notes: Note[];
+
+  // Future: @ManyToMany(() => Card, (card) => card.tags)
+  // Future: @ManyToMany(() => Project, (project) => project.tags)
+  // Future: @ManyToMany(() => Board, (board) => board.tags)
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+}
+```
+
+**Join table:** `note_tags(note_id, tag_id)` with composite PK and indexes.
+
+**Future-proofing:** Tags are designed as a cross-cutting entity from day one. Adding tags to cards, projects, or boards later requires only a new join table (e.g., `card_tags`) and a `@ManyToMany` decorator — no changes to the `Tag` entity itself.
 
 ## Implementation Patterns & Consistency Rules
 
@@ -253,6 +408,24 @@ backend/src/
 ├── cards/              # Cards module
 ├── checklists/         # Checklists module
 ├── labels/             # Labels module
+├── notes/              # Notes module
+│   ├── notes.module.ts
+│   ├── notes.controller.ts
+│   ├── notes.service.ts
+│   ├── entities/
+│   │   └── note.entity.ts
+│   └── dto/
+│       ├── create-note.dto.ts
+│       └── update-note.dto.ts
+├── tags/               # Tags module (cross-cutting, used by notes now, cards/projects future)
+│   ├── tags.module.ts
+│   ├── tags.controller.ts
+│   ├── tags.service.ts
+│   ├── entities/
+│   │   └── tag.entity.ts
+│   └── dto/
+│       ├── create-tag.dto.ts
+│       └── update-tag.dto.ts
 ├── admin/              # Admin module
 ├── common/             # Shared utilities
 │   ├── decorators/
@@ -275,6 +448,19 @@ frontend/src/
 │   ├── cards/          # Card component, card detail, drag-drop
 │   ├── checklists/     # Checklist component, progress bar
 │   ├── labels/         # Label picker, label badges
+│   ├── notes/          # Note list, note editor, note detail
+│   │   ├── note-list.tsx
+│   │   ├── note-editor.tsx
+│   │   ├── note-card.tsx
+│   │   ├── note-detail.tsx
+│   │   ├── create-note-dialog.tsx
+│   │   ├── use-notes.ts
+│   │   └── notes.api.ts
+│   ├── tags/           # Tag management (used by notes now, cards/projects future)
+│   │   ├── tag-picker.tsx
+│   │   ├── tag-badge.tsx
+│   │   ├── use-tags.ts
+│   │   └── tags.api.ts
 │   ├── search/         # Search and filter components
 │   └── admin/          # Admin panel components
 ├── components/

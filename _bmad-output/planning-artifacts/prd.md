@@ -18,11 +18,12 @@ vision:
   valueProposition: "Your boards, your server, your data - infinite possibilities, zero subscriptions"
 success:
   userSuccess:
-    - Quick task capture
-    - Visual clarity
-    - Zero-friction organization
-    - Progress visibility
-    - Markdown for rich card details
+- Quick task capture
+- Visual clarity
+- Zero-friction organization
+- Progress visibility
+- Markdown for rich card details
+- Notes for planning and documentation
   businessSuccess:
     - Zero maintenance overhead
     - Data safety
@@ -90,6 +91,9 @@ Users can create and manage multiple boards with customizable backgrounds, defin
 - User can complete task workflow in under 2 minutes
 - Board loads in under 1 second
 - All CRUD operations complete reliably
+- User can create a note in under 30 seconds
+- Notes page loads in under 1 second
+- Markdown preview renders within 500ms
 
 ## User Journeys
 
@@ -232,6 +236,17 @@ Older browsers not supported.
 - Activity log viewer: view logs for debugging abnormal situations
 - Access restricted to admin role users
 
+**Notes**
+- Create notes with title and markdown content
+- Edit and delete notes
+- Link notes to boards, projects, or cards (optional)
+- View all notes in a dedicated notes page (`/notes`)
+- Search notes by title
+- Filter notes by type (standalone, board-linked, project-linked, card-linked)
+- Optional tags for note organization
+- Markdown rendering with code syntax highlighting and mermaid diagrams
+- Sanitized output to prevent XSS
+
 ### Growth Features (Post-MVP)
 
 - WebSocket real-time updates
@@ -317,6 +332,18 @@ Older browsers not supported.
 - FR47: Admin can toggle new user registration on/off
 - FR48: Admin can view activity logs for debugging
 - FR49: CLI script can create initial superadmin user
+
+### Notes
+
+- FR50: Users can create notes with a title and markdown content
+- FR51: Users can edit note title and markdown content
+- FR52: Users can delete notes permanently
+- FR53: Users can optionally link a note to a board, project, or card
+- FR54: Users can view all their notes in a dedicated notes page
+- FR55: Users can search notes by title
+- FR56: Users can filter notes by type (standalone, board-linked, project-linked, card-linked)
+- FR57: Users can assign optional tags to notes for organization
+- FR58: System renders markdown content with code syntax highlighting and mermaid diagrams
 
 ## Non-Functional Requirements
 
