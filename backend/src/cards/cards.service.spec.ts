@@ -35,6 +35,8 @@ describe('CardsService', () => {
       title: `Card ${id}`,
       column_id: columnId,
       position,
+      description: null,
+      due_date: null,
       column: { ...mockColumn, id: columnId } as BoardColumn,
       created_at: new Date(),
       updated_at: new Date(),
@@ -66,6 +68,55 @@ describe('CardsService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe('create', () => {
+    it('should create a card with default fields', async () => {
+      mockColumnRepository.findOne.mockResolvedValue(mockColumn);
+      const mockQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: null }),
+      };
+      mockCardRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockCardRepository.create.mockReturnValue({ id: 1 });
+      mockCardRepository.save.mockResolvedValue({ id: 1, title: 'New Card', column_id: 1, position: 0, description: null, due_date: null });
+
+      const result = await service.create(mockUserId, { title: 'New Card', column_id: 1 });
+
+      expect(mockCardRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'New Card',
+        column_id: 1,
+        position: 0,
+        description: null,
+        due_date: null,
+      }));
+      expect(result).toBeDefined();
+    });
+
+    it('should create a card with description and due_date', async () => {
+      mockColumnRepository.findOne.mockResolvedValue(mockColumn);
+      const mockQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: null }),
+      };
+      mockCardRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockCardRepository.create.mockReturnValue({ id: 1 });
+      mockCardRepository.save.mockResolvedValue({ id: 1, title: 'New Card', column_id: 1, position: 0, description: 'A description', due_date: new Date('2026-01-01') });
+
+      await service.create(mockUserId, {
+        title: 'New Card',
+        column_id: 1,
+        description: 'A description',
+        due_date: '2026-01-01',
+      });
+
+      expect(mockCardRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+        description: 'A description',
+        due_date: new Date('2026-01-01'),
+      }));
+    });
   });
 
   describe('update (reordering)', () => {
@@ -144,6 +195,37 @@ describe('CardsService', () => {
       expect(targetColumnCards[1].position).toBe(2);
       expect(mockCardRepository.update).toHaveBeenCalledWith(1, { column_id: 2 });
       expect(mockCardRepository.update).toHaveBeenCalledWith(1, { position: 0 });
+    });
+
+    it('should update description', async () => {
+      const card = createMockCard(1, 1, 0);
+      mockCardRepository.findOne.mockResolvedValue(card);
+      mockCardRepository.update.mockResolvedValue({ affected: 1 } as UpdateResult);
+
+      await service.update(1, mockUserId, { description: 'New description' });
+
+      expect(mockCardRepository.update).toHaveBeenCalledWith(1, { description: 'New description' });
+    });
+
+    it('should update due_date', async () => {
+      const card = createMockCard(1, 1, 0);
+      mockCardRepository.findOne.mockResolvedValue(card);
+      mockCardRepository.update.mockResolvedValue({ affected: 1 } as UpdateResult);
+
+      await service.update(1, mockUserId, { due_date: '2026-06-01' });
+
+      expect(mockCardRepository.update).toHaveBeenCalledWith(1, { due_date: new Date('2026-06-01') });
+    });
+
+    it('should clear due_date when set to nullish via empty string', async () => {
+      const card = createMockCard(1, 1, 0);
+      card.due_date = new Date('2026-01-01');
+      mockCardRepository.findOne.mockResolvedValue(card);
+      mockCardRepository.update.mockResolvedValue({ affected: 1 } as UpdateResult);
+
+      await service.update(1, mockUserId, { due_date: undefined });
+
+      expect(mockCardRepository.update).not.toHaveBeenCalledWith(1, expect.objectContaining({ due_date: expect.anything() }));
     });
   });
 

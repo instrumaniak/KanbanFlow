@@ -11,6 +11,8 @@ describe('CardsController', () => {
     title: string;
     column_id: number;
     position: number;
+    description: string | null;
+    due_date: string | null;
     created_at: string;
     updated_at: string;
   };
@@ -48,6 +50,8 @@ describe('CardsController', () => {
           title: 'Card 1',
           column_id: 1,
           position: 0,
+          description: null,
+          due_date: null,
           created_at: new Date(),
           updated_at: new Date(),
         },
@@ -56,6 +60,8 @@ describe('CardsController', () => {
           title: 'Card 2',
           column_id: 1,
           position: 1,
+          description: 'A description',
+          due_date: new Date('2026-01-01'),
           created_at: new Date(),
           updated_at: new Date(),
         },
@@ -67,8 +73,8 @@ describe('CardsController', () => {
       expect(result.data).toHaveLength(2);
       expect(result.data).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ id: 1, title: 'Card 1' }),
-          expect.objectContaining({ id: 2, title: 'Card 2' }),
+          expect.objectContaining({ id: 1, title: 'Card 1', description: null, due_date: null }),
+          expect.objectContaining({ id: 2, title: 'Card 2', description: 'A description', due_date: expect.any(String) }),
         ]),
       );
     });
@@ -81,6 +87,8 @@ describe('CardsController', () => {
         title: 'New Card',
         column_id: 1,
         position: 0,
+        description: null,
+        due_date: null,
         created_at: new Date(),
         updated_at: new Date(),
       };
@@ -96,10 +104,38 @@ describe('CardsController', () => {
         title: 'New Card',
         column_id: 1,
         position: 0,
+        description: null,
+        due_date: null,
       });
       expect(result.message).toBe('Card created');
       expect(result.data.created_at).toEqual(expect.any(String));
       expect(result.data.updated_at).toEqual(expect.any(String));
+    });
+
+    it('should create a card with description and due_date', async () => {
+      const card = {
+        id: 1,
+        title: 'New Card',
+        column_id: 1,
+        position: 0,
+        description: 'A description',
+        due_date: new Date('2026-01-01'),
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+      mockCardsService.create.mockResolvedValue(card as Card);
+
+      const result = (await controller.create(
+        { userId: 1 },
+        { title: 'New Card', column_id: 1, description: 'A description', due_date: '2026-01-01' },
+      )) as CardMutationResponse;
+
+      expect(result.data).toMatchObject({
+        id: 1,
+        title: 'New Card',
+        description: 'A description',
+        due_date: expect.any(String),
+      });
     });
   });
 
@@ -110,6 +146,8 @@ describe('CardsController', () => {
         title: 'Updated Card',
         column_id: 1,
         position: 0,
+        description: null,
+        due_date: null,
         created_at: new Date(),
         updated_at: new Date(),
       };
@@ -124,10 +162,36 @@ describe('CardsController', () => {
         title: 'Updated Card',
         column_id: 1,
         position: 0,
+        description: null,
+        due_date: null,
       });
       expect(result.message).toBe('Card updated');
       expect(result.data.created_at).toEqual(expect.any(String));
       expect(result.data.updated_at).toEqual(expect.any(String));
+    });
+
+    it('should update description and due_date', async () => {
+      const card = {
+        id: 1,
+        title: 'Card',
+        column_id: 1,
+        position: 0,
+        description: 'Updated description',
+        due_date: new Date('2026-06-01'),
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+      mockCardsService.update.mockResolvedValue(card as Card);
+
+      const result = (await controller.update({ userId: 1 }, 1, {
+        description: 'Updated description',
+        due_date: '2026-06-01',
+      })) as CardMutationResponse;
+
+      expect(result.data).toMatchObject({
+        description: 'Updated description',
+        due_date: expect.any(String),
+      });
     });
   });
 

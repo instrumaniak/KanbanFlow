@@ -10,6 +10,7 @@ import { CreateBoardsColumns1745862000000 } from '../migrations/1745862000000-Cr
 import { AddIsArchivedToBoards1777411200000 } from '../migrations/1777411200000-AddIsArchivedToBoards';
 import { CreateCards1778000000000 } from '../migrations/1778000000000-CreateCards';
 import { AddSessionsTable1778100000000 } from '../migrations/1778100000000-AddSessionsTable';
+import { AddDescriptionAndDueDateToCards1778200000000 } from '../migrations/1778200000000-AddDescriptionAndDueDateToCards';
 
 /**
  * Explicit registry of TypeORM entities.
@@ -29,4 +30,5 @@ export const migrations = [
   AddIsArchivedToBoards1777411200000,
   CreateCards1778000000000,
   AddSessionsTable1778100000000,
+  AddDescriptionAndDueDateToCards1778200000000,
 ];

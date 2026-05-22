@@ -1,6 +1,6 @@
 # Story 4.1: Card Detail Panel
 
-Status: ready-for-dev
+Status: dev-complete
 
 ---
 
@@ -49,23 +49,23 @@ so that I can edit all card properties in one place.
 
 ## Tasks / Subtasks
 
-- [ ] Database: Add `description` (TEXT, nullable) and `due_date` (DATETIME, nullable) to `cards` table via TypeORM migration
-- [ ] Backend: Update `Card` entity with new fields
-- [ ] Backend: Update `CreateCardDto` and `UpdateCardDto` with new fields
-- [ ] Backend: Update `CardsController` to include new fields in responses
-- [ ] Backend: Run migration locally and verify
-- [ ] Frontend: Update `Card` interface in `cards.api.ts` with new fields
-- [ ] Frontend: Create `CardDetailPanel` component using shadcn `Sheet`
-- [ ] Frontend: Add title editing in detail panel (inline input, auto-save on blur)
-- [ ] Frontend: Add description textarea section in detail panel (auto-save on blur)
-- [ ] Frontend: Add Due Date display section (show formatted date or placeholder)
-- [ ] Frontend: Add Labels placeholder section
-- [ ] Frontend: Add Checklist placeholder section
-- [ ] Frontend: Integrate detail panel into `Card` component (click to open)
-- [ ] Frontend: Ensure panel is scrollable for long content
-- [ ] Frontend: Handle Escape key and outside-click to close panel
-- [ ] Tests: Add backend unit tests for updated DTOs and entity
-- [ ] Tests: Add frontend tests for `CardDetailPanel` rendering and interactions
+- [x] Database: Add `description` (TEXT, nullable) and `due_date` (DATETIME, nullable) to `cards` table via TypeORM migration
+- [x] Backend: Update `Card` entity with new fields
+- [x] Backend: Update `CreateCardDto` and `UpdateCardDto` with new fields
+- [x] Backend: Update `CardsController` to include new fields in responses
+- [x] Backend: Run migration locally and verify
+- [x] Frontend: Update `Card` interface in `cards.api.ts` with new fields
+- [x] Frontend: Create `CardDetailPanel` component using shadcn `Sheet`
+- [x] Frontend: Add title editing in detail panel (inline input, auto-save on blur)
+- [x] Frontend: Add description textarea section in detail panel (auto-save on blur)
+- [x] Frontend: Add Due Date display section (show formatted date or placeholder)
+- [x] Frontend: Add Labels placeholder section
+- [x] Frontend: Add Checklist placeholder section
+- [x] Frontend: Integrate detail panel into `Card` component (click to open)
+- [x] Frontend: Ensure panel is scrollable for long content
+- [x] Frontend: Handle Escape key and outside-click to close panel
+- [x] Tests: Add backend unit tests for updated DTOs and entity
+- [x] Tests: Add frontend tests for `CardDetailPanel` rendering and interactions
 
 ---
 
@@ -212,38 +212,49 @@ Frontend:
 
 ### Completion Notes List
 
-- [ ] Migration generated and tested locally
-- [ ] Backend entity and DTOs updated with validation
-- [ ] Controller response mapping updated
-- [ ] Frontend Card interface updated
-- [ ] CardDetailPanel component created with Sheet, ScrollArea, Textarea
-- [ ] Title editing implemented with auto-save on blur
-- [ ] Description textarea implemented with auto-save on blur
-- [ ] Due Date display section implemented
-- [ ] Labels and Checklist placeholder sections added
-- [ ] Card click handler updated to open detail panel
-- [ ] Inline editing removed from card face (or moved to double-click)
-- [ ] Escape and outside-click close handlers implemented
-- [ ] Accessibility attributes added
-- [ ] Backend tests updated/added
-- [ ] Frontend tests added for CardDetailPanel
-- [ ] All existing tests pass
+- [x] Migration generated and tested locally (`1778200000000-AddDescriptionAndDueDateToCards`)
+- [x] Backend entity and DTOs updated with validation (`@IsOptional`, `@IsString`, `@IsDateString`)
+- [x] Controller response mapping updated to include `description` and `due_date` in all endpoints
+- [x] Frontend Card interface updated with `description: string | null` and `due_date: string | null`
+- [x] CardDetailPanel component created with Sheet, ScrollArea, Textarea, Separator
+- [x] Title editing implemented with auto-save on blur (reverts to original if emptied)
+- [x] Description textarea implemented with auto-save on blur (saves `null` when cleared)
+- [x] Due Date display section implemented with `Badge` and `toLocaleDateString` formatting
+- [x] Labels and Checklist placeholder sections added
+- [x] Card click handler updated to open detail panel; drag distance check preserved
+- [x] Inline editing removed from card face (moved entirely to detail panel)
+- [x] Escape and outside-click close handlers implemented via Radix Dialog/Sheet primitives
+- [x] Accessibility attributes added (`aria-label="Card details"`, `aria-label="Card title"`, `aria-label="Card description"`)
+- [x] Backend tests updated/added (20 tests passing in cards module, 179 total backend tests passing)
+- [x] Frontend tests added for CardDetailPanel (14 tests) and card.test.tsx updated (existing tests pass)
+- [x] All existing tests pass (backend: 179/179; frontend: 231/233 — 2 pre-existing auth form failures unchanged)
+- [x] New shadcn components created: `Sheet`, `Textarea`, `ScrollArea`, `Separator`
+- [x] `ResizeObserver` mock added to `frontend/src/test-setup.ts` for jsdom compatibility
 
 ### File List
 
 Backend:
-- `backend/src/cards/entities/card.entity.ts`
-- `backend/src/cards/dto/create-card.dto.ts`
-- `backend/src/cards/dto/update-card.dto.ts`
-- `backend/src/cards/cards.controller.ts`
-- `backend/src/cards/cards.service.ts`
-- `backend/src/migrations/...-AddDescriptionAndDueDateToCards.ts`
+- `backend/src/cards/entities/card.entity.ts` — added `description` and `due_date` columns
+- `backend/src/cards/dto/create-card.dto.ts` — added optional `description` and `due_date` fields with validation
+- `backend/src/cards/dto/update-card.dto.ts` — added optional `description` and `due_date` fields with validation
+- `backend/src/cards/cards.controller.ts` — updated `CardResponse` and all endpoint mappings to include new fields
+- `backend/src/cards/cards.service.ts` — updated `create` and `update` to persist new fields
+- `backend/src/database/typeorm-registry.ts` — registered new migration
+- `backend/src/migrations/1778200000000-AddDescriptionAndDueDateToCards.ts` — new migration (ran successfully in MySQL)
+- `backend/src/cards/cards.controller.spec.ts` — updated test fixtures with new fields
+- `backend/src/cards/cards.service.spec.ts` — updated test fixtures with new fields; added `remove` tests
 
 Frontend:
-- `frontend/src/features/cards/card-detail-panel.tsx`
-- `frontend/src/features/cards/card.tsx`
-- `frontend/src/features/cards/cards.api.ts`
-- `frontend/src/features/cards/use-cards.ts`
+- `frontend/src/features/cards/card-detail-panel.tsx` — new component
+- `frontend/src/features/cards/card-detail-panel.test.tsx` — new tests (14 passing)
+- `frontend/src/features/cards/card.tsx` — click opens detail panel; removed inline editing
+- `frontend/src/features/cards/card.test.tsx` — updated to test detail panel open instead of inline editing
+- `frontend/src/features/cards/cards.api.ts` — updated `Card`, `CreateCardData`, `UpdateCardData` interfaces
+- `frontend/src/components/ui/sheet.tsx` — new shadcn component
+- `frontend/src/components/ui/textarea.tsx` — new shadcn component
+- `frontend/src/components/ui/scroll-area.tsx` — new shadcn component
+- `frontend/src/components/ui/separator.tsx` — new shadcn component
+- `frontend/src/test-setup.ts` — added `ResizeObserver` mock
 
 ---
 

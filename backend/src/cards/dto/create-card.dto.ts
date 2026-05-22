@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, MaxLength, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, MaxLength, IsOptional, IsDateString } from 'class-validator';
 
 export class CreateCardDto {
   @ApiProperty({ example: 'Buy groceries' })
@@ -17,4 +17,14 @@ export class CreateCardDto {
   @IsOptional()
   @IsNumber()
   position?: number;
+
+  @ApiProperty({ example: 'Card description', required: false })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({ example: '2026-01-01T00:00:00.000Z', required: false })
+  @IsOptional()
+  @IsDateString()
+  due_date?: string;
 }

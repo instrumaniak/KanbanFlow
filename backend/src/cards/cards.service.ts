@@ -34,6 +34,8 @@ export class CardsService {
       title: dto.title,
       column_id: dto.column_id,
       position,
+      description: dto.description ?? null,
+      due_date: dto.due_date ? new Date(dto.due_date) : null,
     });
 
     return this.cardRepository.save(card);
@@ -55,6 +57,14 @@ export class CardsService {
 
     if (dto.title !== undefined) {
       await this.cardRepository.update(id, { title: dto.title });
+    }
+
+    if (dto.description !== undefined) {
+      await this.cardRepository.update(id, { description: dto.description });
+    }
+
+    if (dto.due_date !== undefined) {
+      await this.cardRepository.update(id, { due_date: dto.due_date ? new Date(dto.due_date) : null });
     }
 
     if (dto.column_id !== undefined) {

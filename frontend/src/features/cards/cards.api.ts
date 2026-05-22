@@ -3,6 +3,8 @@ export interface Card {
   title: string;
   column_id: number;
   position: number;
+  description: string | null;
+  due_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +38,8 @@ export interface CreateCardData {
   title: string;
   column_id: number;
   position?: number;
+  description?: string;
+  due_date?: string;
 }
 
 export async function createCard(data: CreateCardData): Promise<ApiResponse<Card>> {
@@ -57,6 +61,8 @@ export interface UpdateCardData {
   title?: string;
   column_id?: number;
   position?: number;
+  description?: string;
+  due_date?: string;
 }
 
 export async function updateCard(id: number, data: UpdateCardData): Promise<ApiResponse<Card>> {

@@ -27,6 +27,8 @@ interface CardResponse {
   title: string;
   column_id: number;
   position: number;
+  description: string | null;
+  due_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -51,6 +53,8 @@ export class CardsController {
       title: card.title,
       column_id: card.column_id,
       position: card.position,
+      description: card.description,
+      due_date: card.due_date ? card.due_date.toISOString() : null,
       created_at: card.created_at.toISOString(),
       updated_at: card.updated_at.toISOString(),
     }));
@@ -71,6 +75,8 @@ export class CardsController {
       title: card.title,
       column_id: card.column_id,
       position: card.position,
+      description: card.description,
+      due_date: card.due_date ? card.due_date.toISOString() : null,
       created_at: card.created_at.toISOString(),
       updated_at: card.updated_at.toISOString(),
     };
@@ -93,6 +99,8 @@ export class CardsController {
       title: card.title,
       column_id: card.column_id,
       position: card.position,
+      description: card.description,
+      due_date: card.due_date ? card.due_date.toISOString() : null,
       created_at: card.created_at.toISOString(),
       updated_at: card.updated_at.toISOString(),
     };
