@@ -139,6 +139,12 @@ export function Card({ card, index, isNew }: CardProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+            {card.description?.trim() && (
+              <p className="mt-1 text-xs text-muted-foreground overflow-hidden text-ellipsis whitespace-pre-wrap"
+                 style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                {card.description}
+              </p>
+            )}
           </div>
         )}
       </CardDraggable>

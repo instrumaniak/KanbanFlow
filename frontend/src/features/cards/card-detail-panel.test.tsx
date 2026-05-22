@@ -194,4 +194,109 @@ describe('CardDetailPanel', () => {
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
+
+  describe('Markdown description editor', () => {
+    it('defaults to Edit tab with textarea visible', () => {
+      renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
+
+      expect(screen.getByRole('tab', { name: /edit/i })).toHaveAttribute('data-state', 'active');
+      expect(screen.getByRole('tab', { name: /preview/i })).toHaveAttribute('data-state', 'inactive');
+      expect(screen.getByLabelText('Card description')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('A description')).toBeInTheDocument();
+    });
+
+    it('switches to Preview tab and renders markdown', async () => {
+      const markdownCard = { ...mockCard, description: '# Hello\n\n- item 1\n- item 2' };
+      renderWithProviders(<CardDetailPanel card={markdownCard} open={true} onOpenChange={vi.fn()} />);
+
+      const previewTab = screen.getByRole('tab', { name: /preview/i });
+      await userEvent.click(previewTab);
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Hello');
+      });
+      expect(screen.getByRole('list')).toBeInTheDocument();
+    });
+
+    it('switches back to Edit tab and preserves textarea content', async () => {
+      renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
+
+      const previewTab = screen.getByRole('tab', { name: /preview/i });
+      await userEvent.click(previewTab);
+      await waitFor(() => {
+        expect(screen.queryByLabelText('Card description')).not.toBeInTheDocument();
+      });
+
+      const editTab = screen.getByRole('tab', { name: /edit/i });
+      await userEvent.click(editTab);
+
+      expect(screen.getByLabelText('Card description')).toHaveValue('A description');
+    });
+
+    it('auto-saves raw markdown on blur in Edit mode', async () => {
+      renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
+
+      const textarea = screen.getByLabelText('Card description');
+      await userEvent.clear(textarea);
+      await userEvent.type(textarea, '# Updated');
+      fireEvent.blur(textarea);
+
+      await waitFor(() => {
+        expect(mockMutate).toHaveBeenCalledWith(
+          { id: 1, data: { description: '# Updated' } },
+          expect.objectContaining({ onSettled: expect.any(Function) }),
+        );
+      });
+    });
+
+    it('shows "Nothing to preview" when description is empty in Preview mode', async () => {
+      const emptyCard = { ...mockCard, description: '' };
+      renderWithProviders(<CardDetailPanel card={emptyCard} open={true} onOpenChange={vi.fn()} />);
+
+      const previewTab = screen.getByRole('tab', { name: /preview/i });
+      await userEvent.click(previewTab);
+
+      await waitFor(() => {
+        expect(screen.getByText('Nothing to preview')).toBeInTheDocument();
+      });
+    });
+
+    it('sanitizes XSS payload in Preview mode', async () => {
+      const xssCard = { ...mockCard, description: '<script>alert("xss")</script>\n\n[link](javascript:alert(1))' };
+      renderWithProviders(<CardDetailPanel card={xssCard} open={true} onOpenChange={vi.fn()} />);
+
+      const previewTab = screen.getByRole('tab', { name: /preview/i });
+      await userEvent.click(previewTab);
+
+      await waitFor(() => {
+        expect(screen.queryByText('alert("xss")')).not.toBeInTheDocument();
+      });
+
+      const previewPanel = screen.getByRole('tabpanel');
+      const html = previewPanel.innerHTML;
+      expect(html).not.toContain('<script>');
+      expect(html).not.toContain('javascript:');
+    });
+
+    it('sanitizes dangerous HTML tags in Preview mode', async () => {
+      const payload = '<img src=x onerror=alert(1)>\n\n<iframe src="javascript:alert(1)">\n\n<svg onload=alert(1)>';
+      const xssCard = { ...mockCard, description: payload };
+      renderWithProviders(<CardDetailPanel card={xssCard} open={true} onOpenChange={vi.fn()} />);
+
+      const previewTab = screen.getByRole('tab', { name: /preview/i });
+      await userEvent.click(previewTab);
+
+      const previewPanel = screen.getByRole('tabpanel');
+      const html = previewPanel.innerHTML;
+      expect(html).not.toContain('<iframe');
+      expect(html).not.toContain('onerror');
+      expect(html).not.toContain('<svg');
+    });
+
+    it('has accessible tab list with aria-label', () => {
+      renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
+
+      expect(screen.getByLabelText('Description mode')).toBeInTheDocument();
+    });
+  });
 });

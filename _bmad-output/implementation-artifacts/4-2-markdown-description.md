@@ -1,6 +1,6 @@
 # Story 4.2: Markdown Description
 
-Status: ready-for-dev
+Status: done
 
 ---
 
@@ -51,27 +51,27 @@ so that I can add rich formatting to my task details.
 
 ## Tasks / Subtasks
 
-- [ ] Install markdown rendering dependencies (`react-markdown`, `rehype-sanitize`) in `frontend/`
-- [ ] Add shadcn `Tabs` component to `frontend/src/components/ui/tabs.tsx`
-- [ ] Update `CardDetailPanel` description section:
-  - [ ] Replace plain `Textarea` with Edit/Preview toggle using shadcn `Tabs`
-  - [ ] Edit tab: keep `Textarea` for raw markdown input
-  - [ ] Preview tab: render markdown with `react-markdown` + `rehype-sanitize`
-  - [ ] Preserve auto-save on blur behavior (save raw markdown text)
-  - [ ] Preserve "Saving..." indicator and error handling
-- [ ] Update `Card` component face:
-  - [ ] Add 2-line description preview below title when `card.description` exists
-  - [ ] Preview is plain text, truncated with ellipsis, max 2 lines
-  - [ ] No preview rendered if description is null/empty/whitespace-only
-  - [ ] Ensure preview does not break card layout or drag-drop
-- [ ] Accessibility:
-  - [ ] Tabs have `aria-label="Description mode"`
-  - [ ] Preview content is readable by screen readers
-- [ ] Tests:
-  - [ ] Frontend tests for `CardDetailPanel` markdown toggle and rendering
-  - [ ] Frontend tests for `Card` description preview rendering
-  - [ ] Frontend tests for XSS sanitization in preview mode
-  - [ ] Verify all existing tests still pass
+- [x] Install markdown rendering dependencies (`react-markdown`, `rehype-sanitize`) in `frontend/`
+- [x] Add shadcn `Tabs` component to `frontend/src/components/ui/tabs.tsx`
+- [x] Update `CardDetailPanel` description section:
+  - [x] Replace plain `Textarea` with Edit/Preview toggle using shadcn `Tabs`
+  - [x] Edit tab: keep `Textarea` for raw markdown input
+  - [x] Preview tab: render markdown with `react-markdown` + `rehype-sanitize`
+  - [x] Preserve auto-save on blur behavior (save raw markdown text)
+  - [x] Preserve "Saving..." indicator and error handling
+- [x] Update `Card` component face:
+  - [x] Add 2-line description preview below title when `card.description` exists
+  - [x] Preview is plain text, truncated with ellipsis, max 2 lines
+  - [x] No preview rendered if description is null/empty/whitespace-only
+  - [x] Ensure preview does not break card layout or drag-drop
+- [x] Accessibility:
+  - [x] Tabs have `aria-label="Description mode"`
+  - [x] Preview content is readable by screen readers
+- [x] Tests:
+  - [x] Frontend tests for `CardDetailPanel` markdown toggle and rendering
+  - [x] Frontend tests for `Card` description preview rendering
+  - [x] Frontend tests for XSS sanitization in preview mode
+  - [x] Verify all existing tests still pass
 
 ---
 
@@ -287,17 +287,17 @@ The `components` prop lets you map markdown elements to styled components withou
 
 ### Completion Notes List
 
-- [ ] `react-markdown` and `rehype-sanitize` installed in `frontend/package.json`
-- [ ] shadcn `Tabs` component added (`frontend/src/components/ui/tabs.tsx`)
-- [ ] `CardDetailPanel` description section upgraded to Edit/Preview toggle
-- [ ] Edit mode preserves existing textarea behavior (auto-save on blur, "Saving...", error toast)
-- [ ] Preview mode renders markdown with `react-markdown` + `rehype-sanitize`
-- [ ] XSS payloads (script tags, event handlers, javascript URLs) are sanitized in preview
-- [ ] `Card` face shows 2-line plain-text preview of description when present
-- [ ] Preview hidden when description is null/empty/whitespace-only
-- [ ] `line-clamp-2` or equivalent CSS truncation applied
-- [ ] All existing frontend tests pass (backend tests unchanged — no backend work)
-- [ ] New frontend tests added for markdown toggle, preview rendering, XSS sanitization, card preview
+- [x] `react-markdown` and `rehype-sanitize` installed in `frontend/package.json`
+- [x] shadcn `Tabs` component added (`frontend/src/components/ui/tabs.tsx`)
+- [x] `CardDetailPanel` description section upgraded to Edit/Preview toggle
+- [x] Edit mode preserves existing textarea behavior (auto-save on blur, "Saving...", error toast)
+- [x] Preview mode renders markdown with `react-markdown` + `rehype-sanitize`
+- [x] XSS payloads (script tags, event handlers, javascript URLs) are sanitized in preview
+- [x] `Card` face shows 2-line plain-text preview of description when present
+- [x] Preview hidden when description is null/empty/whitespace-only
+- [x] `line-clamp-2` or equivalent CSS truncation applied
+- [x] All existing frontend tests pass (backend tests unchanged — no backend work)
+- [x] New frontend tests added for markdown toggle, preview rendering, XSS sanitization, card preview
 
 ### File List
 

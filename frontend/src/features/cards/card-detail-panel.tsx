@@ -1,5 +1,28 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import type { Schema } from 'hast-util-sanitize';
 import { useUpdateCard, type Card as CardType } from './use-cards';
+
+const markdownSanitizeSchema: Schema = {
+  ...defaultSchema,
+  tagNames: [
+    'h1', 'h2', 'h3', 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code',
+    'em', 'strong', 'a', 'br', 'hr', 'img', 'table', 'thead', 'tbody',
+    'tr', 'th', 'td', 'input',
+  ],
+  attributes: {
+    ...defaultSchema.attributes,
+    a: [...(defaultSchema.attributes?.a ?? []), 'target', 'rel'],
+    img: [...(defaultSchema.attributes?.img ?? []), 'src', 'alt', 'title'],
+    input: [...(defaultSchema.attributes?.input ?? []), 'type', 'checked', 'disabled'],
+  },
+  protocols: {
+    ...defaultSchema.protocols,
+    href: ['http', 'https', 'mailto'],
+    src: ['http', 'https'],
+  },
+};
 import {
   Sheet,
   SheetContent,
@@ -8,6 +31,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -22,6 +46,7 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
   const [description, setDescription] = useState(card.description ?? '');
   const [isSavingTitle, setIsSavingTitle] = useState(false);
   const [isSavingDescription, setIsSavingDescription] = useState(false);
+  const [descriptionMode, setDescriptionMode] = useState<'edit' | 'preview'>('edit');
   const isMountedRef = useRef(true);
   const isDirtyRef = useRef(false);
   const pendingSaveRef = useRef(false);
@@ -30,7 +55,9 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
   const updateCard = useUpdateCard();
   const { toast } = useToast();
 
-  latestCardRef.current = card;
+  useEffect(() => {
+    latestCardRef.current = card;
+  });
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -181,16 +208,69 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
             <Separator />
 
             <div className="space-y-2">
-              <h3 className="text-sm font-medium">Description</h3>
-              <Textarea
-                value={description}
-                onChange={handleDescriptionChange}
-                onBlur={handleDescriptionBlur}
-                placeholder="Add a more detailed description..."
-                aria-label="Card description"
-                className="min-h-[120px] resize-y"
-                disabled={isSavingDescription}
-              />
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">Description</h3>
+                <Tabs
+                  value={descriptionMode}
+                  onValueChange={(v) => {
+                    if (v === 'edit' || v === 'preview') setDescriptionMode(v);
+                  }}
+                >
+                  <TabsList aria-label="Description mode">
+                    <TabsTrigger value="edit">Edit</TabsTrigger>
+                    <TabsTrigger value="preview">Preview</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              <Tabs
+                value={descriptionMode}
+                onValueChange={(v) => {
+                  if (v === 'edit' || v === 'preview') setDescriptionMode(v);
+                }}
+              >
+                <TabsContent value="edit">
+                  <Textarea
+                    value={description}
+                    onChange={handleDescriptionChange}
+                    onBlur={handleDescriptionBlur}
+                    placeholder="Add a more detailed description..."
+                    aria-label="Card description"
+                    className="min-h-[200px] resize-y font-mono text-sm"
+                    disabled={isSavingDescription}
+                  />
+                </TabsContent>
+                <TabsContent value="preview">
+                  <div className="min-h-[200px] rounded-md border border-input bg-background p-3 overflow-auto text-sm space-y-2">
+                    {description.trim() ? (
+                      <ReactMarkdown
+                        rehypePlugins={[[rehypeSanitize, markdownSanitizeSchema]]}
+                        components={{
+                          h1: ({ children }) => <h1 className="text-lg font-bold">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-base font-semibold">{children}</h2>,
+                          p: ({ children }) => <p className="leading-relaxed">{children}</p>,
+                          ul: ({ children }) => <ul className="list-disc pl-5">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal pl-5">{children}</ol>,
+                          code: ({ children }) => <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">{children}</code>,
+                          pre: ({ children }) => <pre className="rounded bg-muted p-2 overflow-auto">{children}</pre>,
+                          a: ({ children, href }) => (
+                            <a href={href} className="text-primary underline" target="_blank" rel="noopener noreferrer">
+                              {children}
+                            </a>
+                          ),
+                        }}
+                      >
+                        {description}
+                      </ReactMarkdown>
+                    ) : (
+                      <p className="text-muted-foreground text-sm italic">
+                        Nothing to preview
+                      </p>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+
               {isSavingDescription && (
                 <span className="text-xs text-muted-foreground">Saving...</span>
               )}
