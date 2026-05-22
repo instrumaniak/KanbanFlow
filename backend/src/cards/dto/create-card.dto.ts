@@ -1,5 +1,37 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, MaxLength, IsOptional, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  MaxLength,
+  IsOptional,
+  ValidateIf,
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
+} from 'class-validator';
+
+function IsValidDate(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'isValidDate',
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: unknown, _args: ValidationArguments) {
+          if (value === undefined || value === null) return true;
+          if (typeof value !== 'string') return false;
+          const date = new Date(value);
+          return !isNaN(date.getTime());
+        },
+        defaultMessage(_args: ValidationArguments) {
+          return 'due_date must be a valid ISO 8601 date string';
+        },
+      },
+    });
+  };
+}
 
 export class CreateCardDto {
   @ApiProperty({ example: 'Buy groceries' })
@@ -20,11 +52,13 @@ export class CreateCardDto {
 
   @ApiProperty({ example: 'Card description', required: false })
   @IsOptional()
+  @ValidateIf((_object, value) => value !== null)
   @IsString()
-  description?: string;
+  @MaxLength(10000)
+  description?: string | null;
 
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z', required: false })
   @IsOptional()
-  @IsDateString()
+  @IsValidDate()
   due_date?: string;
 }

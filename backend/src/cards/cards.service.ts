@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Card } from './entities/card.entity';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
@@ -13,6 +13,7 @@ export class CardsService {
     private readonly cardRepository: Repository<Card>,
     @InjectRepository(BoardColumn)
     private readonly columnRepository: Repository<BoardColumn>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(userId: number, dto: CreateCardDto): Promise<Card> {
@@ -55,37 +56,41 @@ export class CardsService {
     const oldColumnId = card.column_id;
     const oldPosition = card.position;
 
-    if (dto.title !== undefined) {
-      await this.cardRepository.update(id, { title: dto.title });
-    }
+    await this.dataSource.transaction(async (manager) => {
+      const cardRepo = manager.getRepository(Card);
 
-    if (dto.description !== undefined) {
-      await this.cardRepository.update(id, { description: dto.description });
-    }
-
-    if (dto.due_date !== undefined) {
-      await this.cardRepository.update(id, { due_date: dto.due_date ? new Date(dto.due_date) : null });
-    }
-
-    if (dto.column_id !== undefined) {
-      await this.findColumnById(dto.column_id, userId);
-      await this.cardRepository.update(id, { column_id: dto.column_id });
-    }
-
-    if (dto.position !== undefined) {
-      const targetColumnId = dto.column_id ?? oldColumnId;
-      const newPosition = dto.position;
-
-      if (oldColumnId === targetColumnId && oldPosition !== newPosition) {
-        await this.reorderWithinColumn(targetColumnId, oldPosition, newPosition);
-      } else if (oldColumnId !== targetColumnId) {
-        await this.removeFromColumn(oldColumnId, oldPosition);
-        const maxPosition = await this.getMaxPositionInColumn(targetColumnId);
-        const targetPosition = Math.min(newPosition, maxPosition + 1);
-        await this.insertIntoColumn(targetColumnId, targetPosition);
+      if (dto.title !== undefined) {
+        await cardRepo.update(id, { title: dto.title });
       }
-      await this.cardRepository.update(id, { position: dto.position });
-    }
+
+      if (dto.description !== undefined) {
+        await cardRepo.update(id, { description: dto.description });
+      }
+
+      if (dto.due_date !== undefined) {
+        await cardRepo.update(id, { due_date: dto.due_date ? new Date(dto.due_date) : null });
+      }
+
+      if (dto.column_id !== undefined) {
+        await this.findColumnById(dto.column_id, userId);
+        await cardRepo.update(id, { column_id: dto.column_id });
+      }
+
+      if (dto.position !== undefined) {
+        const targetColumnId = dto.column_id ?? oldColumnId;
+        const newPosition = dto.position;
+
+        if (oldColumnId === targetColumnId && oldPosition !== newPosition) {
+          await this.reorderWithinColumn(targetColumnId, oldPosition, newPosition, manager);
+        } else if (oldColumnId !== targetColumnId) {
+          await this.removeFromColumn(oldColumnId, oldPosition, manager);
+          const maxPosition = await this.getMaxPositionInColumn(targetColumnId, manager);
+          const targetPosition = Math.min(newPosition, maxPosition + 1);
+          await this.insertIntoColumn(targetColumnId, targetPosition, manager);
+        }
+        await cardRepo.update(id, { position: dto.position });
+      }
+    });
 
     const updated = await this.cardRepository.findOne({ where: { id } });
     if (!updated) {
@@ -98,10 +103,12 @@ export class CardsService {
     columnId: number,
     oldPos: number,
     newPos: number,
+    manager?: import('typeorm').EntityManager,
   ): Promise<void> {
     if (oldPos === newPos) return;
 
-    const cards = await this.cardRepository.find({
+    const cardRepo = manager ? manager.getRepository(Card) : this.cardRepository;
+    const cards = await cardRepo.find({
       where: { column_id: columnId },
       order: { position: 'ASC' },
     });
@@ -116,17 +123,22 @@ export class CardsService {
     for (const c of cards) {
       if (safeOldPos < safeNewPos && c.position > safeOldPos && c.position <= safeNewPos) {
         c.position -= 1;
-        updates.push(this.cardRepository.save(c));
+        updates.push(cardRepo.save(c));
       } else if (safeOldPos > safeNewPos && c.position >= safeNewPos && c.position < safeOldPos) {
         c.position += 1;
-        updates.push(this.cardRepository.save(c));
+        updates.push(cardRepo.save(c));
       }
     }
     await Promise.all(updates);
   }
 
-  private async removeFromColumn(columnId: number, position: number): Promise<void> {
-    const cards = await this.cardRepository.find({
+  private async removeFromColumn(
+    columnId: number,
+    position: number,
+    manager?: import('typeorm').EntityManager,
+  ): Promise<void> {
+    const cardRepo = manager ? manager.getRepository(Card) : this.cardRepository;
+    const cards = await cardRepo.find({
       where: { column_id: columnId },
       order: { position: 'ASC' },
     });
@@ -135,14 +147,19 @@ export class CardsService {
     for (const c of cards) {
       if (c.position > position) {
         c.position -= 1;
-        updates.push(this.cardRepository.save(c));
+        updates.push(cardRepo.save(c));
       }
     }
     await Promise.all(updates);
   }
 
-  private async insertIntoColumn(columnId: number, position: number): Promise<void> {
-    const cards = await this.cardRepository.find({
+  private async insertIntoColumn(
+    columnId: number,
+    position: number,
+    manager?: import('typeorm').EntityManager,
+  ): Promise<void> {
+    const cardRepo = manager ? manager.getRepository(Card) : this.cardRepository;
+    const cards = await cardRepo.find({
       where: { column_id: columnId },
       order: { position: 'ASC' },
     });
@@ -151,14 +168,18 @@ export class CardsService {
     for (const c of cards) {
       if (c.position >= position) {
         c.position += 1;
-        updates.push(this.cardRepository.save(c));
+        updates.push(cardRepo.save(c));
       }
     }
     await Promise.all(updates);
   }
 
-  private async getMaxPositionInColumn(columnId: number): Promise<number> {
-    const result = await this.cardRepository
+  private async getMaxPositionInColumn(
+    columnId: number,
+    manager?: import('typeorm').EntityManager,
+  ): Promise<number> {
+    const cardRepo = manager ? manager.getRepository(Card) : this.cardRepository;
+    const result = await cardRepo
       .createQueryBuilder('card')
       .where('card.column_id = :columnId', { columnId })
       .select('MAX(card.position)', 'max')

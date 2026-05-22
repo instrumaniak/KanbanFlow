@@ -4,13 +4,12 @@ import {
   Sheet,
   SheetContent,
   SheetHeader,
-  SheetTitle,
-  SheetDescription,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
 
 interface CardDetailPanelProps {
   card: CardType;
@@ -23,44 +22,111 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
   const [description, setDescription] = useState(card.description ?? '');
   const [isSavingTitle, setIsSavingTitle] = useState(false);
   const [isSavingDescription, setIsSavingDescription] = useState(false);
+  const isMountedRef = useRef(true);
+  const isDirtyRef = useRef(false);
+  const pendingSaveRef = useRef(false);
+  const latestCardRef = useRef(card);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const updateCard = useUpdateCard();
+  const { toast } = useToast();
+
+  latestCardRef.current = card;
 
   useEffect(() => {
-    setTitle(card.title);
-    setDescription(card.description ?? '');
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDirtyRef.current && !pendingSaveRef.current) {
+      setTitle(card.title);
+      setDescription(card.description ?? '');
+    }
   }, [card.title, card.description, card.id]);
 
+  const safeSetIsSavingTitle = useCallback((value: boolean) => {
+    if (isMountedRef.current) setIsSavingTitle(value);
+  }, []);
+
+  const safeSetIsSavingDescription = useCallback((value: boolean) => {
+    if (isMountedRef.current) setIsSavingDescription(value);
+  }, []);
+
   const handleTitleBlur = useCallback(() => {
+    if (isSavingTitle) return;
     const trimmed = title.trim();
+    const currentCard = latestCardRef.current;
     if (trimmed === '') {
-      setTitle(card.title);
+      setTitle(currentCard.title);
+      isDirtyRef.current = false;
       return;
     }
-    if (trimmed !== card.title) {
+    if (trimmed !== currentCard.title) {
+      isDirtyRef.current = false;
+      pendingSaveRef.current = true;
       setIsSavingTitle(true);
       updateCard.mutate(
-        { id: card.id, data: { title: trimmed } },
+        { id: currentCard.id, data: { title: trimmed } },
         {
-          onSettled: () => setIsSavingTitle(false),
+          onSettled: () => {
+            pendingSaveRef.current = false;
+            safeSetIsSavingTitle(false);
+          },
+          onError: () => {
+            setTitle(latestCardRef.current.title);
+            toast({ title: 'Failed to save title', variant: 'destructive' });
+          },
         },
       );
+    } else {
+      isDirtyRef.current = false;
     }
-  }, [title, card.title, card.id, updateCard]);
+  }, [title, isSavingTitle, updateCard, safeSetIsSavingTitle, toast]);
 
   const handleDescriptionBlur = useCallback(() => {
+    if (isSavingDescription) return;
     const newValue = description.trim();
-    const oldValue = (card.description ?? '').trim();
+    const currentCard = latestCardRef.current;
+    const oldValue = (currentCard.description ?? '').trim();
     if (newValue !== oldValue) {
+      isDirtyRef.current = false;
+      pendingSaveRef.current = true;
       setIsSavingDescription(true);
       updateCard.mutate(
-        { id: card.id, data: { description: newValue || null } },
+        { id: currentCard.id, data: { description: newValue || null } },
         {
-          onSettled: () => setIsSavingDescription(false),
+          onSettled: () => {
+            pendingSaveRef.current = false;
+            safeSetIsSavingDescription(false);
+          },
+          onError: () => {
+            setDescription(latestCardRef.current.description ?? '');
+            toast({ title: 'Failed to save description', variant: 'destructive' });
+          },
         },
       );
+    } else {
+      isDirtyRef.current = false;
     }
-  }, [description, card.description, card.id, updateCard]);
+  }, [description, isSavingDescription, updateCard, safeSetIsSavingDescription, toast]);
+
+  const handleTitleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      isDirtyRef.current = true;
+      setTitle(e.target.value);
+    },
+    [],
+  );
+
+  const handleDescriptionChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      isDirtyRef.current = true;
+      setDescription(e.target.value);
+    },
+    [],
+  );
 
   const formattedDueDate = card.due_date
     ? new Date(card.due_date).toLocaleDateString(undefined, {
@@ -71,11 +137,16 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
     : null;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChange} modal={true}>
       <SheetContent
         side="right"
         className="w-[400px] sm:w-[540px] p-0"
         aria-label="Card details"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={() => {
+          isDirtyRef.current = false;
+          pendingSaveRef.current = false;
+        }}
       >
         <ScrollArea className="h-full">
           <div className="p-6 space-y-6">
@@ -89,7 +160,7 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
                   ref={titleInputRef}
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={handleTitleChange}
                   onBlur={handleTitleBlur}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -113,7 +184,7 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
               <h3 className="text-sm font-medium">Description</h3>
               <Textarea
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={handleDescriptionChange}
                 onBlur={handleDescriptionBlur}
                 placeholder="Add a more detailed description..."
                 aria-label="Card description"
@@ -141,7 +212,7 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
               {formattedDueDate ? (
                 <Badge variant="secondary">{formattedDueDate}</Badge>
               ) : (
-                <p className="text-muted-foreground text-sm">No due date set</p>
+                <p className="text-muted-foreground text-sm">No due date</p>
               )}
             </div>
 

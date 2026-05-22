@@ -43,6 +43,8 @@ export function Card({ card, index, isNew }: CardProps) {
       const distance = Math.sqrt(dx * dx + dy * dy);
       pointerDownPos.current = null;
       if (distance > 5) return;
+    } else {
+      pointerDownPos.current = null;
     }
     e.stopPropagation();
     setIsPanelOpen(true);
@@ -62,6 +64,7 @@ export function Card({ card, index, isNew }: CardProps) {
   const handleDelete = () => {
     const deletedCard = { ...card };
     setShowDeleteDialog(false);
+    setIsPanelOpen(false);
     deleteCard.mutate(card.id, {
       onSuccess: () => {
         toast({
@@ -75,6 +78,8 @@ export function Card({ card, index, isNew }: CardProps) {
                   title: deletedCard.title,
                   column_id: deletedCard.column_id,
                   position: deletedCard.position,
+                  description: deletedCard.description ?? undefined,
+                  due_date: deletedCard.due_date ?? undefined,
                 });
                 toast({ title: 'Card restored to original position', type: 'success' });
               } catch {

@@ -17,6 +17,7 @@ import { SessionGuard } from '../auth/guards/session.guard';
 import { CardsService } from './cards.service';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
+import { Card } from './entities/card.entity';
 
 interface SessionData {
   userId: number;
@@ -31,6 +32,19 @@ interface CardResponse {
   due_date: string | null;
   created_at: string;
   updated_at: string;
+}
+
+function toCardResponse(card: Card): CardResponse {
+  return {
+    id: card.id,
+    title: card.title,
+    column_id: card.column_id,
+    position: card.position,
+    description: card.description,
+    due_date: card.due_date ? card.due_date.toISOString() : null,
+    created_at: card.created_at.toISOString(),
+    updated_at: card.updated_at.toISOString(),
+  };
 }
 
 @Controller('api')
@@ -48,17 +62,7 @@ export class CardsController {
     @Param('columnId', ParseIntPipe) columnId: number,
   ): Promise<{ data: CardResponse[] }> {
     const cards = await this.cardsService.findAllByColumnId(columnId, session.userId);
-    const data: CardResponse[] = cards.map((card) => ({
-      id: card.id,
-      title: card.title,
-      column_id: card.column_id,
-      position: card.position,
-      description: card.description,
-      due_date: card.due_date ? card.due_date.toISOString() : null,
-      created_at: card.created_at.toISOString(),
-      updated_at: card.updated_at.toISOString(),
-    }));
-    return { data };
+    return { data: cards.map(toCardResponse) };
   }
 
   @Post('cards')
@@ -70,17 +74,7 @@ export class CardsController {
     @Body() dto: CreateCardDto,
   ): Promise<{ data: CardResponse; message: string }> {
     const card = await this.cardsService.create(session.userId, dto);
-    const data: CardResponse = {
-      id: card.id,
-      title: card.title,
-      column_id: card.column_id,
-      position: card.position,
-      description: card.description,
-      due_date: card.due_date ? card.due_date.toISOString() : null,
-      created_at: card.created_at.toISOString(),
-      updated_at: card.updated_at.toISOString(),
-    };
-    return { data, message: 'Card created' };
+    return { data: toCardResponse(card), message: 'Card created' };
   }
 
   @Patch('cards/:id')
@@ -94,17 +88,7 @@ export class CardsController {
     @Body() dto: UpdateCardDto,
   ): Promise<{ data: CardResponse; message: string }> {
     const card = await this.cardsService.update(id, session.userId, dto);
-    const data: CardResponse = {
-      id: card.id,
-      title: card.title,
-      column_id: card.column_id,
-      position: card.position,
-      description: card.description,
-      due_date: card.due_date ? card.due_date.toISOString() : null,
-      created_at: card.created_at.toISOString(),
-      updated_at: card.updated_at.toISOString(),
-    };
-    return { data, message: 'Card updated' };
+    return { data: toCardResponse(card), message: 'Card updated' };
   }
 
   @Delete('cards/:id')

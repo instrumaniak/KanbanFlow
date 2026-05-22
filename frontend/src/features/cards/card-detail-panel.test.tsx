@@ -11,8 +11,14 @@ const mockMutateObj = {
   isPending: false,
 };
 
+const mockToast = vi.fn();
+
 vi.mock('./use-cards', () => ({
   useUpdateCard: () => mockMutateObj,
+}));
+
+vi.mock('@/components/ui/use-toast', () => ({
+  useToast: () => ({ toast: mockToast }),
 }));
 
 const renderWithProviders = (component: React.ReactElement) => {
@@ -73,7 +79,7 @@ describe('CardDetailPanel', () => {
 
   it('shows no due date placeholder when due_date is null', () => {
     renderWithProviders(<CardDetailPanel card={mockCardNoExtras} open={true} onOpenChange={vi.fn()} />);
-    expect(screen.getByText('No due date set')).toBeInTheDocument();
+    expect(screen.getByText('No due date')).toBeInTheDocument();
   });
 
   it('shows labels placeholder', () => {

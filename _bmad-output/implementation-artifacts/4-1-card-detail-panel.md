@@ -1,6 +1,6 @@
 # Story 4.1: Card Detail Panel
 
-Status: dev-complete
+Status: done
 
 ---
 
@@ -230,6 +230,14 @@ Frontend:
 - [x] All existing tests pass (backend: 179/179; frontend: 231/233 — 2 pre-existing auth form failures unchanged)
 - [x] New shadcn components created: `Sheet`, `Textarea`, `ScrollArea`, `Separator`
 - [x] `ResizeObserver` mock added to `frontend/src/test-setup.ts` for jsdom compatibility
+- [x] Code review completed — 16 patch findings fixed, 3 deferred, 6 rejected
+- [x] DTOs: Added `@MaxLength(10000)` on description, `@ValidateIf` for null-safe validation, custom `@IsValidDate()` decorator
+- [x] Controller: Extracted `toCardResponse()` helper to eliminate duplicated mapping logic
+- [x] Service: Wrapped `update()` in `dataSource.transaction()` for atomicity; helpers accept optional `EntityManager`
+- [x] Detail panel: `latestCardRef` for stale closure fix, `isDirtyRef` dirty guard, `isMountedRef` for unmount safety, blur guards, `onError` with toast
+- [x] Card component: Delete closes panel, undo restores `description`/`due_date`, NaN gate fixed for null `pointerDownPos`
+- [x] Placeholder text corrected to "No due date" per AC5
+- [x] All tests passing after review fixes (backend: 20/20 cards module; frontend: 25/25 cards module)
 
 ### File List
 

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { SelectQueryBuilder, UpdateResult } from 'typeorm';
+import { DataSource, SelectQueryBuilder, UpdateResult } from 'typeorm';
 import { CardsService } from './cards.service';
 import { Card } from './entities/card.entity';
 import { BoardColumn } from '../columns/entities/column.entity';
@@ -27,6 +27,15 @@ describe('CardsService', () => {
 
   const mockColumnRepository = {
     findOne: jest.fn(),
+  };
+
+  const mockDataSource = {
+    transaction: jest.fn().mockImplementation(async (callback: (manager: unknown) => Promise<unknown>) => {
+      const mockManager = {
+        getRepository: jest.fn().mockReturnValue(mockCardRepository),
+      };
+      return callback(mockManager);
+    }),
   };
 
   const createMockCard = (id: number, columnId: number, position: number): Card =>
@@ -59,6 +68,10 @@ describe('CardsService', () => {
           useValue: {
             findOne: jest.fn(),
           },
+        },
+        {
+          provide: DataSource,
+          useValue: mockDataSource,
         },
       ],
     }).compile();
