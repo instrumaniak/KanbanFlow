@@ -3,9 +3,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, SelectQueryBuilder, UpdateResult } from 'typeorm';
 import { CardsService } from './cards.service';
 import { Card } from './entities/card.entity';
+import { CardLabel } from './entities/card-label.entity';
+import { Label } from '../labels/entities/label.entity';
 import { BoardColumn } from '../columns/entities/column.entity';
 import { Board } from '../boards/entities/board.entity';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 
 describe('CardsService', () => {
   let service: CardsService;
@@ -29,10 +31,27 @@ describe('CardsService', () => {
     findOne: jest.fn(),
   };
 
+  const mockCardLabelRepository = {
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn(),
+  };
+
+  const mockLabelRepository = {
+    findOne: jest.fn(),
+  };
+
   const mockDataSource = {
     transaction: jest.fn().mockImplementation(async (callback: (manager: unknown) => Promise<unknown>) => {
       const mockManager = {
-        getRepository: jest.fn().mockReturnValue(mockCardRepository),
+        getRepository: jest.fn().mockImplementation((entity: unknown) => {
+          const ctorName = (entity as { name?: string }).name;
+          if (ctorName === 'Card') return mockCardRepository;
+          if (ctorName === 'Label') return mockLabelRepository;
+          if (ctorName === 'CardLabel') return mockCardLabelRepository;
+          return mockCardRepository;
+        }),
       };
       return callback(mockManager);
     }),
@@ -68,6 +87,14 @@ describe('CardsService', () => {
           useValue: {
             findOne: jest.fn(),
           },
+        },
+        {
+          provide: getRepositoryToken(CardLabel),
+          useValue: mockCardLabelRepository,
+        },
+        {
+          provide: getRepositoryToken(Label),
+          useValue: mockLabelRepository,
         },
         {
           provide: DataSource,
@@ -284,6 +311,147 @@ describe('CardsService', () => {
 
       await expect(service.remove(1, mockUserId)).rejects.toThrow(ForbiddenException);
       expect(mockCardRepository.remove).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findById', () => {
+    it('should return a card with labels', async () => {
+      const card = createMockCard(1, 1, 0);
+      card.column.board.user_id = mockUserId;
+      card.labels = [{ id: 1, name: 'Urgent', color: 'red', user_id: mockUserId }] as unknown as Label[];
+      mockCardRepository.findOne.mockResolvedValue(card);
+
+      const result = await service.findById(1, mockUserId);
+
+      expect(result).toEqual(card);
+    });
+
+    it('should throw NotFoundException if card does not exist', async () => {
+      mockCardRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.findById(999, mockUserId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException if user does not own the board', async () => {
+      const card = createMockCard(1, 1, 0);
+      card.column.board.user_id = 999;
+      mockCardRepository.findOne.mockResolvedValue(card);
+
+      await expect(service.findById(1, mockUserId)).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('assignLabel', () => {
+    it('should assign a label to a card', async () => {
+      const card = createMockCard(1, 1, 0);
+      card.column.board.user_id = mockUserId;
+      const label = { id: 1, name: 'Urgent', color: 'red', user_id: mockUserId } as Label;
+
+      mockCardRepository.findOne
+        .mockResolvedValueOnce(card)
+        .mockResolvedValueOnce({ ...card, labels: [label] });
+      mockLabelRepository.findOne.mockResolvedValue(label);
+      mockCardLabelRepository.findOne.mockResolvedValue(null);
+      mockCardLabelRepository.create.mockReturnValue({ id: 1, card: { id: 1 }, label: { id: 1 }, card_id: 1, label_id: 1 });
+      mockCardLabelRepository.save.mockResolvedValue({ id: 1 });
+
+      const result = await service.assignLabel(1, 1, mockUserId);
+
+      expect(result).toBeDefined();
+      expect(result).toMatchObject({ id: 1, title: 'Card 1' });
+      expect(mockCardLabelRepository.save).toHaveBeenCalled();
+      expect(mockCardLabelRepository.findOne).toHaveBeenCalledWith({ where: { card_id: 1, label_id: 1 } });
+    });
+
+    it('should throw NotFoundException if card does not exist', async () => {
+      mockCardRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.assignLabel(999, 1, mockUserId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException if user does not own the card board', async () => {
+      const card = createMockCard(1, 1, 0);
+      card.column.board.user_id = 999;
+      mockCardRepository.findOne.mockResolvedValue(card);
+
+      await expect(service.assignLabel(1, 1, mockUserId)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw NotFoundException if label does not exist', async () => {
+      const card = createMockCard(1, 1, 0);
+      card.column.board.user_id = mockUserId;
+      mockCardRepository.findOne.mockResolvedValue(card);
+      mockLabelRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.assignLabel(1, 999, mockUserId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException if user does not own the label', async () => {
+      const card = createMockCard(1, 1, 0);
+      card.column.board.user_id = mockUserId;
+      const label = { id: 1, name: 'Urgent', color: 'red', user_id: 999 } as Label;
+
+      mockCardRepository.findOne.mockResolvedValue(card);
+      mockLabelRepository.findOne.mockResolvedValue(label);
+
+      await expect(service.assignLabel(1, 1, mockUserId)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw ConflictException if label already assigned', async () => {
+      const card = createMockCard(1, 1, 0);
+      card.column.board.user_id = mockUserId;
+      const label = { id: 1, name: 'Urgent', color: 'red', user_id: mockUserId } as Label;
+
+      mockCardRepository.findOne.mockResolvedValue(card);
+      mockLabelRepository.findOne.mockResolvedValue(label);
+      mockCardLabelRepository.findOne.mockResolvedValue({ id: 1 });
+
+      await expect(service.assignLabel(1, 1, mockUserId)).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('removeLabel', () => {
+    it('should remove a label from a card', async () => {
+      const card = createMockCard(1, 1, 0);
+      card.column.board.user_id = mockUserId;
+      const label = { id: 1, name: 'Urgent', color: 'red', user_id: mockUserId } as Label;
+      const cardLabel = { id: 1, card, label };
+
+      mockCardRepository.findOne.mockResolvedValue(card);
+      mockLabelRepository.findOne.mockResolvedValue(label);
+      mockCardLabelRepository.findOne.mockResolvedValue(cardLabel);
+      mockCardLabelRepository.remove.mockResolvedValue(cardLabel);
+
+      await service.removeLabel(1, 1, mockUserId);
+
+      expect(mockCardLabelRepository.remove).toHaveBeenCalledWith(cardLabel);
+    });
+
+    it('should throw NotFoundException if card does not exist', async () => {
+      mockCardRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.removeLabel(999, 1, mockUserId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if label does not exist', async () => {
+      const card = createMockCard(1, 1, 0);
+      card.column.board.user_id = mockUserId;
+      mockCardRepository.findOne.mockResolvedValue(card);
+      mockLabelRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.removeLabel(1, 999, mockUserId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if label is not assigned to card', async () => {
+      const card = createMockCard(1, 1, 0);
+      card.column.board.user_id = mockUserId;
+      const label = { id: 1, name: 'Urgent', color: 'red', user_id: mockUserId } as Label;
+
+      mockCardRepository.findOne.mockResolvedValue(card);
+      mockLabelRepository.findOne.mockResolvedValue(label);
+      mockCardLabelRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.removeLabel(1, 1, mockUserId)).rejects.toThrow(NotFoundException);
     });
   });
 });

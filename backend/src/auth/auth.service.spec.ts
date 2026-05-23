@@ -8,6 +8,7 @@ import {
 import { QueryFailedError } from 'typeorm';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { LabelsService } from '../labels/labels.service';
 import * as bcrypt from 'bcryptjs';
 
 jest.mock('bcryptjs');
@@ -21,6 +22,10 @@ describe('AuthService', () => {
     create: jest.fn(),
   };
 
+  const mockLabelsService = {
+    seedDefaultLabels: jest.fn().mockResolvedValue(undefined),
+  };
+
   const originalEnv = process.env;
 
   beforeEach(async () => {
@@ -28,7 +33,11 @@ describe('AuthService', () => {
     process.env = { ...originalEnv, REGISTRATION_ENABLED: 'true' };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthService, { provide: UsersService, useValue: mockUsersService }],
+      providers: [
+        AuthService,
+        { provide: UsersService, useValue: mockUsersService },
+        { provide: LabelsService, useValue: mockLabelsService },
+      ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
@@ -58,6 +67,7 @@ describe('AuthService', () => {
       expect(mockSession.userId).toBe(1);
       expect(mockSession.email).toBe('test@example.com');
       expect(mockSession.role).toBe('user');
+      expect(mockLabelsService.seedDefaultLabels).toHaveBeenCalledWith(1);
     });
 
     it('should normalize email to lowercase before storage', async () => {
@@ -129,6 +139,18 @@ describe('AuthService', () => {
       expect(mockSession.userId).toBe(1);
       expect(mockSession.email).toBe('test@example.com');
       expect(mockSession.role).toBe('user');
+      expect(mockLabelsService.seedDefaultLabels).toHaveBeenCalledWith(1);
+    });
+
+    it('should seed default labels after registration', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+      mockUsersService.create.mockResolvedValue(mockUser);
+
+      await service.register(registerDto, mockSession);
+
+      expect(mockLabelsService.seedDefaultLabels).toHaveBeenCalledTimes(1);
+      expect(mockLabelsService.seedDefaultLabels).toHaveBeenCalledWith(mockUser.id);
     });
   });
 

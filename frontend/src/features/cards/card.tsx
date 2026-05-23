@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useDeleteCard, useCreateCard, type Card as CardType } from './use-cards';
 import { CardDraggable } from './card-draggable';
 import { CardDetailPanel } from './card-detail-panel';
+import { LabelBadge } from '../labels/label-badge';
 import { MoreHorizontal, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -144,6 +145,13 @@ export function Card({ card, index, isNew }: CardProps) {
                  style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                 {card.description}
               </p>
+            )}
+            {card.labels && card.labels.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {card.labels.map((label) => (
+                  <LabelBadge key={label.id} label={label} />
+                ))}
+              </div>
             )}
           </div>
         )}

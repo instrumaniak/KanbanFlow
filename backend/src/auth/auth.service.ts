@@ -8,6 +8,7 @@ import {
 import * as bcrypt from 'bcryptjs';
 import { QueryFailedError } from 'typeorm';
 import { UsersService } from '../users/users.service';
+import { LabelsService } from '../labels/labels.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -15,7 +16,10 @@ import { LoginDto } from './dto/login.dto';
 export class AuthService {
   private registrationEnabled: boolean;
 
-  constructor(private readonly usersService: UsersService) {
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly labelsService: LabelsService,
+  ) {
     this.registrationEnabled = process.env.REGISTRATION_ENABLED !== 'false';
   }
 
@@ -56,6 +60,8 @@ export class AuthService {
     session.userId = user.id;
     session.email = user.email;
     session.role = user.role;
+
+    await this.labelsService.seedDefaultLabels(user.id);
 
     return { id: user.id, email: user.email, role: user.role };
   }

@@ -1,7 +1,14 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Card } from './entities/card.entity';
+import { CardLabel } from './entities/card-label.entity';
+import { Label } from '../labels/entities/label.entity';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
 import { BoardColumn } from '../columns/entities/column.entity';
@@ -11,6 +18,10 @@ export class CardsService {
   constructor(
     @InjectRepository(Card)
     private readonly cardRepository: Repository<Card>,
+    @InjectRepository(CardLabel)
+    private readonly cardLabelRepository: Repository<CardLabel>,
+    @InjectRepository(Label)
+    private readonly labelRepository: Repository<Label>,
     @InjectRepository(BoardColumn)
     private readonly columnRepository: Repository<BoardColumn>,
     private readonly dataSource: DataSource,
@@ -47,6 +58,7 @@ export class CardsService {
 
     return this.cardRepository.find({
       where: { column_id: columnId },
+      relations: ['labels'],
       order: { position: 'ASC' },
     });
   }
@@ -185,6 +197,119 @@ export class CardsService {
       .select('MAX(card.position)', 'max')
       .getRawOne<{ max: string | number | null }>();
     return Number(result?.max ?? -1);
+  }
+
+  async findById(id: number, userId: number): Promise<Card> {
+    const card = await this.findCardById(id, userId);
+    return this.cardRepository.findOne({
+      where: { id: card.id },
+      relations: ['labels'],
+    }) as Promise<Card>;
+  }
+
+  async assignLabel(
+    cardId: number,
+    labelId: number,
+    userId: number,
+  ): Promise<Card> {
+    return this.dataSource.transaction(async (manager) => {
+      const card = await manager
+        .getRepository(Card)
+        .findOne({
+          where: { id: cardId },
+          relations: ['column', 'column.board'],
+        });
+
+      if (!card) {
+        throw new NotFoundException('Card not found');
+      }
+
+      if (card.column.board.user_id !== userId) {
+        throw new ForbiddenException('Access denied');
+      }
+
+      const label = await manager
+        .getRepository(Label)
+        .findOne({ where: { id: labelId } });
+
+      if (!label) {
+        throw new NotFoundException('Label not found');
+      }
+
+      if (label.user_id !== userId) {
+        throw new ForbiddenException('Access denied');
+      }
+
+      const existing = await manager
+        .getRepository(CardLabel)
+        .findOne({
+          where: { card_id: cardId, label_id: labelId },
+        });
+
+      if (existing) {
+        throw new ConflictException('Label already assigned to this card');
+      }
+
+      const cardLabel = manager.getRepository(CardLabel).create({
+        card: { id: cardId } as Card,
+        label: { id: labelId } as Label,
+        card_id: cardId,
+        label_id: labelId,
+      });
+      await manager.getRepository(CardLabel).save(cardLabel);
+
+      return manager.getRepository(Card).findOne({
+        where: { id: cardId },
+        relations: ['labels'],
+      }) as Promise<Card>;
+    });
+  }
+
+  async removeLabel(
+    cardId: number,
+    labelId: number,
+    userId: number,
+  ): Promise<void> {
+    return this.dataSource.transaction(async (manager) => {
+      const card = await manager
+        .getRepository(Card)
+        .findOne({
+          where: { id: cardId },
+          relations: ['column', 'column.board'],
+        });
+
+      if (!card) {
+        throw new NotFoundException('Card not found');
+      }
+
+      if (card.column.board.user_id !== userId) {
+        throw new ForbiddenException('Access denied');
+      }
+
+      const label = await manager
+        .getRepository(Label)
+        .findOne({ where: { id: labelId } });
+
+      if (!label) {
+        throw new NotFoundException('Label not found');
+      }
+
+      if (label.user_id !== userId) {
+        throw new ForbiddenException('Access denied');
+      }
+
+      const existing = await manager
+        .getRepository(CardLabel)
+        .findOne({
+          where: { card_id: cardId, label_id: labelId },
+        });
+
+      if (!existing) {
+        throw new NotFoundException('Label not assigned to this card');
+      }
+
+      await manager.getRepository(CardLabel).remove(existing);
+    });
   }
 
   async remove(id: number, userId: number): Promise<void> {

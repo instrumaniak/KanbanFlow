@@ -12,6 +12,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { BoardsModule } from './boards/boards.module';
 import { ColumnsModule } from './columns/columns.module';
 import { CardsModule } from './cards/cards.module';
+import { LabelsModule } from './labels/labels.module';
 import { buildDataSourceOptions } from './database/data-source-options';
 
 @Module({
@@ -36,6 +37,7 @@ import { buildDataSourceOptions } from './database/data-source-options';
     BoardsModule,
     ColumnsModule,
     CardsModule,
+    LabelsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

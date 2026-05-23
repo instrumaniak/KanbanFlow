@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import type { Schema } from 'hast-util-sanitize';
 import { useUpdateCard, type Card as CardType } from './use-cards';
+import { LabelPicker } from '../labels/label-picker';
 
 const markdownSanitizeSchema: Schema = {
   ...defaultSchema,
@@ -280,9 +281,7 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
 
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Labels</h3>
-              <p className="text-muted-foreground text-sm">
-                Labels will be available in a future update.
-              </p>
+              <LabelPicker card={card} />
             </div>
 
             <Separator />

@@ -18,6 +18,7 @@ import { CardsService } from './cards.service';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
 import { Card } from './entities/card.entity';
+import { Label } from '../labels/entities/label.entity';
 
 interface SessionData {
   userId: number;
@@ -32,6 +33,7 @@ interface CardResponse {
   due_date: string | null;
   created_at: string;
   updated_at: string;
+  labels: { id: number; name: string; color: string }[];
 }
 
 function toCardResponse(card: Card): CardResponse {
@@ -44,6 +46,12 @@ function toCardResponse(card: Card): CardResponse {
     due_date: card.due_date ? card.due_date.toISOString() : null,
     created_at: card.created_at.toISOString(),
     updated_at: card.updated_at.toISOString(),
+    labels:
+      card.labels?.map((l: Label) => ({
+        id: l.id,
+        name: l.name,
+        color: l.color,
+      })) || [],
   };
 }
 
@@ -89,6 +97,45 @@ export class CardsController {
   ): Promise<{ data: CardResponse; message: string }> {
     const card = await this.cardsService.update(id, session.userId, dto);
     return { data: toCardResponse(card), message: 'Card updated' };
+  }
+
+  @Get('cards/:id')
+  @ApiOperation({ summary: 'Get a single card by id' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Card found' })
+  async findOne(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ data: CardResponse }> {
+    const card = await this.cardsService.findById(id, session.userId);
+    return { data: toCardResponse(card) };
+  }
+
+  @Post('cards/:id/labels')
+  @ApiOperation({ summary: 'Assign a label to a card' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 201, description: 'Label assigned' })
+  async assignLabel(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+    @Body('labelId', ParseIntPipe) labelId: number,
+  ): Promise<{ data: CardResponse; message: string }> {
+    const card = await this.cardsService.assignLabel(id, labelId, session.userId);
+    return { data: toCardResponse(card), message: 'Label assigned' };
+  }
+
+  @Delete('cards/:id/labels/:labelId')
+  @ApiOperation({ summary: 'Remove a label from a card' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiParam({ name: 'labelId', type: Number })
+  @ApiResponse({ status: 200, description: 'Label removed' })
+  async removeLabel(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('labelId', ParseIntPipe) labelId: number,
+  ): Promise<{ message: string }> {
+    await this.cardsService.removeLabel(id, labelId, session.userId);
+    return { message: 'Label removed' };
   }
 
   @Delete('cards/:id')

@@ -15,6 +15,12 @@ const mockToast = vi.fn();
 
 vi.mock('./use-cards', () => ({
   useUpdateCard: () => mockMutateObj,
+  useAssignCardLabel: () => ({ mutate: vi.fn(), isPending: false }),
+  useRemoveCardLabel: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+vi.mock('../labels/use-labels', () => ({
+  useLabels: () => ({ data: [], isLoading: false }),
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({
@@ -82,9 +88,9 @@ describe('CardDetailPanel', () => {
     expect(screen.getByText('No due date')).toBeInTheDocument();
   });
 
-  it('shows labels placeholder', () => {
+  it('shows labels section', () => {
     renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
-    expect(screen.getByText('Labels will be available in a future update.')).toBeInTheDocument();
+    expect(screen.getByText('No labels available.')).toBeInTheDocument();
   });
 
   it('shows checklist placeholder', () => {

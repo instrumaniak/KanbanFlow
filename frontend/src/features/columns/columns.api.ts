@@ -1,8 +1,17 @@
+export interface Label {
+  id: number;
+  name: string;
+  color: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Card {
   id: number;
   title: string;
   column_id: number;
   position: number;
+  labels?: Label[];
   created_at: string;
   updated_at: string;
 }

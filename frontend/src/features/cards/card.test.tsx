@@ -19,6 +19,12 @@ vi.mock('./use-cards', () => ({
   useUpdateCard: () => mockMutateObj,
   useDeleteCard: () => mockDeleteMutateObj,
   useCreateCard: () => mockCreateMutateObj,
+  useAssignCardLabel: () => ({ mutate: vi.fn(), isPending: false }),
+  useRemoveCardLabel: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+vi.mock('../labels/use-labels', () => ({
+  useLabels: () => ({ data: [], isLoading: false }),
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({
@@ -122,6 +128,41 @@ describe('Card', () => {
       expect(preview).toHaveClass('whitespace-pre-wrap');
       const style = window.getComputedStyle(preview);
       expect(style.display).toBe('-webkit-box');
+    });
+  });
+
+  describe('Card labels display', () => {
+    it('shows label badges when card has labels', () => {
+      const cardWithLabels = {
+        ...mockCard,
+        labels: [
+          { id: 1, name: 'Bug', color: '#ff0000', created_at: '2024-01-01', updated_at: '2024-01-01' },
+          { id: 2, name: 'Feature', color: '#00ff00', created_at: '2024-01-01', updated_at: '2024-01-01' },
+        ],
+      };
+      renderWithProviders(<Card card={cardWithLabels} index={0} />);
+
+      expect(screen.getByText('Bug')).toBeInTheDocument();
+      expect(screen.getByText('Feature')).toBeInTheDocument();
+    });
+
+    it('does not show label section when card has no labels', () => {
+      renderWithProviders(<Card card={mockCard} index={0} />);
+
+      expect(screen.queryByText('Bug')).not.toBeInTheDocument();
+    });
+
+    it('applies correct background color to label badges', () => {
+      const cardWithLabels = {
+        ...mockCard,
+        labels: [
+          { id: 1, name: 'Bug', color: '#ff0000', created_at: '2024-01-01', updated_at: '2024-01-01' },
+        ],
+      };
+      renderWithProviders(<Card card={cardWithLabels} index={0} />);
+
+      const badge = screen.getByText('Bug');
+      expect(badge).toHaveStyle({ backgroundColor: '#ff0000' });
     });
   });
 

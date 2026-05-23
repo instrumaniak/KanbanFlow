@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CardsController } from './cards.controller';
 import { CardsService } from './cards.service';
 import { Card } from './entities/card.entity';
+import { CardLabel } from './entities/card-label.entity';
 
 describe('CardsController', () => {
   let controller: CardsController;
@@ -13,6 +14,7 @@ describe('CardsController', () => {
     position: number;
     description: string | null;
     due_date: string | null;
+    labels: { id: number; name: string; color: string }[];
     created_at: string;
     updated_at: string;
   };
@@ -21,12 +23,15 @@ describe('CardsController', () => {
   type CardMutationResponse = { data: CardPayload; message: string };
 
   const mockCardsService: jest.Mocked<
-    Pick<CardsService, 'create' | 'findAllByColumnId' | 'update' | 'remove'>
+    Pick<CardsService, 'create' | 'findAllByColumnId' | 'update' | 'remove' | 'findById' | 'assignLabel' | 'removeLabel'>
   > = {
     create: jest.fn(),
     findAllByColumnId: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    findById: jest.fn(),
+    assignLabel: jest.fn(),
+    removeLabel: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -202,6 +207,65 @@ describe('CardsController', () => {
       const result = await controller.remove({ userId: 1 }, 1);
 
       expect(result).toEqual({ message: 'Card deleted' });
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a card by id with labels', async () => {
+      const card = {
+        id: 1,
+        title: 'Card 1',
+        column_id: 1,
+        position: 0,
+        description: null,
+        due_date: null,
+        labels: [{ id: 1, name: 'Urgent', color: 'red' }],
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+      mockCardsService.findById.mockResolvedValue(card as Card);
+
+      const result = (await controller.findOne({ userId: 1 }, 1));
+
+      expect(result.data).toMatchObject({
+        id: 1,
+        title: 'Card 1',
+        labels: [{ id: 1, name: 'Urgent', color: 'red' }],
+      });
+    });
+  });
+
+  describe('assignLabel', () => {
+    it('should assign a label to a card and return card', async () => {
+      const card = {
+        id: 1,
+        title: 'Card 1',
+        column_id: 1,
+        position: 0,
+        description: null,
+        due_date: null,
+        labels: [{ id: 1, name: 'Urgent', color: 'red' }],
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+      mockCardsService.assignLabel.mockResolvedValue(card as Card);
+
+      const result = (await controller.assignLabel({ userId: 1 }, 1, 1)) as CardMutationResponse;
+
+      expect(result.data).toMatchObject({ id: 1, title: 'Card 1' });
+      expect(result.message).toBe('Label assigned');
+      expect(mockCardsService.assignLabel).toHaveBeenCalledWith(1, 1, 1);
+    });
+  });
+
+  describe('removeLabel', () => {
+    it('should remove a label from a card and return message', async () => {
+      mockCardsService.removeLabel.mockResolvedValue(undefined);
+
+      const result = await controller.removeLabel({ userId: 1 }, 1, 1);
+
+      expect(result).toEqual({ message: 'Label removed' });
+      expect(mockCardsService.removeLabel).toHaveBeenCalledWith(1, 1, 1);
     });
   });
 });

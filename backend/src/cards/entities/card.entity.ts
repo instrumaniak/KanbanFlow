@@ -6,9 +6,13 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
+  ManyToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BoardColumn } from '../../columns/entities/column.entity';
+import { CardLabel } from './card-label.entity';
+import { Label } from '../../labels/entities/label.entity';
 
 @Entity('cards')
 export class Card {
@@ -47,4 +51,10 @@ export class Card {
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
   @UpdateDateColumn()
   updated_at!: Date;
+
+  @OneToMany(() => CardLabel, (cardLabel) => cardLabel.card)
+  cardLabels!: CardLabel[];
+
+  @ManyToMany(() => Label, (label) => label.cards)
+  labels!: Label[];
 }

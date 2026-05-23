@@ -4,6 +4,8 @@ import {
   updateCard,
   deleteCard,
   fetchCards,
+  assignLabelToCard,
+  removeLabelFromCard,
   type CreateCardData,
   type UpdateCardData,
   type Card,
@@ -186,6 +188,28 @@ export function useDeleteCard() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['cards'] });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
+    },
+  });
+}
+
+export function useAssignCardLabel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cardId, labelId }: { cardId: number; labelId: number }) =>
+      assignLabelToCard(cardId, labelId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
+    },
+  });
+}
+
+export function useRemoveCardLabel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cardId, labelId }: { cardId: number; labelId: number }) =>
+      removeLabelFromCard(cardId, labelId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
     },
   });
 }
