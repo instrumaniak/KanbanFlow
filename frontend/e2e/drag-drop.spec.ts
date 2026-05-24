@@ -19,7 +19,7 @@ monitoringTest.describe('Drag and Drop', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
   });
 
   async function createBoardWithCards(page: import('@playwright/test').Page, boardName: string) {
@@ -89,7 +89,7 @@ monitoringTest.describe('Drag and Drop', () => {
     await page.waitForTimeout(500);
 
     const column = page.locator('[data-column-id]').first();
-    const cards = column.locator('div[role="button"][aria-label="Edit card title"]');
+    const cards = column.locator('div[role="button"][aria-label="Open card details"]');
     await expect(cards).toHaveCount(2, { timeout: 10000 });
     await expect(cards.nth(0)).toHaveText(/Card 1/);
     await expect(cards.nth(1)).toHaveText(/Card 2/);
@@ -111,7 +111,7 @@ monitoringTest.describe('Drag and Drop', () => {
 
     await page.reload();
     await page.waitForTimeout(2000);
-    const reloadedCards = page.locator('[data-column-id]').first().locator('div[role="button"][aria-label="Edit card title"]');
+    const reloadedCards = page.locator('[data-column-id]').first().locator('div[role="button"][aria-label="Open card details"]');
     await expect(reloadedCards.nth(0)).toHaveText(/Card 2/);
     await expect(reloadedCards.nth(1)).toHaveText(/Card 1/);
 
@@ -143,8 +143,8 @@ monitoringTest.describe('Drag and Drop', () => {
     await page.waitForTimeout(2000);
 
     const columns = page.locator('[data-column-id]');
-    const firstColumnCards = columns.nth(0).locator('div[role="button"][aria-label="Edit card title"]');
-    const secondColumnCards = columns.nth(1).locator('div[role="button"][aria-label="Edit card title"]');
+    const firstColumnCards = columns.nth(0).locator('div[role="button"][aria-label="Open card details"]');
+    const secondColumnCards = columns.nth(1).locator('div[role="button"][aria-label="Open card details"]');
 
     await expect(firstColumnCards).toHaveCount(1, { timeout: 10000 });
     await expect(secondColumnCards).toHaveCount(1, { timeout: 10000 });
@@ -166,7 +166,7 @@ monitoringTest.describe('Drag and Drop', () => {
 
     await page.reload();
     await page.waitForTimeout(3000);
-    const reloadedSecondColumn = page.locator('[data-column-id]').nth(1).locator('div[role="button"][aria-label="Edit card title"]');
+    const reloadedSecondColumn = page.locator('[data-column-id]').nth(1).locator('div[role="button"][aria-label="Open card details"]');
     await expect(reloadedSecondColumn).toHaveCount(2);
 
     assertNoErrors(monitoring);

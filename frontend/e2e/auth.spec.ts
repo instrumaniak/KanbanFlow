@@ -9,7 +9,7 @@ test.describe('Auth flows', () => {
     test('renders registration form with all fields', async ({ page }) => {
       await page.goto('/register');
 
-      await expect(page.getByRole('heading', { name: 'Create an Account' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'KanbanFlow' })).toBeVisible();
       await expect(page.getByLabel('Email')).toBeVisible();
       await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
       await expect(page.getByLabel('Confirm Password')).toBeVisible();
@@ -56,8 +56,8 @@ test.describe('Auth flows', () => {
       await page.getByLabel('Confirm Password').fill(TEST_PASSWORD);
       await page.getByRole('button', { name: 'Register' }).click();
 
-      await page.waitForURL((url) => url.pathname === '/projects', { timeout: 15000 });
-      await expect(page.getByRole('heading', { name: 'My Projects' })).toBeVisible();
+      await page.waitForURL((url) => url.pathname === '/', { timeout: 15000 });
+      await expect(page.getByRole('heading', { name: 'My Boards' })).toBeVisible();
     });
   });
 
@@ -76,7 +76,7 @@ test.describe('Auth flows', () => {
     test('renders login form with all fields', async ({ page }) => {
       await page.goto('/login');
 
-      await expect(page.getByRole('heading', { name: 'Welcome Back' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'KanbanFlow' })).toBeVisible();
       await expect(page.getByLabel('Email')).toBeVisible();
       await expect(page.getByLabel('Password')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();

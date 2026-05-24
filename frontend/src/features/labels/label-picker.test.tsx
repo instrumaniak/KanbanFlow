@@ -14,8 +14,18 @@ const mockLabels = [
   { id: 3, name: 'Enhancement', color: 'blue', created_at: '2024-01-01', updated_at: '2024-01-01' },
 ];
 
+const manyMockLabels = Array.from({ length: 24 }, (_, index) => ({
+  id: index + 1,
+  name: `Label ${index + 1}`,
+  color: ['red', 'green', 'blue', 'yellow', 'orange', 'purple'][index % 6],
+  created_at: '2024-01-01',
+  updated_at: '2024-01-01',
+}));
+
+let labelsData = mockLabels;
+
 vi.mock('../labels/use-labels', () => ({
-  useLabels: () => ({ data: mockLabels, isLoading: false }),
+  useLabels: () => ({ data: labelsData, isLoading: false }),
   useCreateLabel: () => ({ mutate: mockCreateMutate, isPending: false }),
 }));
 
@@ -58,6 +68,7 @@ describe('LabelPicker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    labelsData = mockLabels;
   });
 
   it('renders a trigger button showing label count', () => {
@@ -150,6 +161,22 @@ describe('LabelPicker', () => {
       const bugButton = screen.getByRole('button', { name: /remove bug/i });
       expect(bugButton).toHaveAttribute('aria-pressed', 'true');
       expect(bugButton).toHaveAttribute('aria-label', 'Remove Bug');
+    });
+  });
+
+  it('bounds and scrolls the popover content when many labels are available', async () => {
+    const user = userEvent.setup();
+    labelsData = manyMockLabels;
+
+    renderWithProviders(<LabelPicker card={mockCardNoLabels} />);
+    await user.click(screen.getByText('Add labels'));
+
+    await waitFor(() => {
+      const popoverContent = document.querySelector('[data-state="open"][data-side]');
+      expect(popoverContent).toBeTruthy();
+      expect(popoverContent).toHaveClass('max-h-[var(--radix-popper-available-height)]');
+      expect(popoverContent).toHaveClass('overflow-y-auto');
+      expect(screen.getByRole('button', { name: /create new label/i })).toBeInTheDocument();
     });
   });
 });

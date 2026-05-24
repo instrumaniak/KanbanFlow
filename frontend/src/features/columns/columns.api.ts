@@ -9,6 +9,7 @@ export interface Label {
 export interface Card {
   id: number;
   title: string;
+  description: string | null;
   column_id: number;
   position: number;
   labels?: Label[];

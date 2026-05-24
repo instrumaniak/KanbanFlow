@@ -21,6 +21,7 @@ test.describe('Projects CRUD', () => {
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL((url) => url.pathname !== '/login', { timeout: 10000 });
+    await page.goto('/projects');
   });
 
   test('shows My Projects heading', async ({ page }) => {

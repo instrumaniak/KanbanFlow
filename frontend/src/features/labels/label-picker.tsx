@@ -91,7 +91,10 @@ export function LabelPicker({ card }: LabelPickerProps) {
             : 'Add labels'}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64" align="start">
+      <PopoverContent
+        className="w-64 max-h-[var(--radix-popper-available-height)] overflow-y-auto"
+        align="start"
+      >
         {isLoading ? (
           <p className="text-muted-foreground text-sm">Loading labels...</p>
         ) : !labels || labels.length === 0 ? (

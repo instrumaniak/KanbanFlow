@@ -18,7 +18,7 @@ test.describe('Column CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     const boardName = `Test Board Columns ${Date.now()}`;
     await page.goto('/');
@@ -52,7 +52,7 @@ test.describe('Column CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/');
 
@@ -83,7 +83,7 @@ test.describe('Column CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/');
     await page.waitForTimeout(500);
@@ -114,7 +114,7 @@ test.describe('Column CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/');
     await page.waitForTimeout(500);

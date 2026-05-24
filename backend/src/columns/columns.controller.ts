@@ -32,8 +32,10 @@ interface ColumnResponse {
   cards: {
     id: number;
     title: string;
+    description: string | null;
     column_id: number;
     position: number;
+    labels: { id: number; name: string; color: string }[];
     created_at: string;
     updated_at: string;
   }[];
@@ -67,8 +69,10 @@ export class ColumnsController {
             .map((c) => ({
               id: c.id,
               title: c.title,
+              description: c.description,
               column_id: c.column_id,
               position: c.position,
+              labels: c.cardLabels ? c.cardLabels.map((cl) => ({ id: cl.label.id, name: cl.label.name, color: cl.label.color })) : [],
               created_at: c.created_at.toISOString(),
               updated_at: c.updated_at.toISOString(),
             }))
@@ -159,8 +163,10 @@ export class ColumnsController {
             .map((c) => ({
               id: c.id,
               title: c.title,
+              description: c.description,
               column_id: c.column_id,
               position: c.position,
+              labels: c.cardLabels ? c.cardLabels.map((cl) => ({ id: cl.label.id, name: cl.label.name, color: cl.label.color })) : [],
               created_at: c.created_at.toISOString(),
               updated_at: c.updated_at.toISOString(),
             }))
