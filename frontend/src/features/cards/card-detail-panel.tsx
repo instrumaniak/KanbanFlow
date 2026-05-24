@@ -27,7 +27,9 @@ const markdownSanitizeSchema: Schema = {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
+  SheetTitle,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -204,6 +206,10 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
                   <span className="text-xs text-muted-foreground">Saving...</span>
                 )}
               </div>
+              <SheetTitle className="sr-only">Card details: {card.title}</SheetTitle>
+              <SheetDescription className="sr-only">
+                Detailed view and editing options for the card "{card.title}"
+              </SheetDescription>
             </SheetHeader>
 
             <Separator />
