@@ -62,7 +62,7 @@ export function RegisterForm() {
 
     try {
       await register({ email, password });
-      navigate('/projects');
+      navigate('/');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed';
       toast({

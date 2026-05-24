@@ -78,14 +78,15 @@ test.describe('Labels E2E', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     // Navigate to the board
-    await page.goto(`/boards/${boardId}`);
-    await page.waitForTimeout(1000);
+    await page.goto(`/board/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
     // Find the card and open detail panel
-    const cardButton = page.getByRole('button', { name: /Test Card for Labels/i });
+    const cardButton = page.locator('div[role="button"][aria-label="Open card details"]', { hasText: /Test Card for Labels/i });
     await expect(cardButton).toBeVisible();
     await cardButton.click();
 
@@ -105,25 +106,24 @@ test.describe('Labels E2E', () => {
     await expect(bugLabelButton).toBeVisible();
     await bugLabelButton.click();
 
-    await page.waitForTimeout(500);
+    // Wait for the badge to appear after assignment
+    const cardBadge = page.locator('div[role="button"][aria-label="Open card details"]', { hasText: /Test Card for Labels/i }).locator('span').filter({ hasText: 'Bug' });
+    await expect(cardBadge).toBeVisible({ timeout: 5000 });
 
     // Close the panel
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
 
-    // Verify the label badge appears on the card face
-    const cardBadge = page.locator('.group').filter({ hasText: /Test Card for Labels/i }).locator('span').filter({ hasText: 'Bug' });
-    await expect(cardBadge).toBeVisible();
-
     // Refresh the page and verify persistence
     await page.reload();
+    await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1500);
 
-    const persistedBadge = page.locator('.group').filter({ hasText: /Test Card for Labels/i }).locator('span').filter({ hasText: 'Bug' });
+    const persistedBadge = page.locator('div[role="button"][aria-label="Open card details"]', { hasText: /Test Card for Labels/i }).locator('span').filter({ hasText: 'Bug' });
     await expect(persistedBadge).toBeVisible();
 
     // Open card detail again and remove the label
-    const cardButtonAfterReload = page.getByRole('button', { name: /Test Card for Labels/i });
+    const cardButtonAfterReload = page.locator('div[role="button"][aria-label="Open card details"]', { hasText: /Test Card for Labels/i });
     await cardButtonAfterReload.click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
@@ -197,13 +197,14 @@ test.describe('Labels E2E', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
-    await page.goto(`/boards/${boardId}`);
-    await page.waitForTimeout(1000);
+    await page.goto(`/board/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
     // Verify the custom label appears on the card face
-    const cardBadge = page.locator('.group').filter({ hasText: /Custom Label Card/i }).locator('span').filter({ hasText: customLabelName });
+    const cardBadge = page.locator('div[role="button"][aria-label="Open card details"]', { hasText: /Custom Label Card/i }).locator('span').filter({ hasText: customLabelName });
     await expect(cardBadge).toBeVisible();
 
     // Verify the label has the correct color
@@ -212,7 +213,7 @@ test.describe('Labels E2E', () => {
     expect(badgeStyle).not.toBe('rgba(0, 0, 0, 0)');
 
     // Open card detail panel and verify label is shown as assigned (full opacity)
-    const cardButton = page.getByRole('button', { name: /Custom Label Card/i });
+    const cardButton = page.locator('div[role="button"][aria-label="Open card details"]', { hasText: /Custom Label Card/i });
     await cardButton.click();
     await expect(page.getByRole('dialog')).toBeVisible();
 

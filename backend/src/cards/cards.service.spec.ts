@@ -343,9 +343,9 @@ describe('CardsService', () => {
     it('should return a card with labels', async () => {
       const card = createMockCard(1, 1, 0);
       card.column.board.user_id = mockUserId;
-      card.labels = [
-        { id: 1, name: 'Urgent', color: 'red', user_id: mockUserId },
-      ] as unknown as Label[];
+      card.cardLabels = [
+        { cardId: 1, labelId: 1, label: { id: 1, name: 'Urgent', color: 'red', user_id: mockUserId } as unknown as Label, card: card },
+      ];
       mockCardRepository.findOne.mockResolvedValue(card);
 
       const result = await service.findById(1, mockUserId);

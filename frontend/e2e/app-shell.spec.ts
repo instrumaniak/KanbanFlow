@@ -50,7 +50,7 @@ test.describe('App shell & navigation', () => {
     // Expand via header toggle
     await headerToggle.click();
     await expect(sidebar).toHaveClass(/w-\[240px\]/);
-    await expect(page.getByText('Projects', { exact: true })).toBeVisible();
+    await expect(sidebar.getByText('Projects', { exact: true })).toBeVisible();
 
     // Collapse via sidebar toggle (now visible)
     const sidebarToggle = sidebar.getByRole('button', { name: 'Toggle sidebar' });

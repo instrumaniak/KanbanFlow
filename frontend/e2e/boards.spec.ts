@@ -18,7 +18,7 @@ test.describe('Boards CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     // Navigate to root which shows boards
     await page.goto('/');
@@ -32,7 +32,7 @@ test.describe('Boards CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     // Navigate to root which shows boards
     await page.goto('/');
@@ -48,7 +48,7 @@ test.describe('Boards CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     // Navigate to root which shows boards
     await page.goto('/');
@@ -78,7 +78,7 @@ test.describe('Boards CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     // Navigate to root which shows boards
     await page.goto('/');
@@ -130,7 +130,7 @@ test.describe('Board Archiving', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/');
     await page.waitForTimeout(500);
@@ -159,7 +159,7 @@ test.describe('Board Archiving', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/');
     await page.waitForTimeout(500);
@@ -180,7 +180,7 @@ test.describe('Board Archiving', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/archived-boards');
     await page.waitForTimeout(500);
@@ -216,7 +216,7 @@ test.describe('Board Archiving', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/archived-boards');
     await page.waitForTimeout(500);

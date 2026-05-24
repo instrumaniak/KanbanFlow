@@ -34,7 +34,7 @@ export class ColumnsService {
 
     return this.columnRepository.find({
       where: { board_id: boardId },
-      relations: ['cards'],
+      relations: ['cards', 'cards.cardLabels', 'cards.cardLabels.label'],
       order: { position: 'ASC' },
     });
   }
@@ -112,7 +112,7 @@ export class ColumnsService {
 
     const sortedColumn = await this.columnRepository.findOne({
       where: { id },
-      relations: ['cards'],
+      relations: ['cards', 'cards.cardLabels', 'cards.cardLabels.label'],
       order: { position: 'ASC' },
     });
     if (!sortedColumn) {
