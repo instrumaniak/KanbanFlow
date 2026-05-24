@@ -7,12 +7,10 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
-  ManyToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BoardColumn } from '../../columns/entities/column.entity';
 import { CardLabel } from './card-label.entity';
-import { Label } from '../../labels/entities/label.entity';
 
 @Entity('cards')
 export class Card {
@@ -54,7 +52,4 @@ export class Card {
 
   @OneToMany(() => CardLabel, (cardLabel) => cardLabel.card)
   cardLabels!: CardLabel[];
-
-  @ManyToMany(() => Label, (label) => label.cards)
-  labels!: Label[];
 }

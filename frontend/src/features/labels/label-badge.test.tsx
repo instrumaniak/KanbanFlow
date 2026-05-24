@@ -17,7 +17,7 @@ describe('LabelBadge', () => {
   const mockLabel = {
     id: 1,
     name: 'Bug',
-    color: '#ff0000',
+    color: 'red',
     created_at: '2024-01-01',
     updated_at: '2024-01-01',
   };
@@ -31,10 +31,10 @@ describe('LabelBadge', () => {
     expect(screen.getByText('Bug')).toBeInTheDocument();
   });
 
-  it('applies label color as background', () => {
+  it('applies label color class', () => {
     renderWithProviders(<LabelBadge label={mockLabel} />);
     const badge = screen.getByText('Bug');
-    expect(badge).toHaveStyle({ backgroundColor: '#ff0000' });
+    expect(badge.className).toContain('bg-rose-500');
   });
 
   it('has title attribute with label name', () => {
@@ -47,5 +47,17 @@ describe('LabelBadge', () => {
     renderWithProviders(<LabelBadge label={mockLabel} className="custom-class" />);
     const badge = screen.getByText('Bug');
     expect(badge.className).toContain('custom-class');
+  });
+
+  it('renders remove button when onRemove is provided', () => {
+    const onRemove = vi.fn();
+    renderWithProviders(<LabelBadge label={mockLabel} onRemove={onRemove} />);
+    const removeBtn = screen.getByRole('button', { name: /remove bug/i });
+    expect(removeBtn).toBeInTheDocument();
+  });
+
+  it('does not render remove button when onRemove is not provided', () => {
+    renderWithProviders(<LabelBadge label={mockLabel} />);
+    expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument();
   });
 });

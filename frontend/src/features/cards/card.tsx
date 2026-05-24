@@ -148,9 +148,14 @@ export function Card({ card, index, isNew }: CardProps) {
             )}
             {card.labels && card.labels.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
-                {card.labels.map((label) => (
+                {card.labels.slice(0, 3).map((label) => (
                   <LabelBadge key={label.id} label={label} />
                 ))}
+                {card.labels.length > 3 && (
+                  <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    +{card.labels.length - 3}
+                  </span>
+                )}
               </div>
             )}
           </div>

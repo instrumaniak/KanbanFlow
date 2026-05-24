@@ -26,9 +26,7 @@ describe('LabelsController', () => {
 
   describe('findAll', () => {
     it('should return all labels for user', async () => {
-      const labels = [
-        { id: 1, name: 'Urgent', color: 'red', user_id: 1 },
-      ];
+      const labels = [{ id: 1, name: 'Urgent', color: 'red', user_id: 1 }];
       mockLabelsService.findAll.mockResolvedValue(labels as Label[]);
 
       const result = await controller.findAll({ userId: 1 });

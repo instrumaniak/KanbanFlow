@@ -1,4 +1,4 @@
-import type { Label } from '../cards/cards.api';
+import type { Label, LabelColor } from '../cards/cards.api';
 
 interface ApiResponse<T> {
   data: T;
@@ -17,6 +17,9 @@ async function handleResponse<T>(response: Response): Promise<T> {
       message = response.statusText || 'Request failed';
     }
     throw new Error(message);
+  }
+  if (response.status === 204) {
+    return undefined as T;
   }
   try {
     return await response.json();
@@ -37,7 +40,7 @@ export async function fetchLabels(): Promise<ApiResponse<Label[]>> {
 
 export interface CreateLabelData {
   name: string;
-  color: string;
+  color: LabelColor;
 }
 
 export async function createLabel(data: CreateLabelData): Promise<ApiResponse<Label>> {
@@ -57,7 +60,7 @@ export async function createLabel(data: CreateLabelData): Promise<ApiResponse<La
 
 export interface UpdateLabelData {
   name?: string;
-  color?: string;
+  color?: LabelColor;
 }
 
 export async function updateLabel(id: number, data: UpdateLabelData): Promise<ApiResponse<Label>> {

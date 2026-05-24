@@ -1,7 +1,9 @@
+export type LabelColor = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple';
+
 export interface Label {
   id: number;
   name: string;
-  color: string;
+  color: LabelColor;
   created_at: string;
   updated_at: string;
 }

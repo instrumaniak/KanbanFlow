@@ -21,6 +21,7 @@ vi.mock('./use-cards', () => ({
 
 vi.mock('../labels/use-labels', () => ({
   useLabels: () => ({ data: [], isLoading: false }),
+  useCreateLabel: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({
@@ -90,7 +91,7 @@ describe('CardDetailPanel', () => {
 
   it('shows labels section', () => {
     renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
-    expect(screen.getByText('No labels available.')).toBeInTheDocument();
+    expect(screen.getByText('Add labels')).toBeInTheDocument();
   });
 
   it('shows checklist placeholder', () => {

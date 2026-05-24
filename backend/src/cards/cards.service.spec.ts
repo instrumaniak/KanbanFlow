@@ -7,7 +7,7 @@ import { CardLabel } from './entities/card-label.entity';
 import { Label } from '../labels/entities/label.entity';
 import { BoardColumn } from '../columns/entities/column.entity';
 import { Board } from '../boards/entities/board.entity';
-import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
 
 describe('CardsService', () => {
   let service: CardsService;
@@ -43,18 +43,20 @@ describe('CardsService', () => {
   };
 
   const mockDataSource = {
-    transaction: jest.fn().mockImplementation(async (callback: (manager: unknown) => Promise<unknown>) => {
-      const mockManager = {
-        getRepository: jest.fn().mockImplementation((entity: unknown) => {
-          const ctorName = (entity as { name?: string }).name;
-          if (ctorName === 'Card') return mockCardRepository;
-          if (ctorName === 'Label') return mockLabelRepository;
-          if (ctorName === 'CardLabel') return mockCardLabelRepository;
-          return mockCardRepository;
-        }),
-      };
-      return callback(mockManager);
-    }),
+    transaction: jest
+      .fn()
+      .mockImplementation(async (callback: (manager: unknown) => Promise<unknown>) => {
+        const mockManager = {
+          getRepository: jest.fn().mockImplementation((entity: unknown) => {
+            const ctorName = (entity as { name?: string }).name;
+            if (ctorName === 'Card') return mockCardRepository;
+            if (ctorName === 'Label') return mockLabelRepository;
+            if (ctorName === 'CardLabel') return mockCardLabelRepository;
+            return mockCardRepository;
+          }),
+        };
+        return callback(mockManager);
+      }),
   };
 
   const createMockCard = (id: number, columnId: number, position: number): Card =>
@@ -120,17 +122,26 @@ describe('CardsService', () => {
       };
       mockCardRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockCardRepository.create.mockReturnValue({ id: 1 });
-      mockCardRepository.save.mockResolvedValue({ id: 1, title: 'New Card', column_id: 1, position: 0, description: null, due_date: null });
-
-      const result = await service.create(mockUserId, { title: 'New Card', column_id: 1 });
-
-      expect(mockCardRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+      mockCardRepository.save.mockResolvedValue({
+        id: 1,
         title: 'New Card',
         column_id: 1,
         position: 0,
         description: null,
         due_date: null,
-      }));
+      });
+
+      const result = await service.create(mockUserId, { title: 'New Card', column_id: 1 });
+
+      expect(mockCardRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'New Card',
+          column_id: 1,
+          position: 0,
+          description: null,
+          due_date: null,
+        }),
+      );
       expect(result).toBeDefined();
     });
 
@@ -143,7 +154,14 @@ describe('CardsService', () => {
       };
       mockCardRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockCardRepository.create.mockReturnValue({ id: 1 });
-      mockCardRepository.save.mockResolvedValue({ id: 1, title: 'New Card', column_id: 1, position: 0, description: 'A description', due_date: new Date('2026-01-01') });
+      mockCardRepository.save.mockResolvedValue({
+        id: 1,
+        title: 'New Card',
+        column_id: 1,
+        position: 0,
+        description: 'A description',
+        due_date: new Date('2026-01-01'),
+      });
 
       await service.create(mockUserId, {
         title: 'New Card',
@@ -152,10 +170,12 @@ describe('CardsService', () => {
         due_date: '2026-01-01',
       });
 
-      expect(mockCardRepository.create).toHaveBeenCalledWith(expect.objectContaining({
-        description: 'A description',
-        due_date: new Date('2026-01-01'),
-      }));
+      expect(mockCardRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'A description',
+          due_date: new Date('2026-01-01'),
+        }),
+      );
     });
   });
 
@@ -254,7 +274,9 @@ describe('CardsService', () => {
 
       await service.update(1, mockUserId, { due_date: '2026-06-01' });
 
-      expect(mockCardRepository.update).toHaveBeenCalledWith(1, { due_date: new Date('2026-06-01') });
+      expect(mockCardRepository.update).toHaveBeenCalledWith(1, {
+        due_date: new Date('2026-06-01'),
+      });
     });
 
     it('should clear due_date when set to nullish via empty string', async () => {
@@ -265,7 +287,10 @@ describe('CardsService', () => {
 
       await service.update(1, mockUserId, { due_date: undefined });
 
-      expect(mockCardRepository.update).not.toHaveBeenCalledWith(1, expect.objectContaining({ due_date: expect.anything() }));
+      expect(mockCardRepository.update).not.toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ due_date: expect.anything() }),
+      );
     });
   });
 
@@ -318,7 +343,9 @@ describe('CardsService', () => {
     it('should return a card with labels', async () => {
       const card = createMockCard(1, 1, 0);
       card.column.board.user_id = mockUserId;
-      card.labels = [{ id: 1, name: 'Urgent', color: 'red', user_id: mockUserId }] as unknown as Label[];
+      card.labels = [
+        { id: 1, name: 'Urgent', color: 'red', user_id: mockUserId },
+      ] as unknown as Label[];
       mockCardRepository.findOne.mockResolvedValue(card);
 
       const result = await service.findById(1, mockUserId);
@@ -352,7 +379,13 @@ describe('CardsService', () => {
         .mockResolvedValueOnce({ ...card, labels: [label] });
       mockLabelRepository.findOne.mockResolvedValue(label);
       mockCardLabelRepository.findOne.mockResolvedValue(null);
-      mockCardLabelRepository.create.mockReturnValue({ id: 1, card: { id: 1 }, label: { id: 1 }, card_id: 1, label_id: 1 });
+      mockCardLabelRepository.create.mockReturnValue({
+        id: 1,
+        card: { id: 1 },
+        label: { id: 1 },
+        cardId: 1,
+        labelId: 1,
+      });
       mockCardLabelRepository.save.mockResolvedValue({ id: 1 });
 
       const result = await service.assignLabel(1, 1, mockUserId);
@@ -360,7 +393,9 @@ describe('CardsService', () => {
       expect(result).toBeDefined();
       expect(result).toMatchObject({ id: 1, title: 'Card 1' });
       expect(mockCardLabelRepository.save).toHaveBeenCalled();
-      expect(mockCardLabelRepository.findOne).toHaveBeenCalledWith({ where: { card_id: 1, label_id: 1 } });
+      expect(mockCardLabelRepository.findOne).toHaveBeenCalledWith({
+        where: { cardId: 1, labelId: 1 },
+      });
     });
 
     it('should throw NotFoundException if card does not exist', async () => {
@@ -397,7 +432,7 @@ describe('CardsService', () => {
       await expect(service.assignLabel(1, 1, mockUserId)).rejects.toThrow(ForbiddenException);
     });
 
-    it('should throw ConflictException if label already assigned', async () => {
+    it('should return card idempotently if label already assigned', async () => {
       const card = createMockCard(1, 1, 0);
       card.column.board.user_id = mockUserId;
       const label = { id: 1, name: 'Urgent', color: 'red', user_id: mockUserId } as Label;
@@ -406,7 +441,8 @@ describe('CardsService', () => {
       mockLabelRepository.findOne.mockResolvedValue(label);
       mockCardLabelRepository.findOne.mockResolvedValue({ id: 1 });
 
-      await expect(service.assignLabel(1, 1, mockUserId)).rejects.toThrow(ConflictException);
+      const result = await service.assignLabel(1, 1, mockUserId);
+      expect(result).toBeDefined();
     });
   });
 

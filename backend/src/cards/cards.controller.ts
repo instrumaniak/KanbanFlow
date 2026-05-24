@@ -11,6 +11,7 @@ import {
   ParseIntPipe,
   ValidationPipe,
   UsePipes,
+  HttpCode,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { SessionGuard } from '../auth/guards/session.guard';
@@ -18,7 +19,6 @@ import { CardsService } from './cards.service';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
 import { Card } from './entities/card.entity';
-import { Label } from '../labels/entities/label.entity';
 
 interface SessionData {
   userId: number;
@@ -47,10 +47,10 @@ function toCardResponse(card: Card): CardResponse {
     created_at: card.created_at.toISOString(),
     updated_at: card.updated_at.toISOString(),
     labels:
-      card.labels?.map((l: Label) => ({
-        id: l.id,
-        name: l.name,
-        color: l.color,
+      card.cardLabels?.map((cl) => ({
+        id: cl.label.id,
+        name: cl.label.name,
+        color: cl.label.color,
       })) || [],
   };
 }
@@ -112,9 +112,10 @@ export class CardsController {
   }
 
   @Post('cards/:id/labels')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Assign a label to a card' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 201, description: 'Label assigned' })
+  @ApiResponse({ status: 200, description: 'Label assigned' })
   async assignLabel(
     @Session() session: SessionData,
     @Param('id', ParseIntPipe) id: number,

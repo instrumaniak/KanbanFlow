@@ -198,7 +198,7 @@ export function useAssignCardLabel() {
     mutationFn: ({ cardId, labelId }: { cardId: number; labelId: number }) =>
       assignLabelToCard(cardId, labelId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      queryClient.invalidateQueries({ queryKey: ['cards'], exact: false });
     },
   });
 }
@@ -209,7 +209,7 @@ export function useRemoveCardLabel() {
     mutationFn: ({ cardId, labelId }: { cardId: number; labelId: number }) =>
       removeLabelFromCard(cardId, labelId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      queryClient.invalidateQueries({ queryKey: ['cards'], exact: false });
     },
   });
 }

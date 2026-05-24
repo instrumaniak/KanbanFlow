@@ -1,20 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LabelPicker } from './label-picker';
 
 const mockAssignMutate = vi.fn();
 const mockRemoveMutate = vi.fn();
+const mockCreateMutate = vi.fn();
 
 const mockLabels = [
-  { id: 1, name: 'Bug', color: '#ff0000', created_at: '2024-01-01', updated_at: '2024-01-01' },
-  { id: 2, name: 'Feature', color: '#00ff00', created_at: '2024-01-01', updated_at: '2024-01-01' },
-  { id: 3, name: 'Enhancement', color: '#0000ff', created_at: '2024-01-01', updated_at: '2024-01-01' },
+  { id: 1, name: 'Bug', color: 'red', created_at: '2024-01-01', updated_at: '2024-01-01' },
+  { id: 2, name: 'Feature', color: 'green', created_at: '2024-01-01', updated_at: '2024-01-01' },
+  { id: 3, name: 'Enhancement', color: 'blue', created_at: '2024-01-01', updated_at: '2024-01-01' },
 ];
 
 vi.mock('../labels/use-labels', () => ({
   useLabels: () => ({ data: mockLabels, isLoading: false }),
+  useCreateLabel: () => ({ mutate: mockCreateMutate, isPending: false }),
 }));
 
 vi.mock('../cards/use-cards', () => ({
@@ -58,29 +60,48 @@ describe('LabelPicker', () => {
     vi.clearAllMocks();
   });
 
-  it('renders all available labels', () => {
+  it('renders a trigger button showing label count', () => {
     renderWithProviders(<LabelPicker card={mockCard} />);
-    expect(screen.getByText('Bug')).toBeInTheDocument();
-    expect(screen.getByText('Feature')).toBeInTheDocument();
-    expect(screen.getByText('Enhancement')).toBeInTheDocument();
+    expect(screen.getByText('1 label')).toBeInTheDocument();
   });
 
-  it('shows assigned label with higher opacity', () => {
-    renderWithProviders(<LabelPicker card={mockCard} />);
-    const bugButton = screen.getByText('Bug');
-    expect(bugButton.className).toContain('opacity-100');
+  it('renders trigger button with "Add labels" when no labels', () => {
+    renderWithProviders(<LabelPicker card={mockCardNoLabels} />);
+    expect(screen.getByText('Add labels')).toBeInTheDocument();
   });
 
-  it('shows unassigned labels with lower opacity', () => {
+  it('shows assigned label with higher opacity when popover is open', async () => {
+    const user = userEvent.setup();
     renderWithProviders(<LabelPicker card={mockCard} />);
-    const featureButton = screen.getByText('Feature');
-    expect(featureButton.className).toContain('opacity-50');
+    await user.click(screen.getByText('1 label'));
+
+    await waitFor(() => {
+      const bugButton = screen.getByRole('button', { name: /remove bug/i });
+      expect(bugButton.className).toContain('opacity-100');
+    });
+  });
+
+  it('shows unassigned labels with lower opacity when popover is open', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LabelPicker card={mockCard} />);
+    await user.click(screen.getByText('1 label'));
+
+    await waitFor(() => {
+      const featureButton = screen.getByRole('button', { name: /add feature/i });
+      expect(featureButton.className).toContain('opacity-50');
+    });
   });
 
   it('calls assign mutation when clicking unassigned label', async () => {
+    const user = userEvent.setup();
     renderWithProviders(<LabelPicker card={mockCardNoLabels} />);
-    const featureButton = screen.getByText('Feature');
-    await userEvent.click(featureButton);
+    await user.click(screen.getByText('Add labels'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /add feature/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: /add feature/i }));
 
     await waitFor(() => {
       expect(mockAssignMutate).toHaveBeenCalledWith(
@@ -91,9 +112,15 @@ describe('LabelPicker', () => {
   });
 
   it('calls remove mutation when clicking assigned label', async () => {
+    const user = userEvent.setup();
     renderWithProviders(<LabelPicker card={mockCard} />);
-    const bugButton = screen.getByText('Bug');
-    await userEvent.click(bugButton);
+    await user.click(screen.getByText('1 label'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /remove bug/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: /remove bug/i }));
 
     await waitFor(() => {
       expect(mockRemoveMutate).toHaveBeenCalledWith(
@@ -103,15 +130,26 @@ describe('LabelPicker', () => {
     });
   });
 
-  it('displays labels with correct background colors', () => {
+  it('applies correct Tailwind color class', async () => {
+    const user = userEvent.setup();
     renderWithProviders(<LabelPicker card={mockCard} />);
-    const bugButton = screen.getByText('Bug');
-    expect(bugButton).toHaveStyle({ backgroundColor: '#ff0000' });
+    await user.click(screen.getByText('1 label'));
+
+    await waitFor(() => {
+      const bugButton = screen.getByRole('button', { name: /remove bug/i });
+      expect(bugButton.className).toContain('bg-rose-500');
+    });
   });
 
-  it('has title attribute for accessibility', () => {
+  it('has accessibility attributes on label buttons', async () => {
+    const user = userEvent.setup();
     renderWithProviders(<LabelPicker card={mockCard} />);
-    const bugButton = screen.getByText('Bug');
-    expect(bugButton).toHaveAttribute('title', 'Remove Bug');
+    await user.click(screen.getByText('1 label'));
+
+    await waitFor(() => {
+      const bugButton = screen.getByRole('button', { name: /remove bug/i });
+      expect(bugButton).toHaveAttribute('aria-pressed', 'true');
+      expect(bugButton).toHaveAttribute('aria-label', 'Remove Bug');
+    });
   });
 });

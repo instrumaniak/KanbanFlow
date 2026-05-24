@@ -1,9 +1,4 @@
-import {
-  Entity,
-  ManyToOne,
-  JoinColumn,
-  PrimaryColumn,
-} from 'typeorm';
+import { Entity, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
 import { Card } from './card.entity';
 import { Label } from '../../labels/entities/label.entity';
 

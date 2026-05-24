@@ -36,7 +36,7 @@ export function useUpdateLabel() {
       updateLabel(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labelKeys.all() });
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      queryClient.invalidateQueries({ queryKey: ['cards'], exact: false });
     },
   });
 }
@@ -47,7 +47,10 @@ export function useDeleteLabel() {
     mutationFn: (id: number) => deleteLabel(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labelKeys.all() });
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      queryClient.invalidateQueries({ queryKey: ['cards'], exact: false });
+    },
+    onError: (error: Error) => {
+      console.error('Failed to delete label:', error.message);
     },
   });
 }

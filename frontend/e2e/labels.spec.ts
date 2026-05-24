@@ -13,7 +13,7 @@ test.describe('Labels E2E', () => {
     }
   });
 
-  test('default labels are available after registration', async ({ page, request }) => {
+  test('default labels are available after registration', async ({ request }) => {
     // Login via API to get cookies
     const loginRes = await request.post('http://localhost:3000/api/auth/login', {
       data: { email: TEST_EMAIL, password: TEST_PASSWORD },
@@ -30,8 +30,8 @@ test.describe('Labels E2E', () => {
     const labelNames = labelsData.data.map((l: { name: string }) => l.name);
     expect(labelNames).toContain('Bug');
     expect(labelNames).toContain('Feature');
-    expect(labelNames).toContain('Enhancement');
-    expect(labelNames).toContain('Documentation');
+    expect(labelNames).toContain('Urgent');
+    expect(labelNames).toContain('Important');
   });
 
   test('assigns a label to a card and persists', async ({ page, request }) => {
@@ -71,7 +71,7 @@ test.describe('Labels E2E', () => {
       headers: { Cookie: cookies },
     });
     const cardData = await cardRes.json();
-    const cardId = cardData.data.id;
+    expect(cardData.data.id).toBeDefined();
 
     // Login via UI
     await page.goto('/login');
@@ -95,8 +95,13 @@ test.describe('Labels E2E', () => {
     // Verify Labels section is visible
     await expect(page.getByText('Labels', { exact: true })).toBeVisible();
 
-    // Click the Bug label to assign it (it should be at 50% opacity initially)
-    const bugLabelButton = page.locator('button').filter({ hasText: 'Bug' }).first();
+    // Open the label picker popover
+    const labelPickerTrigger = page.getByRole('button', { name: /add labels/i });
+    await expect(labelPickerTrigger).toBeVisible();
+    await labelPickerTrigger.click();
+
+    // Click the Bug label to assign it
+    const bugLabelButton = page.getByRole('button', { name: /add bug/i });
     await expect(bugLabelButton).toBeVisible();
     await bugLabelButton.click();
 
@@ -122,8 +127,14 @@ test.describe('Labels E2E', () => {
     await cardButtonAfterReload.click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
+    // Open the label picker popover (now shows "1 label")
+    const labelPickerTriggerAfterReload = page.getByRole('button', { name: /1 label/i });
+    await expect(labelPickerTriggerAfterReload).toBeVisible();
+    await labelPickerTriggerAfterReload.click();
+
     // Click the Bug label again to remove it
-    const bugLabelButtonAgain = page.locator('button').filter({ hasText: 'Bug' }).first();
+    const bugLabelButtonAgain = page.getByRole('button', { name: /remove bug/i });
+    await expect(bugLabelButtonAgain).toBeVisible();
     await bugLabelButtonAgain.click();
 
     await page.waitForTimeout(500);
@@ -144,15 +155,16 @@ test.describe('Labels E2E', () => {
     const cookies = loginRes.headers()['set-cookie'] || '';
 
     // Create a custom label
+    const customLabelName = `Custom Label ${Date.now()}`;
     const createLabelRes = await request.post('http://localhost:3000/api/labels', {
-      data: { name: 'Custom Label', color: '#9b59b6' },
+      data: { name: customLabelName, color: 'purple' },
       headers: { Cookie: cookies },
     });
     expect(createLabelRes.status()).toBe(201);
     const labelData = await createLabelRes.json();
     const customLabelId = labelData.data.id;
-    expect(labelData.data.name).toBe('Custom Label');
-    expect(labelData.data.color).toBe('#9b59b6');
+    expect(labelData.data.name).toBe(customLabelName);
+    expect(labelData.data.color).toBe('purple');
 
     // Create a board, column, card
     const boardRes = await request.post('http://localhost:3000/api/boards', {
@@ -178,7 +190,7 @@ test.describe('Labels E2E', () => {
       data: { labelId: customLabelId },
       headers: { Cookie: cookies },
     });
-    expect(assignRes.status()).toBe(201);
+    expect(assignRes.status()).toBe(200);
 
     // Login via UI and navigate to board
     await page.goto('/login');
@@ -191,7 +203,7 @@ test.describe('Labels E2E', () => {
     await page.waitForTimeout(1000);
 
     // Verify the custom label appears on the card face
-    const cardBadge = page.locator('.group').filter({ hasText: /Custom Label Card/i }).locator('span').filter({ hasText: 'Custom Label' });
+    const cardBadge = page.locator('.group').filter({ hasText: /Custom Label Card/i }).locator('span').filter({ hasText: customLabelName });
     await expect(cardBadge).toBeVisible();
 
     // Verify the label has the correct color
@@ -204,7 +216,11 @@ test.describe('Labels E2E', () => {
     await cardButton.click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
-    const customLabelButton = page.locator('button').filter({ hasText: 'Custom Label' }).first();
+    // Open the label picker popover
+    const labelPickerTrigger = page.getByRole('button', { name: /1 label/i });
+    await labelPickerTrigger.click();
+
+    const customLabelButton = page.locator('button').filter({ hasText: customLabelName }).first();
     await expect(customLabelButton).toBeVisible();
   });
 });

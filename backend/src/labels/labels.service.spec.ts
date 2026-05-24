@@ -1,13 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DataSource, Repository, Like } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { LabelsService } from './labels.service';
 import { Label } from './entities/label.entity';
 import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 
 describe('LabelsService', () => {
   let service: LabelsService;
-  let labelsRepository: jest.Mocked<Repository<Label>>;
 
   const mockUserId = 1;
 
@@ -20,12 +19,14 @@ describe('LabelsService', () => {
   };
 
   const mockDataSource = {
-    transaction: jest.fn().mockImplementation(async (callback: (manager: unknown) => Promise<unknown>) => {
-      const mockManager = {
-        getRepository: jest.fn().mockReturnValue(mockLabelsRepository),
-      };
-      return callback(mockManager);
-    }),
+    transaction: jest
+      .fn()
+      .mockImplementation(async (callback: (manager: unknown) => Promise<unknown>) => {
+        const mockManager = {
+          getRepository: jest.fn().mockReturnValue(mockLabelsRepository),
+        };
+        return callback(mockManager);
+      }),
   };
 
   beforeEach(async () => {
@@ -44,7 +45,6 @@ describe('LabelsService', () => {
     }).compile();
 
     service = module.get<LabelsService>(LabelsService);
-    labelsRepository = module.get(getRepositoryToken(Label));
     jest.clearAllMocks();
   });
 
@@ -67,9 +67,7 @@ describe('LabelsService', () => {
 
     it('should seed default labels when user has no labels', async () => {
       mockLabelsRepository.find.mockResolvedValue([]);
-      const seededLabels = [
-        { id: 1, name: 'Urgent', color: 'red', user_id: mockUserId },
-      ];
+      const seededLabels = [{ id: 1, name: 'Urgent', color: 'red', user_id: mockUserId }];
       mockLabelsRepository.save.mockResolvedValue(seededLabels as Label[]);
 
       const result = await service.findAll(mockUserId);
@@ -83,27 +81,42 @@ describe('LabelsService', () => {
       const dto = { name: '  New Label  ', color: 'purple' as const };
       mockLabelsRepository.findOne.mockResolvedValue(null);
       mockLabelsRepository.create.mockReturnValue({ id: 1, ...dto, user_id: mockUserId } as Label);
-      mockLabelsRepository.save.mockResolvedValue({ id: 1, name: 'New Label', color: 'purple', user_id: mockUserId } as Label);
+      mockLabelsRepository.save.mockResolvedValue({
+        id: 1,
+        name: 'New Label',
+        color: 'purple',
+        user_id: mockUserId,
+      } as Label);
 
       const result = await service.create(mockUserId, dto);
 
       expect(result.name).toBe('New Label');
       expect(result.color).toBe('purple');
-      expect(mockLabelsRepository.create).toHaveBeenCalledWith(expect.objectContaining({
-        name: 'New Label',
-        color: 'purple',
-        user_id: mockUserId,
-      }));
+      expect(mockLabelsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'New Label',
+          color: 'purple',
+          user_id: mockUserId,
+        }),
+      );
     });
 
     it('should throw ConflictException for empty name', async () => {
-      await expect(service.create(mockUserId, { name: '   ', color: 'red' })).rejects.toThrow(ConflictException);
+      await expect(service.create(mockUserId, { name: '   ', color: 'red' })).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw ConflictException for duplicate name', async () => {
-      mockLabelsRepository.findOne.mockResolvedValue({ id: 1, name: 'Existing', user_id: mockUserId } as Label);
+      mockLabelsRepository.findOne.mockResolvedValue({
+        id: 1,
+        name: 'Existing',
+        user_id: mockUserId,
+      } as Label);
 
-      await expect(service.create(mockUserId, { name: 'Existing', color: 'red' })).rejects.toThrow(ConflictException);
+      await expect(service.create(mockUserId, { name: 'Existing', color: 'red' })).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -121,19 +134,33 @@ describe('LabelsService', () => {
     it('should throw NotFoundException when label does not exist', async () => {
       mockLabelsRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update(999, mockUserId, { name: 'New' })).rejects.toThrow(NotFoundException);
+      await expect(service.update(999, mockUserId, { name: 'New' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ForbiddenException when user does not own the label', async () => {
-      mockLabelsRepository.findOne.mockResolvedValue({ id: 1, name: 'Label', user_id: 999 } as Label);
+      mockLabelsRepository.findOne.mockResolvedValue({
+        id: 1,
+        name: 'Label',
+        user_id: 999,
+      } as Label);
 
-      await expect(service.update(1, mockUserId, { name: 'New' })).rejects.toThrow(ForbiddenException);
+      await expect(service.update(1, mockUserId, { name: 'New' })).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should throw ConflictException for empty name', async () => {
-      mockLabelsRepository.findOne.mockResolvedValue({ id: 1, name: 'Old', user_id: mockUserId } as Label);
+      mockLabelsRepository.findOne.mockResolvedValue({
+        id: 1,
+        name: 'Old',
+        user_id: mockUserId,
+      } as Label);
 
-      await expect(service.update(1, mockUserId, { name: '   ' })).rejects.toThrow(ConflictException);
+      await expect(service.update(1, mockUserId, { name: '   ' })).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw ConflictException for duplicate name', async () => {
@@ -141,7 +168,9 @@ describe('LabelsService', () => {
         .mockResolvedValueOnce({ id: 1, name: 'Old', user_id: mockUserId } as Label)
         .mockResolvedValueOnce({ id: 2, name: 'Existing', user_id: mockUserId } as Label);
 
-      await expect(service.update(1, mockUserId, { name: 'Existing' })).rejects.toThrow(ConflictException);
+      await expect(service.update(1, mockUserId, { name: 'Existing' })).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -163,7 +192,11 @@ describe('LabelsService', () => {
     });
 
     it('should throw ForbiddenException when user does not own the label', async () => {
-      mockLabelsRepository.findOne.mockResolvedValue({ id: 1, name: 'Label', user_id: 999 } as Label);
+      mockLabelsRepository.findOne.mockResolvedValue({
+        id: 1,
+        name: 'Label',
+        user_id: 999,
+      } as Label);
 
       await expect(service.remove(1, mockUserId)).rejects.toThrow(ForbiddenException);
     });
@@ -171,9 +204,7 @@ describe('LabelsService', () => {
 
   describe('seedDefaultLabels', () => {
     it('should seed default labels for a user', async () => {
-      const seededLabels = [
-        { id: 1, name: 'Urgent', color: 'red', user_id: mockUserId },
-      ];
+      const seededLabels = [{ id: 1, name: 'Urgent', color: 'red', user_id: mockUserId }];
       mockLabelsRepository.save.mockResolvedValue(seededLabels as Label[]);
 
       const result = await service.seedDefaultLabels(mockUserId);
@@ -200,7 +231,11 @@ describe('LabelsService', () => {
     });
 
     it('should throw ForbiddenException when user does not own the label', async () => {
-      mockLabelsRepository.findOne.mockResolvedValue({ id: 1, name: 'Label', user_id: 999 } as Label);
+      mockLabelsRepository.findOne.mockResolvedValue({
+        id: 1,
+        name: 'Label',
+        user_id: 999,
+      } as Label);
 
       await expect(service.findLabelById(1, mockUserId)).rejects.toThrow(ForbiddenException);
     });

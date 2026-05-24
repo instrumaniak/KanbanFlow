@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateLabelsAndCardLabelsTables1710825600011 implements MigrationInterface {
-  name = 'CreateLabelsAndCardLabelsTables1710825600011';
+export class CreateLabelsAndCardLabelsTables1778300000000 implements MigrationInterface {
+  name = 'CreateLabelsAndCardLabelsTables1778300000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -22,8 +22,12 @@ export class CreateLabelsAndCardLabelsTables1710825600011 implements MigrationIn
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE \`card_labels\` DROP FOREIGN KEY \`FK_card_labels_label_id\``);
-    await queryRunner.query(`ALTER TABLE \`card_labels\` DROP FOREIGN KEY \`FK_card_labels_card_id\``);
+    await queryRunner.query(
+      `ALTER TABLE \`card_labels\` DROP FOREIGN KEY \`FK_card_labels_label_id\``,
+    );
+    await queryRunner.query(
+      `ALTER TABLE \`card_labels\` DROP FOREIGN KEY \`FK_card_labels_card_id\``,
+    );
     await queryRunner.query(`ALTER TABLE \`labels\` DROP FOREIGN KEY \`FK_labels_user_id\``);
     await queryRunner.query(`DROP TABLE \`card_labels\``);
     await queryRunner.query(`DROP TABLE \`labels\``);

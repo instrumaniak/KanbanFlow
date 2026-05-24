@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, Like } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Label } from './entities/label.entity';
 import { CreateLabelDto } from './dto/create-label.dto';
 import { UpdateLabelDto } from './dto/update-label.dto';
@@ -38,6 +38,13 @@ export class LabelsService {
     return labels;
   }
 
+  async findAllRaw(userId: number): Promise<Label[]> {
+    return this.labelsRepository.find({
+      where: { user_id: userId },
+      order: { id: 'ASC' },
+    });
+  }
+
   async create(userId: number, dto: CreateLabelDto): Promise<Label> {
     const trimmedName = dto.name.trim();
     if (!trimmedName) {
@@ -47,7 +54,7 @@ export class LabelsService {
     const existing = await this.labelsRepository.findOne({
       where: {
         user_id: userId,
-        name: Like(trimmedName),
+        name: trimmedName,
       },
     });
 
@@ -76,7 +83,7 @@ export class LabelsService {
       const existing = await this.labelsRepository.findOne({
         where: {
           user_id: userId,
-          name: Like(trimmedName),
+          name: trimmedName,
         },
       });
 
@@ -98,6 +105,10 @@ export class LabelsService {
   async seedDefaultLabels(userId: number): Promise<Label[]> {
     return this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(Label);
+      const existing = await repo.find({ where: { user_id: userId } });
+      if (existing.length > 0) {
+        return existing;
+      }
       const labels = defaultLabels.map((dl) =>
         repo.create({
           name: dl.name,

@@ -23,7 +23,16 @@ describe('CardsController', () => {
   type CardMutationResponse = { data: CardPayload; message: string };
 
   const mockCardsService: jest.Mocked<
-    Pick<CardsService, 'create' | 'findAllByColumnId' | 'update' | 'remove' | 'findById' | 'assignLabel' | 'removeLabel'>
+    Pick<
+      CardsService,
+      | 'create'
+      | 'findAllByColumnId'
+      | 'update'
+      | 'remove'
+      | 'findById'
+      | 'assignLabel'
+      | 'removeLabel'
+    >
   > = {
     create: jest.fn(),
     findAllByColumnId: jest.fn(),
@@ -79,7 +88,12 @@ describe('CardsController', () => {
       expect(result.data).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ id: 1, title: 'Card 1', description: null, due_date: null }),
-          expect.objectContaining({ id: 2, title: 'Card 2', description: 'A description', due_date: expect.any(String) }),
+          expect.objectContaining({
+            id: 2,
+            title: 'Card 2',
+            description: 'A description',
+            due_date: expect.any(String),
+          }),
         ]),
       );
     });
@@ -219,13 +233,13 @@ describe('CardsController', () => {
         position: 0,
         description: null,
         due_date: null,
-        labels: [{ id: 1, name: 'Urgent', color: 'red' }],
+        cardLabels: [{ label: { id: 1, name: 'Urgent', color: 'red' } }],
         created_at: new Date(),
         updated_at: new Date(),
       };
       mockCardsService.findById.mockResolvedValue(card as Card);
 
-      const result = (await controller.findOne({ userId: 1 }, 1));
+      const result = await controller.findOne({ userId: 1 }, 1);
 
       expect(result.data).toMatchObject({
         id: 1,
@@ -244,7 +258,7 @@ describe('CardsController', () => {
         position: 0,
         description: null,
         due_date: null,
-        labels: [{ id: 1, name: 'Urgent', color: 'red' }],
+        cardLabels: [{ label: { id: 1, name: 'Urgent', color: 'red' } }],
         created_at: new Date(),
         updated_at: new Date(),
       };

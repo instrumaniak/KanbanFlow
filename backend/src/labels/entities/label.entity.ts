@@ -7,11 +7,9 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
-  ManyToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../users/entities/user.entity';
-import { Card } from '../../cards/entities/card.entity';
 import { CardLabel } from '../../cards/entities/card-label.entity';
 
 @Entity('labels')
@@ -38,9 +36,6 @@ export class Label {
 
   @OneToMany(() => CardLabel, (cardLabel) => cardLabel.label)
   cardLabels!: CardLabel[];
-
-  @ManyToMany(() => Card, (card) => card.labels)
-  cards!: Card[];
 
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
   @CreateDateColumn({ name: 'created_at' })

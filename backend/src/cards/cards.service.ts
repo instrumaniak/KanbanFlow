@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Card } from './entities/card.entity';
@@ -58,7 +53,7 @@ export class CardsService {
 
     return this.cardRepository.find({
       where: { column_id: columnId },
-      relations: ['labels'],
+      relations: ['cardLabels', 'cardLabels.label'],
       order: { position: 'ASC' },
     });
   }
@@ -203,22 +198,16 @@ export class CardsService {
     const card = await this.findCardById(id, userId);
     return this.cardRepository.findOne({
       where: { id: card.id },
-      relations: ['labels'],
+      relations: ['cardLabels', 'cardLabels.label'],
     }) as Promise<Card>;
   }
 
-  async assignLabel(
-    cardId: number,
-    labelId: number,
-    userId: number,
-  ): Promise<Card> {
+  async assignLabel(cardId: number, labelId: number, userId: number): Promise<Card> {
     return this.dataSource.transaction(async (manager) => {
-      const card = await manager
-        .getRepository(Card)
-        .findOne({
-          where: { id: cardId },
-          relations: ['column', 'column.board'],
-        });
+      const card = await manager.getRepository(Card).findOne({
+        where: { id: cardId },
+        relations: ['column', 'column.board'],
+      });
 
       if (!card) {
         throw new NotFoundException('Card not found');
@@ -228,9 +217,7 @@ export class CardsService {
         throw new ForbiddenException('Access denied');
       }
 
-      const label = await manager
-        .getRepository(Label)
-        .findOne({ where: { id: labelId } });
+      const label = await manager.getRepository(Label).findOne({ where: { id: labelId } });
 
       if (!label) {
         throw new NotFoundException('Label not found');
@@ -240,43 +227,33 @@ export class CardsService {
         throw new ForbiddenException('Access denied');
       }
 
-      const existing = await manager
-        .getRepository(CardLabel)
-        .findOne({
-          where: { card_id: cardId, label_id: labelId },
-        });
-
-      if (existing) {
-        throw new ConflictException('Label already assigned to this card');
-      }
-
-      const cardLabel = manager.getRepository(CardLabel).create({
-        card: { id: cardId } as Card,
-        label: { id: labelId } as Label,
-        card_id: cardId,
-        label_id: labelId,
+      const existing = await manager.getRepository(CardLabel).findOne({
+        where: { cardId, labelId },
       });
-      await manager.getRepository(CardLabel).save(cardLabel);
+
+      if (!existing) {
+        const cardLabel = manager.getRepository(CardLabel).create({
+          card: { id: cardId } as Card,
+          label: { id: labelId } as Label,
+          cardId,
+          labelId,
+        });
+        await manager.getRepository(CardLabel).save(cardLabel);
+      }
 
       return manager.getRepository(Card).findOne({
         where: { id: cardId },
-        relations: ['labels'],
+        relations: ['cardLabels', 'cardLabels.label'],
       }) as Promise<Card>;
     });
   }
 
-  async removeLabel(
-    cardId: number,
-    labelId: number,
-    userId: number,
-  ): Promise<void> {
+  async removeLabel(cardId: number, labelId: number, userId: number): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
-      const card = await manager
-        .getRepository(Card)
-        .findOne({
-          where: { id: cardId },
-          relations: ['column', 'column.board'],
-        });
+      const card = await manager.getRepository(Card).findOne({
+        where: { id: cardId },
+        relations: ['column', 'column.board'],
+      });
 
       if (!card) {
         throw new NotFoundException('Card not found');
@@ -286,9 +263,7 @@ export class CardsService {
         throw new ForbiddenException('Access denied');
       }
 
-      const label = await manager
-        .getRepository(Label)
-        .findOne({ where: { id: labelId } });
+      const label = await manager.getRepository(Label).findOne({ where: { id: labelId } });
 
       if (!label) {
         throw new NotFoundException('Label not found');
@@ -298,11 +273,9 @@ export class CardsService {
         throw new ForbiddenException('Access denied');
       }
 
-      const existing = await manager
-        .getRepository(CardLabel)
-        .findOne({
-          where: { card_id: cardId, label_id: labelId },
-        });
+      const existing = await manager.getRepository(CardLabel).findOne({
+        where: { cardId, labelId },
+      });
 
       if (!existing) {
         throw new NotFoundException('Label not assigned to this card');

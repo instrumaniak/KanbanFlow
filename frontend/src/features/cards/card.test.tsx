@@ -25,6 +25,7 @@ vi.mock('./use-cards', () => ({
 
 vi.mock('../labels/use-labels', () => ({
   useLabels: () => ({ data: [], isLoading: false }),
+  useCreateLabel: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({
@@ -136,8 +137,8 @@ describe('Card', () => {
       const cardWithLabels = {
         ...mockCard,
         labels: [
-          { id: 1, name: 'Bug', color: '#ff0000', created_at: '2024-01-01', updated_at: '2024-01-01' },
-          { id: 2, name: 'Feature', color: '#00ff00', created_at: '2024-01-01', updated_at: '2024-01-01' },
+          { id: 1, name: 'Bug', color: 'red', created_at: '2024-01-01', updated_at: '2024-01-01' },
+          { id: 2, name: 'Feature', color: 'green', created_at: '2024-01-01', updated_at: '2024-01-01' },
         ],
       };
       renderWithProviders(<Card card={cardWithLabels} index={0} />);
@@ -156,13 +157,13 @@ describe('Card', () => {
       const cardWithLabels = {
         ...mockCard,
         labels: [
-          { id: 1, name: 'Bug', color: '#ff0000', created_at: '2024-01-01', updated_at: '2024-01-01' },
+          { id: 1, name: 'Bug', color: 'red', created_at: '2024-01-01', updated_at: '2024-01-01' },
         ],
       };
       renderWithProviders(<Card card={cardWithLabels} index={0} />);
 
       const badge = screen.getByText('Bug');
-      expect(badge).toHaveStyle({ backgroundColor: '#ff0000' });
+      expect(badge.className).toContain('bg-rose-500');
     });
   });
 
