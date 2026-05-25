@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LabelPicker } from './label-picker';
+import { LABEL_COLOR_CLASS_MAP } from './label-colors';
 
 const mockAssignMutate = vi.fn();
 const mockRemoveMutate = vi.fn();
@@ -148,7 +149,7 @@ describe('LabelPicker', () => {
 
     await waitFor(() => {
       const bugButton = screen.getByRole('button', { name: /remove bug/i });
-      expect(bugButton.className).toContain('bg-rose-500');
+      expect(bugButton.className).toContain(LABEL_COLOR_CLASS_MAP.red);
     });
   });
 

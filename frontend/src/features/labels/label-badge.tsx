@@ -1,14 +1,6 @@
 import type { Label } from '../cards/cards.api';
 import { X } from 'lucide-react';
-
-const labelColorMap: Record<string, string> = {
-  red: 'bg-rose-500',
-  orange: 'bg-orange-500',
-  yellow: 'bg-yellow-500',
-  green: 'bg-green-500',
-  blue: 'bg-blue-500',
-  purple: 'bg-purple-500',
-};
+import { getLabelColorClass } from './label-colors';
 
 interface LabelBadgeProps {
   label: Label;
@@ -17,7 +9,7 @@ interface LabelBadgeProps {
 }
 
 export function LabelBadge({ label, className = '', onRemove }: LabelBadgeProps) {
-  const colorClass = labelColorMap[label.color] ?? 'bg-gray-500';
+  const colorClass = getLabelColorClass(label.color);
 
   return (
     <span
