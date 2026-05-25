@@ -22,11 +22,13 @@ function SheetClose({
 
 function SheetContent({
   className,
+  overlayClassName,
   children,
   side = "right",
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   side?: "top" | "bottom" | "left" | "right"
+  overlayClassName?: string
 }) {
   return (
     <DialogPrimitive.Portal>
@@ -34,7 +36,7 @@ function SheetContent({
         data-slot="sheet-overlay"
         className={cn(
           "fixed inset-0 z-50 bg-black/50 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
-          className
+          overlayClassName
         )}
       />
       <DialogPrimitive.Content
