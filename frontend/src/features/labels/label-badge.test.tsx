@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LabelBadge } from './label-badge';
+import { LABEL_COLOR_CLASS_MAP } from './label-colors';
 
 const renderWithProviders = (component: React.ReactElement) => {
   const queryClient = new QueryClient({
@@ -34,7 +35,7 @@ describe('LabelBadge', () => {
   it('applies label color class', () => {
     renderWithProviders(<LabelBadge label={mockLabel} />);
     const badge = screen.getByText('Bug');
-    expect(badge.className).toContain('bg-rose-500');
+    expect(badge.className).toContain(LABEL_COLOR_CLASS_MAP.red);
   });
 
   it('has title attribute with label name', () => {

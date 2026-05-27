@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LabelPicker } from './label-picker';
+import { LABEL_COLOR_CLASS_MAP } from './label-colors';
 
 const mockAssignMutate = vi.fn();
 const mockRemoveMutate = vi.fn();
@@ -14,8 +15,18 @@ const mockLabels = [
   { id: 3, name: 'Enhancement', color: 'blue', created_at: '2024-01-01', updated_at: '2024-01-01' },
 ];
 
+const manyMockLabels = Array.from({ length: 24 }, (_, index) => ({
+  id: index + 1,
+  name: `Label ${index + 1}`,
+  color: ['red', 'green', 'blue', 'yellow', 'orange', 'purple'][index % 6],
+  created_at: '2024-01-01',
+  updated_at: '2024-01-01',
+}));
+
+let labelsData = mockLabels;
+
 vi.mock('../labels/use-labels', () => ({
-  useLabels: () => ({ data: mockLabels, isLoading: false }),
+  useLabels: () => ({ data: labelsData, isLoading: false }),
   useCreateLabel: () => ({ mutate: mockCreateMutate, isPending: false }),
 }));
 
@@ -58,6 +69,7 @@ describe('LabelPicker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    labelsData = mockLabels;
   });
 
   it('renders a trigger button showing label count', () => {
@@ -137,7 +149,7 @@ describe('LabelPicker', () => {
 
     await waitFor(() => {
       const bugButton = screen.getByRole('button', { name: /remove bug/i });
-      expect(bugButton.className).toContain('bg-rose-500');
+      expect(bugButton.className).toContain(LABEL_COLOR_CLASS_MAP.red);
     });
   });
 
@@ -150,6 +162,22 @@ describe('LabelPicker', () => {
       const bugButton = screen.getByRole('button', { name: /remove bug/i });
       expect(bugButton).toHaveAttribute('aria-pressed', 'true');
       expect(bugButton).toHaveAttribute('aria-label', 'Remove Bug');
+    });
+  });
+
+  it('bounds and scrolls the popover content when many labels are available', async () => {
+    const user = userEvent.setup();
+    labelsData = manyMockLabels;
+
+    renderWithProviders(<LabelPicker card={mockCardNoLabels} />);
+    await user.click(screen.getByText('Add labels'));
+
+    await waitFor(() => {
+      const popoverContent = document.querySelector('[data-state="open"][data-side]');
+      expect(popoverContent).toBeTruthy();
+      expect(popoverContent).toHaveClass('max-h-[var(--radix-popper-available-height)]');
+      expect(popoverContent).toHaveClass('overflow-y-auto');
+      expect(screen.getByRole('button', { name: /create new label/i })).toBeInTheDocument();
     });
   });
 });

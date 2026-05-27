@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Card } from './card';
+import { LABEL_COLOR_CLASS_MAP } from '../labels/label-colors';
 
 const mockMutate = vi.fn();
 const mockMutateAsync = vi.fn();
@@ -163,7 +164,7 @@ describe('Card', () => {
       renderWithProviders(<Card card={cardWithLabels} index={0} />);
 
       const badge = screen.getByText('Bug');
-      expect(badge.className).toContain('bg-rose-500');
+      expect(badge.className).toContain(LABEL_COLOR_CLASS_MAP.red);
     });
   });
 

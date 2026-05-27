@@ -6,24 +6,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
-const LABEL_COLORS: { value: LabelColor; label: string; className: string }[] = [
-  { value: 'red', label: 'Red', className: 'bg-rose-500' },
-  { value: 'orange', label: 'Orange', className: 'bg-orange-500' },
-  { value: 'yellow', label: 'Yellow', className: 'bg-yellow-500' },
-  { value: 'green', label: 'Green', className: 'bg-green-500' },
-  { value: 'blue', label: 'Blue', className: 'bg-blue-500' },
-  { value: 'purple', label: 'Purple', className: 'bg-purple-500' },
-];
-
-const labelColorMap: Record<string, string> = {
-  red: 'bg-rose-500',
-  orange: 'bg-orange-500',
-  yellow: 'bg-yellow-500',
-  green: 'bg-green-500',
-  blue: 'bg-blue-500',
-  purple: 'bg-purple-500',
-};
+import { LABEL_COLOR_OPTIONS, getLabelColorClass } from './label-colors';
 
 interface LabelPickerProps {
   card: Card;
@@ -91,7 +74,10 @@ export function LabelPicker({ card }: LabelPickerProps) {
             : 'Add labels'}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64" align="start">
+      <PopoverContent
+        className="w-64 max-h-[var(--radix-popper-available-height)] overflow-y-auto"
+        align="start"
+      >
         {isLoading ? (
           <p className="text-muted-foreground text-sm">Loading labels...</p>
         ) : !labels || labels.length === 0 ? (
@@ -112,7 +98,7 @@ export function LabelPicker({ card }: LabelPickerProps) {
             <div className="flex flex-wrap gap-1.5">
               {labels.map((label) => {
                 const isAssigned = cardLabelIds.has(label.id);
-                const colorClass = labelColorMap[label.color] ?? 'bg-gray-500';
+                const colorClass = getLabelColorClass(label.color);
                 return (
                   <button
                     key={label.id}
@@ -161,7 +147,7 @@ export function LabelPicker({ card }: LabelPickerProps) {
               }}
             />
             <div className="flex gap-1">
-              {LABEL_COLORS.map((c) => (
+              {LABEL_COLOR_OPTIONS.map((c) => (
                 <button
                   key={c.value}
                   type="button"
