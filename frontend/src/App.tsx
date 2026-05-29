@@ -1,16 +1,29 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './features/auth/auth-provider';
 import { ToastProvider } from './components/ui/toast-provider';
-import { RegisterForm } from './features/auth/register-form';
-import { LoginForm } from './features/auth/login-form';
-import { ProjectList } from './features/projects/project-list';
-import { BoardList } from './features/boards/board-list';
-import { ArchivedBoards } from './features/boards/archived-boards';
-import { BoardView } from './features/boards/board-view/board-view';
 import { useProjects } from './features/projects/use-projects';
 import { AppLayout } from './layouts/app-layout';
+
+const RegisterForm = lazy(() =>
+  import('./features/auth/register-form').then((m) => ({ default: m.RegisterForm }))
+);
+const LoginForm = lazy(() =>
+  import('./features/auth/login-form').then((m) => ({ default: m.LoginForm }))
+);
+const ProjectList = lazy(() =>
+  import('./features/projects/project-list').then((m) => ({ default: m.ProjectList }))
+);
+const BoardList = lazy(() =>
+  import('./features/boards/board-list').then((m) => ({ default: m.BoardList }))
+);
+const ArchivedBoards = lazy(() =>
+  import('./features/boards/archived-boards').then((m) => ({ default: m.ArchivedBoards }))
+);
+const BoardView = lazy(() =>
+  import('./features/boards/board-view/board-view').then((m) => ({ default: m.BoardView }))
+);
 
 function ForgotPasswordPage() {
   return (
@@ -19,6 +32,14 @@ function ForgotPasswordPage() {
         <h1 className="text-2xl font-bold">Forgot Password</h1>
         <p className="text-muted-foreground">Coming soon</p>
       </div>
+    </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
     </div>
   );
 }
@@ -46,7 +67,8 @@ function App() {
       <BrowserRouter>
         <ToastProvider>
           <AuthProvider>
-            <Routes>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
               <Route path="/register" element={<RegisterForm />} />
               <Route path="/login" element={<LoginForm />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -63,6 +85,7 @@ function App() {
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </Suspense>
           </AuthProvider>
         </ToastProvider>
       </BrowserRouter>
