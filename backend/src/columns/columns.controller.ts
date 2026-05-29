@@ -72,7 +72,13 @@ export class ColumnsController {
               description: c.description,
               column_id: c.column_id,
               position: c.position,
-              labels: c.cardLabels ? c.cardLabels.map((cl) => ({ id: cl.label.id, name: cl.label.name, color: cl.label.color })) : [],
+              labels: c.cardLabels
+                ? c.cardLabels.map((cl) => ({
+                    id: cl.label.id,
+                    name: cl.label.name,
+                    color: cl.label.color,
+                  }))
+                : [],
               created_at: c.created_at.toISOString(),
               updated_at: c.updated_at.toISOString(),
             }))
@@ -166,7 +172,13 @@ export class ColumnsController {
               description: c.description,
               column_id: c.column_id,
               position: c.position,
-              labels: c.cardLabels ? c.cardLabels.map((cl) => ({ id: cl.label.id, name: cl.label.name, color: cl.label.color })) : [],
+              labels: c.cardLabels
+                ? c.cardLabels.map((cl) => ({
+                    id: cl.label.id,
+                    name: cl.label.name,
+                    color: cl.label.color,
+                  }))
+                : [],
               created_at: c.created_at.toISOString(),
               updated_at: c.updated_at.toISOString(),
             }))

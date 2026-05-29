@@ -344,7 +344,12 @@ describe('CardsService', () => {
       const card = createMockCard(1, 1, 0);
       card.column.board.user_id = mockUserId;
       card.cardLabels = [
-        { cardId: 1, labelId: 1, label: { id: 1, name: 'Urgent', color: 'red', user_id: mockUserId } as unknown as Label, card: card },
+        {
+          cardId: 1,
+          labelId: 1,
+          label: { id: 1, name: 'Urgent', color: 'red', user_id: mockUserId } as unknown as Label,
+          card: card,
+        },
       ];
       mockCardRepository.findOne.mockResolvedValue(card);
 
