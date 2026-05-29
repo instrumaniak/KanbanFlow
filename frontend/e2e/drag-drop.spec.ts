@@ -19,7 +19,7 @@ monitoringTest.describe('Drag and Drop', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
   });
 
   async function createBoardWithCards(page: import('@playwright/test').Page, boardName: string) {
@@ -89,7 +89,7 @@ monitoringTest.describe('Drag and Drop', () => {
     await page.waitForTimeout(500);
 
     const column = page.locator('[data-column-id]').first();
-    const cards = column.locator('div[role="button"][aria-label="Edit card title"]');
+    const cards = column.locator('div[role="button"][aria-label="Open card details"]');
     await expect(cards).toHaveCount(2, { timeout: 10000 });
     await expect(cards.nth(0)).toHaveText(/Card 1/);
     await expect(cards.nth(1)).toHaveText(/Card 2/);
@@ -111,7 +111,7 @@ monitoringTest.describe('Drag and Drop', () => {
 
     await page.reload();
     await page.waitForTimeout(2000);
-    const reloadedCards = page.locator('[data-column-id]').first().locator('div[role="button"][aria-label="Edit card title"]');
+    const reloadedCards = page.locator('[data-column-id]').first().locator('div[role="button"][aria-label="Open card details"]');
     await expect(reloadedCards.nth(0)).toHaveText(/Card 2/);
     await expect(reloadedCards.nth(1)).toHaveText(/Card 1/);
 
@@ -143,8 +143,8 @@ monitoringTest.describe('Drag and Drop', () => {
     await page.waitForTimeout(2000);
 
     const columns = page.locator('[data-column-id]');
-    const firstColumnCards = columns.nth(0).locator('div[role="button"][aria-label="Edit card title"]');
-    const secondColumnCards = columns.nth(1).locator('div[role="button"][aria-label="Edit card title"]');
+    const firstColumnCards = columns.nth(0).locator('div[role="button"][aria-label="Open card details"]');
+    const secondColumnCards = columns.nth(1).locator('div[role="button"][aria-label="Open card details"]');
 
     await expect(firstColumnCards).toHaveCount(1, { timeout: 10000 });
     await expect(secondColumnCards).toHaveCount(1, { timeout: 10000 });
@@ -166,8 +166,100 @@ monitoringTest.describe('Drag and Drop', () => {
 
     await page.reload();
     await page.waitForTimeout(3000);
-    const reloadedSecondColumn = page.locator('[data-column-id]').nth(1).locator('div[role="button"][aria-label="Edit card title"]');
+    const reloadedSecondColumn = page.locator('[data-column-id]').nth(1).locator('div[role="button"][aria-label="Open card details"]');
     await expect(reloadedSecondColumn).toHaveCount(2);
+
+    assertNoErrors(monitoring);
+  });
+
+  monitoringTest('drag overlay shows the same labels and description as the source card', async ({ page, monitoring }) => {
+    test.setTimeout(60000);
+
+    const loginRes = await page.request.post('http://localhost:3000/api/auth/login', {
+      data: { email: TEST_EMAIL, password: TEST_PASSWORD },
+    });
+    const cookies = loginRes.headers()['set-cookie'] || '';
+
+    const labelsRes = await page.request.get('http://localhost:3000/api/labels', {
+      headers: { Cookie: cookies },
+    });
+    const labelsData = await labelsRes.json();
+    const bugLabel = labelsData.data.find((l: { id: number; name: string }) => l.name === 'Bug');
+    expect(bugLabel).toBeDefined();
+    if (!bugLabel) {
+      throw new Error('Expected Bug label to exist');
+    }
+
+    const boardName = `DnD Preview ${Date.now()}`;
+    const boardRes = await page.request.post('http://localhost:3000/api/boards', {
+      data: { name: boardName },
+      headers: { Cookie: cookies },
+    });
+    const boardId = (await boardRes.json()).data.id;
+
+    const columnRes = await page.request.post(`http://localhost:3000/api/boards/${boardId}/columns`, {
+      data: { name: 'To Do' },
+      headers: { Cookie: cookies },
+    });
+    const columnId = (await columnRes.json()).data.id;
+
+    const cardTitle = 'Labeled Preview Card';
+    const cardDescription = `Preview body ${Date.now()}`;
+    const cardRes = await page.request.post('http://localhost:3000/api/cards', {
+      data: { title: cardTitle, description: cardDescription, column_id: columnId, position: 0 },
+      headers: { Cookie: cookies },
+    });
+    const cardId = (await cardRes.json()).data.id;
+
+    const assignRes = await page.request.post(`http://localhost:3000/api/cards/${cardId}/labels`, {
+      data: { labelId: bugLabel.id },
+      headers: { Cookie: cookies },
+    });
+    expect(assignRes.status()).toBe(200);
+
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(TEST_EMAIL);
+    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('/');
+
+    await page.goto(`/board/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1500);
+
+    const cardButton = page.locator('div[role="button"][aria-label="Open card details"]', {
+      hasText: new RegExp(cardTitle, 'i'),
+    });
+    await expect(cardButton).toBeVisible({ timeout: 10000 });
+
+    const cardBox = await cardButton.boundingBox();
+    expect(cardBox).toBeTruthy();
+    if (!cardBox) {
+      throw new Error('Expected card to have a bounding box');
+    }
+
+    const cardCenterX = cardBox.x + cardBox.width / 2;
+    const cardCenterY = cardBox.y + cardBox.height / 2;
+
+    await page.mouse.move(cardCenterX, cardCenterY);
+    await page.mouse.down();
+    await page.waitForTimeout(100);
+    await page.mouse.move(cardCenterX + 10, cardCenterY + 10, { steps: 5 });
+    await page.waitForTimeout(300);
+
+    const labelInstances = page.getByText('Bug', { exact: true });
+    const descriptionInstances = page.getByText(cardDescription, { exact: true });
+    await expect(labelInstances).toHaveCount(2);
+    await expect(descriptionInstances).toHaveCount(2);
+
+    const originalOpacity = await cardButton.evaluate((el) => getComputedStyle(el.parentElement!).opacity);
+    expect(originalOpacity).toBe('0.5');
+
+    await page.mouse.up();
+    await page.waitForTimeout(800);
+
+    await expect(labelInstances).toHaveCount(1);
+    await expect(descriptionInstances).toHaveCount(1);
 
     assertNoErrors(monitoring);
   });

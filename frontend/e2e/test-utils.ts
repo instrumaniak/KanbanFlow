@@ -21,7 +21,7 @@ export interface TestContext {
 
 export function createMonitoringFixture() {
   return base.extend<{ monitoring: TestContext }>({
-    monitoring: async ({ page }, use) => {
+    monitoring: function useMonitoring({ page }, useFixture) {
       const context: TestContext = {
         consoleMessages: [],
         networkRequests: [],
@@ -49,26 +49,26 @@ export function createMonitoringFixture() {
         });
       });
 
-      await use(context);
+      return useFixture(context).then(() => {
+        const errors = context.consoleMessages.filter(m => m.type === 'error');
+        const jsErrors = context.jsErrors;
+        const failedRequests = context.networkRequests.filter(r => r.status >= 400 || r.failure);
 
-      const errors = context.consoleMessages.filter(m => m.type === 'error');
-      const jsErrors = context.jsErrors;
-      const failedRequests = context.networkRequests.filter(r => r.status >= 400 || r.failure);
+        if (errors.length > 0) {
+          console.error('\n Browser Console Errors:');
+          errors.forEach(e => console.error(`  [${e.type}] ${e.text} at ${e.location}`));
+        }
 
-      if (errors.length > 0) {
-        console.error('\n Browser Console Errors:');
-        errors.forEach(e => console.error(`  [${e.type}] ${e.text} at ${e.location}`));
-      }
+        if (jsErrors.length > 0) {
+          console.error('\n JavaScript Errors:');
+          jsErrors.forEach(e => console.error(`  ${e}`));
+        }
 
-      if (jsErrors.length > 0) {
-        console.error('\n JavaScript Errors:');
-        jsErrors.forEach(e => console.error(`  ${e}`));
-      }
-
-      if (failedRequests.length > 0) {
-        console.error('\n Network Failures:');
-        failedRequests.forEach(r => console.error(`  ${r.method} ${r.url} -> ${r.status}${r.failure ? ` (${r.failure})` : ''}`));
-      }
+        if (failedRequests.length > 0) {
+          console.error('\n Network Failures:');
+          failedRequests.forEach(r => console.error(`  ${r.method} ${r.url} -> ${r.status}${r.failure ? ` (${r.failure})` : ''}`));
+        }
+      });
     },
   });
 }

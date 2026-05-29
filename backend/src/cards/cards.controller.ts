@@ -11,12 +11,14 @@ import {
   ParseIntPipe,
   ValidationPipe,
   UsePipes,
+  HttpCode,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { SessionGuard } from '../auth/guards/session.guard';
 import { CardsService } from './cards.service';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
+import { Card } from './entities/card.entity';
 
 interface SessionData {
   userId: number;
@@ -27,8 +29,30 @@ interface CardResponse {
   title: string;
   column_id: number;
   position: number;
+  description: string | null;
+  due_date: string | null;
   created_at: string;
   updated_at: string;
+  labels: { id: number; name: string; color: string }[];
+}
+
+function toCardResponse(card: Card): CardResponse {
+  return {
+    id: card.id,
+    title: card.title,
+    column_id: card.column_id,
+    position: card.position,
+    description: card.description,
+    due_date: card.due_date ? card.due_date.toISOString() : null,
+    created_at: card.created_at.toISOString(),
+    updated_at: card.updated_at.toISOString(),
+    labels:
+      card.cardLabels?.map((cl) => ({
+        id: cl.label.id,
+        name: cl.label.name,
+        color: cl.label.color,
+      })) || [],
+  };
 }
 
 @Controller('api')
@@ -44,34 +68,21 @@ export class CardsController {
   async findAll(
     @Session() session: SessionData,
     @Param('columnId', ParseIntPipe) columnId: number,
-  ) {
+  ): Promise<{ data: CardResponse[] }> {
     const cards = await this.cardsService.findAllByColumnId(columnId, session.userId);
-    const data: CardResponse[] = cards.map((card) => ({
-      id: card.id,
-      title: card.title,
-      column_id: card.column_id,
-      position: card.position,
-      created_at: card.created_at.toISOString(),
-      updated_at: card.updated_at.toISOString(),
-    }));
-    return { data };
+    return { data: cards.map(toCardResponse) };
   }
 
   @Post('cards')
   @ApiOperation({ summary: 'Create a new card' })
   @ApiResponse({ status: 201, description: 'Card created' })
   @UsePipes(new ValidationPipe({ transform: true }))
-  async create(@Session() session: SessionData, @Body() dto: CreateCardDto) {
+  async create(
+    @Session() session: SessionData,
+    @Body() dto: CreateCardDto,
+  ): Promise<{ data: CardResponse; message: string }> {
     const card = await this.cardsService.create(session.userId, dto);
-    const data: CardResponse = {
-      id: card.id,
-      title: card.title,
-      column_id: card.column_id,
-      position: card.position,
-      created_at: card.created_at.toISOString(),
-      updated_at: card.updated_at.toISOString(),
-    };
-    return { data, message: 'Card created' };
+    return { data: toCardResponse(card), message: 'Card created' };
   }
 
   @Patch('cards/:id')
@@ -83,24 +94,59 @@ export class CardsController {
     @Session() session: SessionData,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCardDto,
-  ) {
+  ): Promise<{ data: CardResponse; message: string }> {
     const card = await this.cardsService.update(id, session.userId, dto);
-    const data: CardResponse = {
-      id: card.id,
-      title: card.title,
-      column_id: card.column_id,
-      position: card.position,
-      created_at: card.created_at.toISOString(),
-      updated_at: card.updated_at.toISOString(),
-    };
-    return { data, message: 'Card updated' };
+    return { data: toCardResponse(card), message: 'Card updated' };
+  }
+
+  @Get('cards/:id')
+  @ApiOperation({ summary: 'Get a single card by id' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Card found' })
+  async findOne(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ data: CardResponse }> {
+    const card = await this.cardsService.findById(id, session.userId);
+    return { data: toCardResponse(card) };
+  }
+
+  @Post('cards/:id/labels')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Assign a label to a card' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Label assigned' })
+  async assignLabel(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+    @Body('labelId', ParseIntPipe) labelId: number,
+  ): Promise<{ data: CardResponse; message: string }> {
+    const card = await this.cardsService.assignLabel(id, labelId, session.userId);
+    return { data: toCardResponse(card), message: 'Label assigned' };
+  }
+
+  @Delete('cards/:id/labels/:labelId')
+  @ApiOperation({ summary: 'Remove a label from a card' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiParam({ name: 'labelId', type: Number })
+  @ApiResponse({ status: 200, description: 'Label removed' })
+  async removeLabel(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('labelId', ParseIntPipe) labelId: number,
+  ): Promise<{ message: string }> {
+    await this.cardsService.removeLabel(id, labelId, session.userId);
+    return { message: 'Label removed' };
   }
 
   @Delete('cards/:id')
   @ApiOperation({ summary: 'Delete a card' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Card deleted' })
-  async remove(@Session() session: SessionData, @Param('id', ParseIntPipe) id: number) {
+  async remove(
+    @Session() session: SessionData,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ message: string }> {
     await this.cardsService.remove(id, session.userId);
     return { message: 'Card deleted' };
   }

@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { BoardColumn } from './entities/column.entity';
 import { Board } from '../boards/entities/board.entity';
 import { Card } from '../cards/entities/card.entity';
@@ -34,7 +34,7 @@ export class ColumnsService {
 
     return this.columnRepository.find({
       where: { board_id: boardId },
-      relations: ['cards'],
+      relations: ['cards', 'cards.cardLabels', 'cards.cardLabels.label'],
       order: { position: 'ASC' },
     });
   }
@@ -52,9 +52,9 @@ export class ColumnsService {
       .createQueryBuilder('column')
       .where('column.board_id = :boardId', { boardId })
       .select('MAX(column.position)', 'max')
-      .getRawOne();
+      .getRawOne<{ max: string | number | null }>();
 
-    const maxPosition = maxPositionResult?.max ?? -1;
+    const maxPosition = Number(maxPositionResult?.max ?? -1);
 
     const column = this.columnRepository.create({
       name: dto.name || 'New Column',
@@ -112,7 +112,7 @@ export class ColumnsService {
 
     const sortedColumn = await this.columnRepository.findOne({
       where: { id },
-      relations: ['cards'],
+      relations: ['cards', 'cards.cardLabels', 'cards.cardLabels.label'],
       order: { position: 'ASC' },
     });
     if (!sortedColumn) {
@@ -150,14 +150,14 @@ export class ColumnsService {
       throw new BadRequestException('No cards to move');
     }
 
-    await this.cardRepository.manager.transaction(async (manager) => {
+    await this.cardRepository.manager.transaction(async (manager: EntityManager) => {
       const maxPositionResult = await manager
         .createQueryBuilder(Card, 'card')
         .where('card.column_id = :targetId', { targetId })
         .select('MAX(card.position)', 'max')
-        .getRawOne();
+        .getRawOne<{ max: string | number | null }>();
 
-      let maxPosition = typeof maxPositionResult?.max === 'number' ? maxPositionResult.max : -1;
+      let maxPosition = Number(maxPositionResult?.max ?? -1);
 
       for (const card of cards) {
         card.column_id = targetId;

@@ -1,22 +1,7 @@
-import { createContext, useContext, useCallback, type ReactNode } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { registerApi, loginApi, meApi, logoutApi } from './auth.api';
-
-interface User {
-  id: number;
-  email: string;
-  role: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  register: (data: { email: string; password: string }) => Promise<void>;
-  login: (data: { email: string; password: string }) => Promise<void>;
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { registerApi, loginApi, meApi, logoutApi } from '../auth.api';
+import { AuthContext, type AuthContextType } from '../auth-context';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -49,21 +34,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const register = useCallback(
-    async (data: { email: string; password: string }) => {
+  const register = useCallback<AuthContextType['register']>(
+    async (data) => {
       await registerMutation.mutateAsync(data);
     },
     [registerMutation],
   );
 
-  const login = useCallback(
-    async (data: { email: string; password: string }) => {
+  const login = useCallback<AuthContextType['login']>(
+    async (data) => {
       await loginMutation.mutateAsync(data);
     },
     [loginMutation],
   );
 
-  const logout = useCallback(async () => {
+  const logout = useCallback<AuthContextType['logout']>(async () => {
     await logoutMutation.mutateAsync();
   }, [logoutMutation]);
 
@@ -80,12 +65,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }

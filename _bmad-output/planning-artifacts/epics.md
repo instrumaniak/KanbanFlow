@@ -69,6 +69,15 @@ FR46: Admin can delete users (cascade deletes all user data)
 FR47: Admin can toggle new user registration on/off
 FR48: Admin can view activity logs for debugging
 FR49: CLI script can create initial superadmin user
+FR50: Users can create notes with a title and markdown content
+FR51: Users can edit note title and markdown content
+FR52: Users can delete notes permanently
+FR53: Users can optionally link a note to a board, project, or card
+FR54: Users can view all their notes in a dedicated notes page
+FR55: Users can search notes by title
+FR56: Users can filter notes by type (standalone, board-linked, project-linked, card-linked)
+FR57: Users can assign optional tags to notes for organization
+FR58: System renders markdown content with code syntax highlighting and mermaid diagrams
 
 ### NonFunctional Requirements
 
@@ -128,6 +137,9 @@ UX-DR19: Implement navigation with collapsible sidebar (240px, collapsed by defa
 UX-DR20: Implement search and filter system (search, label, due date, checklist filters)
 UX-DR21: Implement loading states (skeleton screens, optimistic updates, spinners)
 UX-DR22: Implement micro-animations (card settle, checkmark, celebration)
+UX-DR23: Build NoteEditor component with markdown edit/preview toggle and rich rendering
+UX-DR24: Build NoteList component with type badges, search, and tag filtering
+UX-DR25: Implement Notes navigation integration (sidebar link, global /notes route)
 
 ### FR Coverage Map
 
@@ -182,6 +194,15 @@ UX-DR22: Implement micro-animations (card settle, checkmark, celebration)
 | FR47 | Epic 6 | Registration toggle |
 | FR48 | Epic 6 | Activity logs |
 | FR49 | Epic 1 | CLI superadmin creation |
+| FR50 | Epic 4 | Create notes with markdown |
+| FR51 | Epic 4 | Edit note title and content |
+| FR52 | Epic 4 | Delete notes |
+| FR53 | Epic 4 | Link note to board/project/card |
+| FR54 | Epic 4 | View notes page |
+| FR55 | Epic 4 | Search notes by title |
+| FR56 | Epic 4 | Filter notes by type |
+| FR57 | Epic 4 | Tag notes |
+| FR58 | Epic 4 | Render markdown with code and mermaid |
 
 ## Epic List
 
@@ -203,10 +224,10 @@ Users can quickly create, edit, and move cards — the core kanban interaction t
 **FRs covered:** FR23, FR24, FR31, FR32, FR33
 **UX Requirements:** UX-DR6, UX-DR14, UX-DR15
 
-### Epic 4: Rich Card Details & Organization
-Users can add depth to cards with markdown descriptions, color-coded labels, due dates, and checklists with progress tracking.
-**FRs covered:** FR25, FR26, FR27, FR28, FR29, FR30
-**UX Requirements:** UX-DR7, UX-DR8, UX-DR9
+### Epic 4: Rich Content, Notes & Organization
+Users can add depth to cards with markdown descriptions, color-coded labels, due dates, checklists with progress tracking, and create rich markdown notes that can be board-linked or standalone for planning and documentation.
+**FRs covered:** FR25, FR26, FR27, FR28, FR29, FR30, FR50, FR51, FR52, FR53, FR54, FR55, FR56, FR57, FR58
+**UX Requirements:** UX-DR7, UX-DR8, UX-DR9, UX-DR23, UX-DR24, UX-DR25
 
 ### Epic 5: Search, Filter & Visual Polish
 Users can find cards quickly, filter by criteria, and enjoy a polished experience with dark mode, responsive design, and delightful animations.
@@ -794,6 +815,123 @@ So that I can break down tasks into subtasks and see completion status.
 **Given** I want to delete a checklist item
 **When** I click the delete icon on an item
 **Then** the item is removed and progress recalculates
+
+---
+
+### Story 4.6: Notes System
+
+As a user,
+I want to create, edit, and organize rich markdown notes that can be standalone or linked to boards, projects, or cards,
+So that I can plan, brainstorm, and document alongside my task tracking.
+
+**Acceptance Criteria:**
+
+**Given** I am on the notes page (`/notes`)
+**When** I click "New Note"
+**Then** a note editor opens with a title field and markdown textarea
+**And** I can type markdown content with support for headings, lists, code blocks, and mermaid diagrams
+
+**Given** I am editing a note
+**When** I toggle to preview mode
+**Then** the markdown renders as formatted HTML with syntax-highlighted code blocks and rendered mermaid diagrams
+**And** the output is sanitized to prevent XSS attacks
+
+**Given** I want to link a note to a board
+**When** I select a board from the link dropdown
+**Then** the note is associated with that board and appears in the board's notes sidebar panel
+**And** the note still appears in the global notes list with a "Board" type badge
+
+**Given** I am viewing a board with linked notes
+**When** I look at the left side of the screen
+**Then** I see the notes sidebar panel showing board-linked notes
+**And** the panel header shows "Notes" 
+**And** each note shows: title (truncated), truncated preview (1-2 lines), tags as small pills
+**And** I can click a note to open it in the note editor (modal or slide-out)
+**And** I can create new notes via "New Note" button at the bottom of the panel
+**And** new notes are automatically linked to this board
+**And** I can edit or delete existing board-linked notes from the panel
+
+**Given** I am viewing a board with no linked notes
+**When** I look at the left side
+**Then** the sidebar shows "No notes for this board" (minimal text)
+**And** a "New Note" button is available to create the first board-linked note
+
+**Given** I am on a non-board page (projects, global notes)
+**When** the page loads
+**Then** the left sidebar is hidden
+**And** the main content takes full width
+
+**Given** I want to hide the notes sidebar
+**When** I click the collapse button (◀)
+**Then** the sidebar collapses and the main board view expands
+**And** the board content reflows to use the full width
+
+**Given** I want to create a standalone note
+**When** I leave all link fields empty
+**Then** the note is created as a standalone note with a "General" type badge
+
+**Given** I am on the notes page
+**When** I view my notes list
+**Then** I see all my notes with title, type badge, tags, and last updated date
+**And** I can search notes by title
+**And** I can filter notes by type (All, General, Board, Project, Card)
+
+**Given** I want to organize notes
+**When** I add tags to a note
+**Then** the tags appear as colored badges on the note
+**And** I can filter the notes list by clicking a tag
+
+**Given** I want to delete a note
+**When** I click delete and confirm
+**Then** the note is permanently deleted
+**And** a toast notification appears with "Undo" button (5 seconds)
+
+---
+
+### Story 4.7: Board View Toggle
+
+As a user,
+I want to switch between kanban board view and list view for a board,
+So that I can use the same board for different purposes — structured workflow management or simple task tracking.
+
+**Acceptance Criteria:**
+
+**Given** I am viewing a board
+**When** I look at the board header
+**Then** I see a view toggle with two options: "Board" (kanban) and "List"
+**And** the current view is visually indicated
+**And** the board remembers my last selected view (persisted per board)
+
+**Given** I am in "Board" (kanban) view
+**When** the board loads
+**Then** I see columns with cards that I can drag-drop between columns
+**And** cards show labels, due dates, and progress bars
+
+**Given** I switch to "List" view
+**When** the view changes
+**Then** I see all cards from all columns in a single flat list
+**And** each row shows: title, column name (as a badge), labels, due date, checklist progress
+**And** the list is sortable by: created date, updated date, due date, title
+**And** I can click a card to open the detail panel (same as kanban view)
+**And** I can edit card title inline (same as kanban view)
+
+**Given** I switch back to "Board" view
+**When** the view changes
+**Then** I see the standard kanban columns and cards
+**And** my previous board state is preserved (scroll position, filters, etc.)
+
+**Given** I am in List view
+**When** I filter or search cards
+**Then** the list updates in real-time (same filter logic as kanban view)
+
+**Given** I create a new card in List view
+**When** I click "Add Card"
+**Then** I can select which column to add it to
+**And** the card appears in the list
+
+**Given** I delete a card in List view
+**When** I click delete
+**Then** the card is removed (same behavior as kanban view)
 
 ---
 

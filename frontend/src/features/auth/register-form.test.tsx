@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RegisterForm } from './register-form';
 import { AuthProvider } from './auth-provider';
-import { ToastProvider } from '@/components/ui/use-toast';
+import { ToastProvider } from '@/components/ui/toast-provider';
 
 vi.mock('./auth.api', () => ({
   registerApi: vi.fn(),
@@ -49,7 +49,7 @@ describe('RegisterForm', () => {
   it('renders the form with correct structure', () => {
     render(<RegisterForm />, { wrapper: createWrapper() });
 
-    expect(screen.getByText(/create an account/i)).toBeInTheDocument();
+    expect(screen.getByText(/KanbanFlow/i)).toBeInTheDocument();
     expect(screen.getByText(/enter your details to register/i)).toBeInTheDocument();
   });
 

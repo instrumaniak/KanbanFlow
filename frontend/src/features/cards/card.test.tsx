@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Card } from './card';
+import { LABEL_COLOR_CLASS_MAP } from '../labels/label-colors';
 
 const mockMutate = vi.fn();
 const mockMutateAsync = vi.fn();
@@ -19,6 +20,13 @@ vi.mock('./use-cards', () => ({
   useUpdateCard: () => mockMutateObj,
   useDeleteCard: () => mockDeleteMutateObj,
   useCreateCard: () => mockCreateMutateObj,
+  useAssignCardLabel: () => ({ mutate: vi.fn(), isPending: false }),
+  useRemoveCardLabel: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+vi.mock('../labels/use-labels', () => ({
+  useLabels: () => ({ data: [], isLoading: false }),
+  useCreateLabel: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({
@@ -38,7 +46,7 @@ const renderWithProviders = (component: React.ReactElement) => {
 };
 
 describe('Card', () => {
-  const mockCard = { id: 1, title: 'Test Card', column_id: 1, position: 0, created_at: '2024-01-01', updated_at: '2024-01-01' };
+  const mockCard = { id: 1, title: 'Test Card', column_id: 1, position: 0, description: null, due_date: null, created_at: '2024-01-01', updated_at: '2024-01-01' };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -53,92 +61,111 @@ describe('Card', () => {
     expect(screen.getByText('Test Card')).toBeInTheDocument();
   });
 
-  it('enters edit mode when clicked', () => {
+  it('opens detail panel when clicked', async () => {
     renderWithProviders(<Card card={mockCard} index={0} />);
 
     fireEvent.click(screen.getByText('Test Card'));
 
-    expect(screen.getByDisplayValue('Test Card')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 
-  it('cancels and reverts on Escape key', () => {
+  it('opens detail panel via keyboard Enter', async () => {
     renderWithProviders(<Card card={mockCard} index={0} />);
 
-    fireEvent.click(screen.getByText('Test Card'));
-    fireEvent.change(screen.getByDisplayValue('Test Card'), { target: { value: 'Changed Title' } });
-    fireEvent.keyDown(screen.getByDisplayValue('Changed Title'), { key: 'Escape', code: 'Escape' });
-
-    expect(screen.queryByDisplayValue('Changed Title')).not.toBeInTheDocument();
-    expect(screen.getByText('Test Card')).toBeInTheDocument();
-  });
-
-  it('reverts empty title on blur', () => {
-    renderWithProviders(<Card card={mockCard} index={0} />);
-
-    fireEvent.click(screen.getByText('Test Card'));
-    fireEvent.change(screen.getByDisplayValue('Test Card'), { target: { value: '' } });
-    fireEvent.blur(screen.getByDisplayValue(''));
-
-    expect(screen.getByText('Test Card')).toBeInTheDocument();
-  });
-
-  it('calls mutate with correct payload on save', () => {
-    renderWithProviders(<Card card={mockCard} index={0} />);
-
-    fireEvent.click(screen.getByText('Test Card'));
-    fireEvent.change(screen.getByDisplayValue('Test Card'), { target: { value: 'New Title' } });
-    fireEvent.blur(screen.getByDisplayValue('New Title'));
-
-    expect(mockMutate).toHaveBeenCalledWith(
-      { id: 1, data: { title: 'New Title' } },
-      expect.objectContaining({
-        onSuccess: expect.any(Function),
-        onError: expect.any(Function),
-      })
-    );
-  });
-
-  it('optimistically updates UI immediately on save', () => {
-    renderWithProviders(<Card card={mockCard} index={0} />);
-
-    fireEvent.click(screen.getByText('Test Card'));
-    fireEvent.change(screen.getByDisplayValue('Test Card'), { target: { value: 'New Title' } });
-    fireEvent.blur(screen.getByDisplayValue('New Title'));
-
-    expect(screen.getByDisplayValue('New Title')).toBeInTheDocument();
-  });
-
-  it('handles mutation error gracefully', async () => {
-    let errorCallback: ((err: Error) => void) | undefined;
-    mockMutate.mockImplementation((_, opts) => {
-      errorCallback = opts?.onError;
-    });
-
-    renderWithProviders(<Card card={mockCard} index={0} />);
-
-    fireEvent.click(screen.getByText('Test Card'));
-    fireEvent.change(screen.getByDisplayValue('Test Card'), { target: { value: 'New Title' } });
-    fireEvent.blur(screen.getByDisplayValue('New Title'));
-
-    expect(() => errorCallback?.(new Error('API Error'))).not.toThrow();
-  });
-
-  it('triggers edit mode via keyboard Enter', () => {
-    renderWithProviders(<Card card={mockCard} index={0} />);
-
-    const cardDiv = screen.getByRole('button', { name: /edit card title/i });
+    const cardDiv = screen.getByRole('button', { name: /open card details/i });
     fireEvent.keyDown(cardDiv, { key: 'Enter', code: 'Enter' });
 
-    expect(screen.getByDisplayValue('Test Card')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 
-  it('triggers edit mode via keyboard Space', () => {
+  it('opens detail panel via keyboard Space', async () => {
     renderWithProviders(<Card card={mockCard} index={0} />);
 
-    const cardDiv = screen.getByRole('button', { name: /edit card title/i });
+    const cardDiv = screen.getByRole('button', { name: /open card details/i });
     fireEvent.keyDown(cardDiv, { key: ' ', code: 'Space' });
 
-    expect(screen.getByDisplayValue('Test Card')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('does not open detail panel on drag', () => {
+    renderWithProviders(<Card card={mockCard} index={0} />);
+
+    const cardDiv = screen.getByRole('button', { name: /open card details/i });
+    fireEvent.pointerDown(cardDiv, { clientX: 0, clientY: 0 });
+    fireEvent.click(cardDiv, { clientX: 10, clientY: 10 });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  describe('Card description preview', () => {
+    it('shows description preview below title when description exists', () => {
+      const cardWithDesc = { ...mockCard, description: 'A task description' };
+      renderWithProviders(<Card card={cardWithDesc} index={0} />);
+
+      expect(screen.getByText('A task description')).toBeInTheDocument();
+    });
+
+    it('does not show description preview when description is null', () => {
+      renderWithProviders(<Card card={mockCard} index={0} />);
+
+      expect(screen.queryByText(/A task description/i)).not.toBeInTheDocument();
+    });
+
+    it('does not show description preview when description is whitespace-only', () => {
+      const cardWithSpaces = { ...mockCard, description: '   ' };
+      renderWithProviders(<Card card={cardWithSpaces} index={0} />);
+
+      expect(screen.queryByText(/\s{3}/)).not.toBeInTheDocument();
+    });
+
+    it('truncates long descriptions', () => {
+      const longDesc = 'A '.repeat(200);
+      const cardWithLongDesc = { ...mockCard, description: longDesc };
+      renderWithProviders(<Card card={cardWithLongDesc} index={0} />);
+
+      const preview = screen.getByText(longDesc.trim());
+      expect(preview).toBeInTheDocument();
+      expect(preview).toHaveClass('overflow-hidden');
+      expect(preview).toHaveClass('text-ellipsis');
+      expect(preview).toHaveClass('whitespace-pre-wrap');
+      const style = window.getComputedStyle(preview);
+      expect(style.display).toBe('-webkit-box');
+    });
+  });
+
+  describe('Card labels display', () => {
+    it('shows label badges when card has labels', () => {
+      const cardWithLabels = {
+        ...mockCard,
+        labels: [
+          { id: 1, name: 'Bug', color: 'red', created_at: '2024-01-01', updated_at: '2024-01-01' },
+          { id: 2, name: 'Feature', color: 'green', created_at: '2024-01-01', updated_at: '2024-01-01' },
+        ],
+      };
+      renderWithProviders(<Card card={cardWithLabels} index={0} />);
+
+      expect(screen.getByText('Bug')).toBeInTheDocument();
+      expect(screen.getByText('Feature')).toBeInTheDocument();
+    });
+
+    it('does not show label section when card has no labels', () => {
+      renderWithProviders(<Card card={mockCard} index={0} />);
+
+      expect(screen.queryByText('Bug')).not.toBeInTheDocument();
+    });
+
+    it('applies correct background color to label badges', () => {
+      const cardWithLabels = {
+        ...mockCard,
+        labels: [
+          { id: 1, name: 'Bug', color: 'red', created_at: '2024-01-01', updated_at: '2024-01-01' },
+        ],
+      };
+      renderWithProviders(<Card card={cardWithLabels} index={0} />);
+
+      const badge = screen.getByText('Bug');
+      expect(badge.className).toContain(LABEL_COLOR_CLASS_MAP.red);
+    });
   });
 
   describe('Card menu and deletion', () => {

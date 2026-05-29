@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,11 @@ export function RegisterForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateEmail = (value: string): string | undefined => {
@@ -58,7 +62,7 @@ export function RegisterForm() {
 
     try {
       await register({ email, password });
-      navigate('/projects');
+      navigate('/');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed';
       toast({
@@ -75,7 +79,7 @@ export function RegisterForm() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="mx-auto w-full max-w-md space-y-6 p-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">Create an Account</h1>
+          <h1 className="text-2xl font-bold">KanbanFlow</h1>
           <p className="text-muted-foreground">Enter your details to register</p>
         </div>
         <form role="form" onSubmit={handleSubmit} className="space-y-4">
@@ -127,6 +131,12 @@ export function RegisterForm() {
             {isSubmitting ? 'Creating account...' : 'Register'}
           </Button>
         </form>
+        <div className="text-center text-sm">
+          <span className="text-muted-foreground">Already have an account? </span>
+          <Link to="/login" className="text-primary underline-offset-4 hover:underline">
+            Login
+          </Link>
+        </div>
       </div>
     </div>
   );

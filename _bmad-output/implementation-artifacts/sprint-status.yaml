@@ -1,5 +1,5 @@
 # generated: 2026-03-19T19:27:21.000Z
-# last_updated: 2026-03-19T19:27:21.000Z
+# last_updated: 2026-05-20T12:00:00.000Z
 # project: trello-clone
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19T19:27:21.000Z
-last_updated: 2026-05-11T12:00:00.000Z
+last_updated: 2026-05-23T12:00:00.000Z
 project: trello-clone
 project_key: NOKEY
 tracking_system: file-system
@@ -65,21 +65,23 @@ development_status:
   epic-2-retrospective: optional
 
   # Epic 3: Task Capture & Card Management
-  epic-3: in-progress
+  epic-3: done
   3-1-card-creation: done
   3-2-card-editing: done
   3-3-drag-drop-between-columns: done
   3-4-drag-drop-within-column: done
-  3-5-card-deletion: ready-for-dev
+  3-5-card-deletion: done
   epic-3-retrospective: optional
 
-  # Epic 4: Rich Card Details & Organization
-  epic-4: backlog
-  4-1-card-detail-panel: backlog
-  4-2-markdown-description: backlog
-  4-3-color-coded-labels: backlog
+  # Epic 4: Rich Content, Notes & Organization
+  epic-4: in-progress
+  4-1-card-detail-panel: done
+  4-2-markdown-description: done
+  4-3-color-coded-labels: review
   4-4-due-dates: backlog
   4-5-checklists-with-progress: backlog
+  4-6-notes-system: backlog
+  4-7-board-view-toggle: backlog
   epic-4-retrospective: optional
 
   # Epic 5: Search, Filter & Visual Polish

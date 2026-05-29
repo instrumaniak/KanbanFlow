@@ -6,9 +6,11 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BoardColumn } from '../../columns/entities/column.entity';
+import { CardLabel } from './card-label.entity';
 
 @Entity('cards')
 export class Card {
@@ -32,6 +34,14 @@ export class Card {
   @Column({ default: 0 })
   position!: number;
 
+  @ApiProperty({ example: 'Card description', required: false })
+  @Column({ type: 'text', nullable: true })
+  description!: string | null;
+
+  @ApiProperty({ example: '2026-01-01T00:00:00.000Z', required: false })
+  @Column({ type: 'datetime', nullable: true })
+  due_date!: Date | null;
+
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
   @CreateDateColumn()
   created_at!: Date;
@@ -39,4 +49,7 @@ export class Card {
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
   @UpdateDateColumn()
   updated_at!: Date;
+
+  @OneToMany(() => CardLabel, (cardLabel) => cardLabel.card)
+  cardLabels!: CardLabel[];
 }

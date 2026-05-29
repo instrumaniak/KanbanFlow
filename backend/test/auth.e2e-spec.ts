@@ -1,13 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { Session } from './../src/sessions/entities/session.entity';
+import { setupFastifySession } from './test-utils';
 
 describe('Auth API (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: NestFastifyApplication;
+  let url: string;
   let dataSource: DataSource;
   const testEmail = `api-e2e-${Date.now()}@example.com`;
   const testPassword = 'Test1234!';
@@ -17,9 +19,12 @@ describe('Auth API (e2e)', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    await setupFastifySession(app);
     await app.init();
+    await app.listen(0);
+    url = await app.getUrl();
     dataSource = app.get(DataSource);
   }, 30000);
 
@@ -29,7 +34,7 @@ describe('Auth API (e2e)', () => {
 
   describe('POST /api/auth/register', () => {
     it('registers a new user with valid data', async () => {
-      const res = await request(app.getHttpServer())
+      const res = await request(url)
         .post('/api/auth/register')
         .send({ email: testEmail, password: testPassword })
         .expect(201);
@@ -46,28 +51,25 @@ describe('Auth API (e2e)', () => {
     });
 
     it('returns 400 for missing email', async () => {
-      await request(app.getHttpServer())
-        .post('/api/auth/register')
-        .send({ password: testPassword })
-        .expect(400);
+      await request(url).post('/api/auth/register').send({ password: testPassword }).expect(400);
     });
 
     it('returns 400 for invalid email format', async () => {
-      await request(app.getHttpServer())
+      await request(url)
         .post('/api/auth/register')
         .send({ email: 'not-an-email', password: testPassword })
         .expect(400);
     });
 
     it('returns 400 for weak password', async () => {
-      await request(app.getHttpServer())
+      await request(url)
         .post('/api/auth/register')
         .send({ email: 'weak@example.com', password: 'short' })
         .expect(400);
     });
 
     it('returns 409 for duplicate email', async () => {
-      await request(app.getHttpServer())
+      await request(url)
         .post('/api/auth/register')
         .send({ email: testEmail, password: testPassword })
         .expect(409);
@@ -76,7 +78,7 @@ describe('Auth API (e2e)', () => {
 
   describe('POST /api/auth/login', () => {
     it('logs in with valid credentials', async () => {
-      const res = await request(app.getHttpServer())
+      const res = await request(url)
         .post('/api/auth/login')
         .send({ email: testEmail, password: testPassword })
         .expect(200);
@@ -88,21 +90,21 @@ describe('Auth API (e2e)', () => {
     });
 
     it('returns 401 for wrong password', async () => {
-      await request(app.getHttpServer())
+      await request(url)
         .post('/api/auth/login')
         .send({ email: testEmail, password: 'WrongPass123!' })
         .expect(401);
     });
 
     it('returns 401 for non-existent email', async () => {
-      await request(app.getHttpServer())
+      await request(url)
         .post('/api/auth/login')
         .send({ email: 'nobody@example.com', password: testPassword })
         .expect(401);
     });
 
     it('returns 400 for missing fields', async () => {
-      await request(app.getHttpServer()).post('/api/auth/login').send({}).expect(400);
+      await request(url).post('/api/auth/login').send({}).expect(400);
     });
   });
 
@@ -111,13 +113,13 @@ describe('Auth API (e2e)', () => {
     const sessionPassword = 'Session123!';
 
     beforeAll(async () => {
-      await request(app.getHttpServer())
+      await request(url)
         .post('/api/auth/register')
         .send({ email: sessionEmail, password: sessionPassword });
     });
 
     it('login creates session row in DB', async () => {
-      const agent = request.agent(app.getHttpServer());
+      const agent = request.agent(url);
 
       await agent
         .post('/api/auth/login')
@@ -137,7 +139,7 @@ describe('Auth API (e2e)', () => {
     });
 
     it('/api/auth/me returns user from DB-backed session', async () => {
-      const agent = request.agent(app.getHttpServer());
+      const agent = request.agent(url);
 
       await agent
         .post('/api/auth/login')
@@ -152,7 +154,7 @@ describe('Auth API (e2e)', () => {
     });
 
     it('logout ends session and /me returns 401', async () => {
-      const agent = request.agent(app.getHttpServer());
+      const agent = request.agent(url);
 
       await agent
         .post('/api/auth/login')
@@ -168,8 +170,8 @@ describe('Auth API (e2e)', () => {
     });
 
     it('concurrent login creates new session row (TypeormStore does NOT auto-replace)', async () => {
-      const agent1 = request.agent(app.getHttpServer());
-      const agent2 = request.agent(app.getHttpServer());
+      const agent1 = request.agent(url);
+      const agent2 = request.agent(url);
 
       await agent1
         .post('/api/auth/login')
@@ -196,7 +198,7 @@ describe('Auth API (e2e)', () => {
     });
 
     it('session survives server restart (new app instance with same DB)', async () => {
-      const agent = request.agent(app.getHttpServer());
+      const agent = request.agent(url);
 
       const loginRes = await agent
         .post('/api/auth/login')
@@ -221,12 +223,16 @@ describe('Auth API (e2e)', () => {
       const moduleFixture2: TestingModule = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
-      const app2 = moduleFixture2.createNestApplication();
+      const app2: NestFastifyApplication =
+        moduleFixture2.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
       app2.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+      await setupFastifySession(app2);
       await app2.init();
+      await app2.listen(0);
+      const url2 = await app2.getUrl();
 
       try {
-        const meRes2 = await request(app2.getHttpServer())
+        const meRes2 = await request(url2)
           .get('/api/auth/me')
           .set('Cookie', sessionCookie)
           .expect(200);
@@ -250,7 +256,7 @@ describe('Auth API (e2e)', () => {
 
   describe('GET /api/auth/me', () => {
     it('returns 401 when not authenticated', async () => {
-      await request(app.getHttpServer()).get('/api/auth/me').expect(401);
+      await request(url).get('/api/auth/me').expect(401);
     });
   });
 });

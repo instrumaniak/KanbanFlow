@@ -50,7 +50,7 @@ test.describe('App shell & navigation', () => {
     // Expand via header toggle
     await headerToggle.click();
     await expect(sidebar).toHaveClass(/w-\[240px\]/);
-    await expect(page.getByText('Projects', { exact: true })).toBeVisible();
+    await expect(sidebar.getByText('Projects', { exact: true })).toBeVisible();
 
     // Collapse via sidebar toggle (now visible)
     const sidebarToggle = sidebar.getByRole('button', { name: 'Toggle sidebar' });
@@ -59,7 +59,6 @@ test.describe('App shell & navigation', () => {
   });
 
   test('sidebar shows "No projects yet" when empty', async ({ page }) => {
-    const sidebar = page.locator('aside');
     const headerToggle = page.locator('header').getByRole('button', { name: 'Toggle sidebar' });
 
     await headerToggle.click();
@@ -104,16 +103,12 @@ test.describe('App shell & navigation', () => {
       await page.getByLabel('Email').fill(TEST_EMAIL);
       await page.getByLabel('Password').fill(TEST_PASSWORD);
       await page.getByRole('button', { name: 'Sign In' }).click();
-      await page.waitForURL('/');
+      await page.waitForURL((url) => url.pathname !== '/login', { timeout: 10000 });
     }
-    
-    await page.waitForTimeout(500);
+
     const boardsHeading = page.getByRole('heading', { name: 'My Boards' });
     const projectsHeading = page.getByRole('heading', { name: 'My Projects' });
-    
-    const isBoardsVisible = await boardsHeading.isVisible().catch(() => false);
-    const isProjectsVisible = await projectsHeading.isVisible().catch(() => false);
-    
-    expect(isBoardsVisible || isProjectsVisible).toBe(true);
+
+    await expect(boardsHeading.or(projectsHeading)).toBeVisible();
   });
 });

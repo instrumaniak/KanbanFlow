@@ -686,16 +686,27 @@ The Admin managing users and security.
 
 ### Navigation Patterns
 
-| Element | Behavior |
-|---------|----------|
-| **Sidebar** | Collapsible. Shows projects + boards. Collapsed by default. Toggle via arrow. |
-| **Breadcrumbs** | Project > Board shown in header. Clickable to navigate up hierarchy. |
-| **Back** | Browser back button works. No custom back button needed. |
-| **Board switching** | Via sidebar only. No tabs — avoids clutter. |
+**Header Navigation:**
+- Top-level tabs in header: **Projects**, **Boards**, **Notes**
+- Active tab indicated with underline or filled background
+- Tabs navigate to respective pages: `/projects`, `/`, `/notes`
+- On mobile: tabs collapse to hamburger menu
+
+**Sidebar (Contextual):**
+- Collapsible left sidebar (240px)
+- **On board pages:** Shows board-linked notes panel (when notes exist)
+- **On non-board pages:** Hidden (projects/boards/notes have their own full-page layouts)
+- Toggle via header hamburger button (≡) or auto-show when board has linked notes
+
+**Breadcrumbs:**
+- Project > Board shown in header
+- Clickable to navigate up hierarchy
+- Hidden on top-level pages (projects, boards list, notes)
 
 **Rules:**
 - Flat hierarchy: Board → Column → Card. Projects are optional grouping (never deeper)
-- Sidebar is the primary navigation for multi-project workflows
+- Header tabs are primary navigation for top-level pages
+- Sidebar is contextual — only appears when relevant (board-linked notes)
 - Breadcrumbs provide context, not primary navigation
 - Current location always clear via sidebar highlight + breadcrumb
 
@@ -841,3 +852,139 @@ The Admin managing users and security.
 - Run axe-core on every page
 - Ensure focus is managed correctly on dynamic content (modals, toasts)
 - Announce dynamic changes to screen readers via ARIA live regions
+
+## Notes User Experience Design
+
+### Notes Page (`/notes`)
+
+**Layout:** Full-page layout following the app shell (sidebar + main content). Main content is a two-pane layout: note list on the left (40%), note editor on the right (60%).
+
+**Note List (Left Pane):**
+- Header: "Notes" title + "New Note" button (primary teal)
+- Search bar: full-width, debounced, placeholder "Search notes..."
+- Filter chips: "All", "General", "Board", "Project", "Card" — sticky below search
+- Note cards: compact cards showing title (truncated), type badge, tag chips, last updated date
+- Empty state: "No notes yet. Create your first note to start documenting." with illustration
+- Loading state: Skeleton cards (3–5 lines)
+
+**Note Editor (Right Pane):**
+- Title input: large, borderless, placeholder "Note title..."
+- Toolbar: bold, italic, heading, code block, quote, list, mermaid diagram toggle
+- Editor area: markdown textarea (edit mode) or rendered preview (preview mode)
+- Toggle: "Edit" / "Preview" tab switch
+- Link section: dropdowns to link to Board/Project/Card (optional)
+- Tags: tag picker with autocomplete, color-coded tags
+- Actions: Save (primary), Delete (danger, with confirmation)
+- Auto-save indicator: "Saved" / "Saving..." / "Unsaved changes"
+
+### Board View Toggle (Kanban ↔ List)
+
+**Trigger:** Segmented control in board header
+
+**Layout:** Board header contains a segmented toggle with two options: "Board" (kanban) and "List".
+- "Board" (default): Shows columns with cards, drag-drop enabled
+- "List": Shows flat list of all cards across all columns
+- Current view is visually indicated with filled background
+- View preference is persisted per board (`boards.view_mode`)
+
+**Kanban View:**
+- Horizontal scrolling columns
+- Cards drag-drop between columns and within columns
+- Column headers with name, count, menu
+- "Add Column" button at right edge
+
+**List View:**
+- Single flat list, vertical scroll
+- Each row: card title, column badge, labels, due date, checklist progress
+- Sortable by: created date, updated date, due date, title (click column header)
+- Search and filters work identically to kanban view
+- Click card opens detail panel (same as kanban)
+- Inline title editing (same as kanban)
+- "Add Card" button opens dialog to select target column
+
+**View Transition:**
+- Smooth fade transition between views (300ms)
+- Previous view state preserved: scroll position, filters, search
+- No data refetch — same query, different rendering
+
+### Board Notes Panel (Contextual)
+
+**Trigger:** Left sidebar panel automatically visible when viewing a board with linked notes.
+
+**Layout:** Left sidebar (240px) repurposed as board-linked notes panel. Only visible on board pages when board has linked notes or user has permission to add notes.
+- Header: "Notes" label
+- Note list: compact cards with title (truncated), truncated preview (1-2 lines), tags
+- Click note: opens in note editor (modal or slide-out panel)
+- "New Note" button at bottom: opens editor with `board_id` pre-filled
+
+**Note List:**
+- Compact vertical list
+- Each note: title (truncated), truncated preview (1-2 lines), tags as small pills
+- Empty state: "No notes for this board" (minimal, no CTA — user creates from global notes page)
+- Click note: opens in note editor
+
+**Board-Linked Note Creation:**
+- "New Note" button in sidebar panel
+- Opens editor with `board_id` pre-filled
+- Note appears in sidebar immediately (optimistic UI)
+- Note also appears in global `/notes` list with "Board" type badge
+
+**Sidebar Visibility:**
+- Hidden on non-board pages (projects, global notes, settings)
+- Hidden on board pages with no linked notes AND no create permission
+- Auto-visible when board has linked notes
+- User can manually collapse via toggle button
+
+### Card Notes Panel (Contextual)
+
+**Trigger:** Card detail panel "Notes" tab
+
+**Layout:** Tab within card detail panel.
+- Note list: compact list of notes linked to this card
+- "Add Note" button: opens inline editor or dialog
+- Inline note: title + truncated content + tags
+
+### Markdown Rendering UX
+
+**Edit Mode:**
+- Plain textarea with monospace font
+- Toolbar buttons insert markdown syntax at cursor
+- Live character count (optional)
+- Keyboard shortcuts: Ctrl+B (bold), Ctrl+I (italic), Ctrl+K (code)
+
+**Preview Mode:**
+- Rendered HTML with proper typography
+- Code blocks: syntax-highlighted with dark background
+- Mermaid diagrams: rendered as SVG, centered, with "Copy as Image" option
+- Tables: styled with borders, alternating row colors
+- Links: underlined, open in new tab
+- Images: max-width 100%, click to expand
+
+**Safety:**
+- All rendered HTML is sanitized (DOMPurify or equivalent)
+- No script execution in preview
+- Raw HTML in markdown is escaped or stripped
+
+### Component Specifications
+
+**NoteCard:**
+- Surface: subtle border, hover elevation
+- Title: font-medium, truncate at 1 line
+- Type badge: small pill, color-coded (General = slate, Board = teal, Project = rose, Card = amber)
+- Tags: horizontal scroll if overflow, small colored pills
+- Date: text-xs, muted color
+- Click: opens note in editor
+
+**NoteEditor:**
+- Split view on large screens (editor + preview side by side)
+- Tab toggle on small screens
+- Toolbar: sticky top, icon buttons with tooltips
+- Auto-save: debounced 2 seconds after typing stops
+- Exit confirmation if unsaved changes
+
+**TagPicker:**
+- Multi-select dropdown
+- Create new tag inline (type + Enter)
+- Color picker for new tags (preset palette)
+- Remove tag: click X on tag chip
+- Search/filter existing tags

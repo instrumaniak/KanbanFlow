@@ -18,7 +18,7 @@ test.describe('Column CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     const boardName = `Test Board Columns ${Date.now()}`;
     await page.goto('/');
@@ -52,17 +52,21 @@ test.describe('Column CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/');
-    await page.waitForTimeout(500);
 
+    const emptyStateButton = page.getByRole('button', { name: 'Create your first board' });
     const createButton = page.getByRole('button', { name: 'Create Board' });
-    if (await createButton.isVisible().catch(() => false)) {
+
+    if (await emptyStateButton.isVisible().catch(() => false)) {
+      await emptyStateButton.click();
+    } else {
       await createButton.click();
     }
 
     const nameInput = page.getByLabel('Board name');
+    await expect(nameInput).toBeVisible();
     await nameInput.fill(`Test Board ${Date.now()}`);
     await page.getByRole('button', { name: 'Create' }).click();
 
@@ -79,7 +83,7 @@ test.describe('Column CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/');
     await page.waitForTimeout(500);
@@ -110,7 +114,7 @@ test.describe('Column CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/');
     await page.waitForTimeout(500);

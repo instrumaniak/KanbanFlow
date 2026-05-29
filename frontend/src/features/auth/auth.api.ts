@@ -29,6 +29,7 @@ export async function registerApi(data: RegisterRequest): Promise<ApiResponse<Us
   const response = await fetch('/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(data),
   });
 
@@ -52,6 +53,7 @@ export async function loginApi(data: LoginRequest): Promise<ApiResponse<UserResp
     response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(data),
     });
   } catch {
@@ -73,7 +75,7 @@ export async function loginApi(data: LoginRequest): Promise<ApiResponse<UserResp
 }
 
 export async function meApi(): Promise<ApiResponse<UserResponse>> {
-  const response = await fetch('/api/auth/me');
+  const response = await fetch('/api/auth/me', { credentials: 'include' });
   if (!response.ok) {
     let message = 'Request failed';
     try {
@@ -88,7 +90,7 @@ export async function meApi(): Promise<ApiResponse<UserResponse>> {
 }
 
 export async function logoutApi(): Promise<void> {
-  const response = await fetch('/api/auth/logout', { method: 'POST' });
+  const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
   if (!response.ok) {
     let message = 'Request failed';
     try {

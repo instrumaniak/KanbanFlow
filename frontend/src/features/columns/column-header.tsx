@@ -26,7 +26,6 @@ export function ColumnHeader({ column, allColumns = [], onDeleted }: ColumnHeade
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showMoveMenu, setShowMoveMenu] = useState(false);
 
-  const inputRef = useRef<HTMLInputElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const moveMenuRef = useRef<HTMLDivElement>(null);
   const updateMutation = useUpdateColumn();
@@ -34,13 +33,6 @@ export function ColumnHeader({ column, allColumns = [], onDeleted }: ColumnHeade
   const sortMutation = useSortCards();
   const moveMutation = useMoveAllCards();
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditing]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -124,7 +116,7 @@ export function ColumnHeader({ column, allColumns = [], onDeleted }: ColumnHeade
 
   const handleMoveAll = async (targetColumnId: number) => {
     try {
-      const result = await moveMutation.mutateAsync({ sourceColumnId: column.id, targetColumnId, boardId: column.board_id });
+      const result = await moveMutation.mutateAsync({ sourceColumnId: column.id, targetColumnId });
       toast({ title: `${result.data.movedCount} cards moved`, type: 'success' });
       setShowMoveMenu(false);
       setShowMenu(false);
@@ -143,11 +135,12 @@ export function ColumnHeader({ column, allColumns = [], onDeleted }: ColumnHeade
     <div className="flex items-center justify-between px-3 py-2">
       {isEditing ? (
         <input
-          ref={inputRef}
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={handleSave}
           onKeyDown={handleKeyDown}
+          autoFocus
+          onFocus={(e) => e.currentTarget.select()}
           className="flex-1 rounded border border-input bg-background px-2 py-1 text-sm font-semibold"
         />
       ) : (

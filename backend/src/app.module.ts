@@ -1,8 +1,7 @@
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { DataSource } from 'typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { validate } from './config/env.validation';
@@ -13,10 +12,8 @@ import { ProjectsModule } from './projects/projects.module';
 import { BoardsModule } from './boards/boards.module';
 import { ColumnsModule } from './columns/columns.module';
 import { CardsModule } from './cards/cards.module';
-import { Session } from './sessions/entities/session.entity';
-import * as cookieParser from 'cookie-parser';
-import session from 'express-session';
-import { TypeormStore } from 'connect-typeorm';
+import { LabelsModule } from './labels/labels.module';
+import { buildDataSourceOptions } from './database/data-source-options';
 
 @Module({
   imports: [
@@ -26,20 +23,7 @@ import { TypeormStore } from 'connect-typeorm';
       validate,
     }),
     TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'mysql',
-        host: config.get<string>('database.host'),
-        port: config.get<number>('database.port'),
-        username: config.get<string>('database.username'),
-        password: config.get<string>('database.password'),
-        database: config.get<string>('database.name'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        migrations: [__dirname + '/migrations/*{.ts,.js}'],
-        migrationsTableName: 'typeorm_migrations',
-        migrationsRun: false,
-        synchronize: false,
-      }),
+      useFactory: () => buildDataSourceOptions(),
     }),
     ThrottlerModule.forRoot([
       {
@@ -53,46 +37,9 @@ import { TypeormStore } from 'connect-typeorm';
     BoardsModule,
     ColumnsModule,
     CardsModule,
+    LabelsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule implements NestModule {
-  constructor(private readonly dataSource: DataSource) {}
-
-  configure(consumer: MiddlewareConsumer) {
-    const sessionRepository = this.dataSource.getRepository(Session);
-
-    consumer
-      .apply(
-        cookieParser.default(),
-        session({
-          store: new TypeormStore({
-            ttl: 86400,
-            cleanupLimit: 10,
-            limitSubquery: false,
-            onError: (store: TypeormStore, error: Error) =>
-              console.error('Session store error:', error),
-          }).connect(sessionRepository),
-          secret: this.getSessionSecret(),
-          resave: false,
-          saveUninitialized: false,
-          cookie: {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 86400000,
-          },
-        }),
-      )
-      .forRoutes('*');
-  }
-
-  private getSessionSecret(): string {
-    const secret = process.env.SESSION_SECRET;
-    if (!secret && process.env.NODE_ENV === 'production') {
-      throw new Error('SESSION_SECRET environment variable is required in production.');
-    }
-    return secret || 'kanbanflow-dev-secret';
-  }
-}
+export class AppModule {}

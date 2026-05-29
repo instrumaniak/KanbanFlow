@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ToastProvider, useToast } from './use-toast';
+import { useToast } from './use-toast';
+import { ToastProvider } from './toast-provider';
 
 const createWrapper = () => {
   const queryClient = new QueryClient({

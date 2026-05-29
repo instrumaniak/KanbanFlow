@@ -1,12 +1,40 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BoardsController } from './boards.controller';
 import { BoardsService } from './boards.service';
+import { Board } from './entities/board.entity';
 
 describe('BoardsController', () => {
   let controller: BoardsController;
-  let service: jest.Mocked<BoardsService>;
+  const createBoardFixture = (overrides: Partial<Board> = {}): Board =>
+    ({
+      id: 1,
+      name: 'Board',
+      background_color: '#0079BF',
+      user_id: 1,
+      project_id: null,
+      is_archived: false,
+      user: { id: 1 } as Board['user'],
+      project: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+      columns: [],
+      ...overrides,
+    }) as Board;
 
-  const mockBoardsService = {
+  const mockBoardsService: jest.Mocked<
+    Pick<
+      BoardsService,
+      | 'findAllByUserId'
+      | 'findAllArchivedByUserId'
+      | 'findOne'
+      | 'create'
+      | 'update'
+      | 'remove'
+      | 'archive'
+      | 'restore'
+      | 'permanentDelete'
+    >
+  > = {
     findAllByUserId: jest.fn(),
     findAllArchivedByUserId: jest.fn(),
     findOne: jest.fn(),
@@ -27,7 +55,6 @@ describe('BoardsController', () => {
     }).compile();
 
     controller = module.get<BoardsController>(BoardsController);
-    service = module.get(BoardsService);
   });
 
   afterEach(() => {
@@ -36,18 +63,8 @@ describe('BoardsController', () => {
 
   describe('findAll', () => {
     it('should return list of boards', async () => {
-      const boards = [
-        {
-          id: 1,
-          name: 'Board 1',
-          background_color: '#0079BF',
-          project_id: null,
-          project: null,
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
-      ];
-      service.findAllByUserId.mockResolvedValue(boards as any);
+      const boards = [createBoardFixture({ id: 1, name: 'Board 1' })];
+      mockBoardsService.findAllByUserId.mockResolvedValue(boards);
 
       const result = await controller.findAll(mockSession);
 
@@ -56,31 +73,25 @@ describe('BoardsController', () => {
     });
 
     it('should filter by projectId query param', async () => {
-      service.findAllByUserId.mockResolvedValue([] as any);
+      mockBoardsService.findAllByUserId.mockResolvedValue([]);
 
       await controller.findAll(mockSession, '1');
 
-      expect(service.findAllByUserId).toHaveBeenCalledWith(1, 1, false);
+      expect(mockBoardsService.findAllByUserId).toHaveBeenCalledWith(1, 1, false);
     });
   });
 
   describe('create', () => {
     it('should create a board and return it with columns', async () => {
-      const board = {
-        id: 1,
+      const board = createBoardFixture({
         name: 'New Board',
-        background_color: '#0079BF',
-        project_id: null,
-        project: null,
-        created_at: new Date(),
-        updated_at: new Date(),
         columns: [
-          { id: 1, name: 'To Do', position: 0 },
-          { id: 2, name: 'In Progress', position: 1 },
-          { id: 3, name: 'Done', position: 2 },
+          { id: 1, name: 'To Do', position: 0 } as Board['columns'][number],
+          { id: 2, name: 'In Progress', position: 1 } as Board['columns'][number],
+          { id: 3, name: 'Done', position: 2 } as Board['columns'][number],
         ],
-      };
-      service.create.mockResolvedValue(board as any);
+      });
+      mockBoardsService.create.mockResolvedValue(board);
 
       const result = await controller.create(mockSession, {
         name: 'New Board',
@@ -94,17 +105,8 @@ describe('BoardsController', () => {
 
   describe('findOne', () => {
     it('should return a single board', async () => {
-      const board = {
-        id: 1,
-        name: 'Board',
-        background_color: '#0079BF',
-        project_id: null,
-        project: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-        columns: [],
-      };
-      service.findOne.mockResolvedValue(board as any);
+      const board = createBoardFixture();
+      mockBoardsService.findOne.mockResolvedValue(board);
 
       const result = await controller.findOne(mockSession, 1);
 
@@ -114,16 +116,8 @@ describe('BoardsController', () => {
 
   describe('update', () => {
     it('should update a board', async () => {
-      const board = {
-        id: 1,
-        name: 'Updated Board',
-        background_color: '#0079BF',
-        project_id: null,
-        project: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
-      service.update.mockResolvedValue(board as any);
+      const board = createBoardFixture({ name: 'Updated Board' });
+      mockBoardsService.update.mockResolvedValue(board);
 
       const result = await controller.update(mockSession, 1, { name: 'Updated Board' });
 
@@ -134,7 +128,7 @@ describe('BoardsController', () => {
 
   describe('remove', () => {
     it('should delete a board', async () => {
-      service.remove.mockResolvedValue();
+      mockBoardsService.remove.mockResolvedValue();
 
       const result = await controller.remove(mockSession, 1);
 
@@ -144,80 +138,51 @@ describe('BoardsController', () => {
 
   describe('findArchived', () => {
     it('should return list of archived boards', async () => {
-      const boards = [
-        {
-          id: 1,
-          name: 'Archived Board',
-          background_color: '#0079BF',
-          project_id: null,
-          project: null,
-          created_at: new Date(),
-          updated_at: new Date(),
-          is_archived: true,
-        },
-      ];
-      service.findAllArchivedByUserId.mockResolvedValue(boards as any);
+      const boards = [createBoardFixture({ name: 'Archived Board', is_archived: true })];
+      mockBoardsService.findAllArchivedByUserId.mockResolvedValue(boards);
 
       const result = await controller.findArchived(mockSession);
 
       expect(result.data).toHaveLength(1);
       expect(result.total).toBe(1);
-      expect(service.findAllArchivedByUserId).toHaveBeenCalledWith(1);
+      expect(mockBoardsService.findAllArchivedByUserId).toHaveBeenCalledWith(1);
     });
   });
 
   describe('archive', () => {
     it('should archive a board', async () => {
-      const board = {
-        id: 1,
-        name: 'Board',
-        background_color: '#0079BF',
-        project_id: null,
-        project: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-        is_archived: true,
-      };
-      service.archive.mockResolvedValue(board as any);
+      const board = createBoardFixture({ is_archived: true });
+      mockBoardsService.archive.mockResolvedValue(board);
 
       const result = await controller.archive(mockSession, 1);
 
       expect(result.data.is_archived).toBe(true);
       expect(result.message).toBe('Board archived');
-      expect(service.archive).toHaveBeenCalledWith(1, 1);
+      expect(mockBoardsService.archive).toHaveBeenCalledWith(1, 1);
     });
   });
 
   describe('restore', () => {
     it('should restore an archived board', async () => {
-      const board = {
-        id: 1,
-        name: 'Board',
-        background_color: '#0079BF',
-        project_id: null,
-        project: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-        is_archived: false,
-      };
-      service.restore.mockResolvedValue(board as any);
+      const board = createBoardFixture({ is_archived: false });
+      mockBoardsService.restore.mockResolvedValue(board);
 
       const result = await controller.restore(mockSession, 1);
 
       expect(result.data.is_archived).toBe(false);
       expect(result.message).toBe('Board restored');
-      expect(service.restore).toHaveBeenCalledWith(1, 1);
+      expect(mockBoardsService.restore).toHaveBeenCalledWith(1, 1);
     });
   });
 
   describe('permanentDelete', () => {
     it('should permanently delete an archived board', async () => {
-      service.permanentDelete.mockResolvedValue();
+      mockBoardsService.permanentDelete.mockResolvedValue();
 
       const result = await controller.permanentDelete(mockSession, 1);
 
       expect(result.message).toBe('Board permanently deleted');
-      expect(service.permanentDelete).toHaveBeenCalledWith(1, 1);
+      expect(mockBoardsService.permanentDelete).toHaveBeenCalledWith(1, 1);
     });
   });
 });

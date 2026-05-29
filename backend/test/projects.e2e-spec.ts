@@ -1,20 +1,25 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { setupFastifySession } from './test-utils';
 
 describe('Projects API (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: NestFastifyApplication;
+  let url: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    await setupFastifySession(app);
     await app.init();
+    await app.listen(0);
+    url = await app.getUrl();
   }, 30000);
 
   afterAll(async () => {
@@ -23,35 +28,25 @@ describe('Projects API (e2e)', () => {
 
   describe('Protected routes (no session)', () => {
     it('GET /api/projects returns 401 without session', async () => {
-      await request(app.getHttpServer()).get('/api/projects').expect(401);
+      await request(url).get('/api/projects').expect(401);
     });
 
     it('POST /api/projects returns 401 without session', async () => {
-      await request(app.getHttpServer())
-        .post('/api/projects')
-        .send({ name: 'Test Project' })
-        .expect(401);
+      await request(url).post('/api/projects').send({ name: 'Test Project' }).expect(401);
     });
 
     it('PATCH /api/projects/:id returns 401 without session', async () => {
-      await request(app.getHttpServer())
-        .patch('/api/projects/1')
-        .send({ name: 'Updated' })
-        .expect(401);
+      await request(url).patch('/api/projects/1').send({ name: 'Updated' }).expect(401);
     });
 
     it('DELETE /api/projects/:id returns 401 without session', async () => {
-      await request(app.getHttpServer()).delete('/api/projects/1').expect(401);
+      await request(url).delete('/api/projects/1').expect(401);
     });
   });
 
-  // Note: express-session cookie propagation may not work reliably in supertest.
-  // CRUD operations and validation with session are tested in Playwright E2E.
-  // These tests verify the API contract and guard behavior without session.
-
   describe('Route validation (without session)', () => {
     it('POST /api/projects returns 400 for invalid JSON body', async () => {
-      await request(app.getHttpServer())
+      await request(url)
         .post('/api/projects')
         .set('Content-Type', 'application/json')
         .send('invalid')
@@ -59,14 +54,11 @@ describe('Projects API (e2e)', () => {
     });
 
     it('PATCH /api/projects/invalid returns 401 for non-numeric id', async () => {
-      await request(app.getHttpServer())
-        .patch('/api/projects/invalid')
-        .send({ name: 'Updated' })
-        .expect(401);
+      await request(url).patch('/api/projects/invalid').send({ name: 'Updated' }).expect(401);
     });
 
     it('DELETE /api/projects/invalid returns 401 for non-numeric id', async () => {
-      await request(app.getHttpServer()).delete('/api/projects/invalid').expect(401);
+      await request(url).delete('/api/projects/invalid').expect(401);
     });
   });
 });

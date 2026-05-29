@@ -7,7 +7,7 @@ import { useProjects } from '../projects/use-projects';
 import { CreateBoardModal } from './create-board-modal';
 import { BoardCard, InlineEditForm, DeleteDialog } from './board-card';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, Layout, Archive } from 'lucide-react';
+import { Plus, Layout, Archive, FolderKanban } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function BoardList() {
@@ -40,22 +40,15 @@ export function BoardList() {
     setDeleteTarget({ id, name });
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-6xl">
-        <h1 className="mb-6 text-2xl font-bold">My Boards</h1>
-        <LoadingSkeleton />
-      </div>
-    );
-  }
-
   if (isError) {
     return (
       <div className="mx-auto max-w-6xl">
         <h1 className="mb-6 text-2xl font-bold">My Boards</h1>
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive">
           <p className="text-sm font-medium">Failed to load boards</p>
-          <p className="text-sm opacity-80">{error instanceof Error ? error.message : 'Something went wrong'}</p>
+          <p className="text-sm opacity-80">
+            {error instanceof Error ? error.message : 'Something went wrong'}
+          </p>
           <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>
             Retry
           </Button>
@@ -64,7 +57,9 @@ export function BoardList() {
     );
   }
 
-  if (boards.length === 0 && !showCreateModal) {
+  const showEmptyState = boards.length === 0 && !showCreateModal && !isLoading;
+
+  if (showEmptyState) {
     return (
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between">
@@ -106,6 +101,12 @@ export function BoardList() {
         <h1 className="text-2xl font-bold">My Boards</h1>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
+            <Link to="/projects">
+              <FolderKanban className="mr-1 h-4 w-4" />
+              Projects
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
             <Link to="/archived-boards">
               <Archive className="mr-1 h-4 w-4" />
               Archived Boards
@@ -117,6 +118,8 @@ export function BoardList() {
           </Button>
         </div>
       </div>
+
+      {isLoading ? <LoadingSkeleton /> : null}
 
       {showCreateModal && (
         <div className="mb-6">
@@ -141,17 +144,13 @@ export function BoardList() {
               onCancel={handleEditCancel}
             />
           ) : (
-<BoardCard
-                key={board.id}
-                board={board}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-          )
+            <BoardCard key={board.id} board={board} onEdit={handleEdit} onDelete={handleDelete} />
+          ),
         )}
       </div>
 
-      {deleteTarget && (() => {
+      {deleteTarget &&
+        (() => {
           const archivedBoard = { id: deleteTarget.id, name: deleteTarget.name };
           return (
             <DeleteDialog

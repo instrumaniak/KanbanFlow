@@ -18,7 +18,7 @@ test.describe('Boards CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     // Navigate to root which shows boards
     await page.goto('/');
@@ -32,19 +32,15 @@ test.describe('Boards CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     // Navigate to root which shows boards
     await page.goto('/');
-    await page.waitForTimeout(500);
-    
+
     const emptyStateButton = page.getByRole('button', { name: 'Create your first board' });
     const createButton = page.getByRole('button', { name: 'Create Board' });
 
-    const isEmptyVisible = await emptyStateButton.isVisible().catch(() => false);
-    const isCreateVisible = await createButton.isVisible().catch(() => false);
-
-    expect(isEmptyVisible || isCreateVisible).toBe(true);
+    await expect(emptyStateButton.or(createButton)).toBeVisible();
   });
 
   test('creates a board via Create Board button', async ({ page }) => {
@@ -52,7 +48,7 @@ test.describe('Boards CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     // Navigate to root which shows boards
     await page.goto('/');
@@ -82,7 +78,7 @@ test.describe('Boards CRUD', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     // Navigate to root which shows boards
     await page.goto('/');
@@ -108,8 +104,6 @@ test.describe('Boards CRUD', () => {
 
 test.describe('Board Archiving', () => {
   const boardNameToArchive = `Board to Archive ${Date.now()}`;
-  let createdBoardId: number;
-
   test.beforeAll(async ({ request }) => {
     const res = await request.post('http://localhost:3000/api/auth/register', {
       data: { email: TEST_EMAIL, password: TEST_PASSWORD },
@@ -128,8 +122,7 @@ test.describe('Board Archiving', () => {
       data: { name: boardNameToArchive },
       headers: { Cookie: cookies },
     });
-    const boardData = await createRes.json();
-    createdBoardId = boardData.data.id;
+    await createRes.json();
   });
 
   test('archives a board from board card', async ({ page }) => {
@@ -137,7 +130,7 @@ test.describe('Board Archiving', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/');
     await page.waitForTimeout(500);
@@ -166,7 +159,7 @@ test.describe('Board Archiving', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/');
     await page.waitForTimeout(500);
@@ -187,7 +180,7 @@ test.describe('Board Archiving', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/archived-boards');
     await page.waitForTimeout(500);
@@ -223,7 +216,7 @@ test.describe('Board Archiving', () => {
     await page.getByLabel('Email').fill(TEST_EMAIL);
     await page.getByLabel('Password').fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL('/projects');
+    await page.waitForURL('/');
 
     await page.goto('/archived-boards');
     await page.waitForTimeout(500);

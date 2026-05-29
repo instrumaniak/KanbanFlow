@@ -5,7 +5,6 @@ import { BoardColumn } from './entities/column.entity';
 
 describe('ColumnsController', () => {
   let controller: ColumnsController;
-  let service: ColumnsService;
 
   const mockColumnsService = {
     findAllByBoardId: jest.fn(),
@@ -30,7 +29,6 @@ describe('ColumnsController', () => {
     }).compile();
 
     controller = module.get<ColumnsController>(ColumnsController);
-    service = module.get<ColumnsService>(ColumnsService);
   });
 
   afterEach(() => {

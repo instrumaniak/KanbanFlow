@@ -1,25 +1,29 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Card } from './entities/card.entity';
+import { CardLabel } from './entities/card-label.entity';
+import { Label } from '../labels/entities/label.entity';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
 import { BoardColumn } from '../columns/entities/column.entity';
-import { Board } from '../boards/entities/board.entity';
 
 @Injectable()
 export class CardsService {
   constructor(
     @InjectRepository(Card)
     private readonly cardRepository: Repository<Card>,
+    @InjectRepository(CardLabel)
+    private readonly cardLabelRepository: Repository<CardLabel>,
+    @InjectRepository(Label)
+    private readonly labelRepository: Repository<Label>,
     @InjectRepository(BoardColumn)
     private readonly columnRepository: Repository<BoardColumn>,
-    @InjectRepository(Board)
-    private readonly boardRepository: Repository<Board>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(userId: number, dto: CreateCardDto): Promise<Card> {
-    const column = await this.findColumnById(dto.column_id, userId);
+    await this.findColumnById(dto.column_id, userId);
 
     let position: number;
     if (dto.position !== undefined) {
@@ -29,14 +33,16 @@ export class CardsService {
         .createQueryBuilder('card')
         .where('card.column_id = :columnId', { columnId: dto.column_id })
         .select('MAX(card.position)', 'max')
-        .getRawOne();
-      position = (maxPositionResult?.max ?? -1) + 1;
+        .getRawOne<{ max: string | number | null }>();
+      position = Number(maxPositionResult?.max ?? -1) + 1;
     }
 
     const card = this.cardRepository.create({
       title: dto.title,
       column_id: dto.column_id,
       position,
+      description: dto.description ?? null,
+      due_date: dto.due_date ? new Date(dto.due_date) : null,
     });
 
     return this.cardRepository.save(card);
@@ -47,6 +53,7 @@ export class CardsService {
 
     return this.cardRepository.find({
       where: { column_id: columnId },
+      relations: ['cardLabels', 'cardLabels.label'],
       order: { position: 'ASC' },
     });
   }
@@ -56,29 +63,41 @@ export class CardsService {
     const oldColumnId = card.column_id;
     const oldPosition = card.position;
 
-    if (dto.title !== undefined) {
-      await this.cardRepository.update(id, { title: dto.title });
-    }
+    await this.dataSource.transaction(async (manager) => {
+      const cardRepo = manager.getRepository(Card);
 
-    if (dto.column_id !== undefined) {
-      await this.findColumnById(dto.column_id, userId);
-      await this.cardRepository.update(id, { column_id: dto.column_id });
-    }
-
-    if (dto.position !== undefined) {
-      const targetColumnId = dto.column_id ?? oldColumnId;
-      const newPosition = dto.position;
-
-      if (oldColumnId === targetColumnId && oldPosition !== newPosition) {
-        await this.reorderWithinColumn(targetColumnId, oldPosition, newPosition);
-      } else if (oldColumnId !== targetColumnId) {
-        await this.removeFromColumn(oldColumnId, oldPosition);
-        const maxPosition = await this.getMaxPositionInColumn(targetColumnId);
-        const targetPosition = Math.min(newPosition, maxPosition + 1);
-        await this.insertIntoColumn(targetColumnId, targetPosition);
+      if (dto.title !== undefined) {
+        await cardRepo.update(id, { title: dto.title });
       }
-      await this.cardRepository.update(id, { position: dto.position });
-    }
+
+      if (dto.description !== undefined) {
+        await cardRepo.update(id, { description: dto.description });
+      }
+
+      if (dto.due_date !== undefined) {
+        await cardRepo.update(id, { due_date: dto.due_date ? new Date(dto.due_date) : null });
+      }
+
+      if (dto.column_id !== undefined) {
+        await this.findColumnById(dto.column_id, userId);
+        await cardRepo.update(id, { column_id: dto.column_id });
+      }
+
+      if (dto.position !== undefined) {
+        const targetColumnId = dto.column_id ?? oldColumnId;
+        const newPosition = dto.position;
+
+        if (oldColumnId === targetColumnId && oldPosition !== newPosition) {
+          await this.reorderWithinColumn(targetColumnId, oldPosition, newPosition, manager);
+        } else if (oldColumnId !== targetColumnId) {
+          await this.removeFromColumn(oldColumnId, oldPosition, manager);
+          const maxPosition = await this.getMaxPositionInColumn(targetColumnId, manager);
+          const targetPosition = Math.min(newPosition, maxPosition + 1);
+          await this.insertIntoColumn(targetColumnId, targetPosition, manager);
+        }
+        await cardRepo.update(id, { position: dto.position });
+      }
+    });
 
     const updated = await this.cardRepository.findOne({ where: { id } });
     if (!updated) {
@@ -91,10 +110,12 @@ export class CardsService {
     columnId: number,
     oldPos: number,
     newPos: number,
+    manager?: import('typeorm').EntityManager,
   ): Promise<void> {
     if (oldPos === newPos) return;
 
-    const cards = await this.cardRepository.find({
+    const cardRepo = manager ? manager.getRepository(Card) : this.cardRepository;
+    const cards = await cardRepo.find({
       where: { column_id: columnId },
       order: { position: 'ASC' },
     });
@@ -109,17 +130,22 @@ export class CardsService {
     for (const c of cards) {
       if (safeOldPos < safeNewPos && c.position > safeOldPos && c.position <= safeNewPos) {
         c.position -= 1;
-        updates.push(this.cardRepository.save(c));
+        updates.push(cardRepo.save(c));
       } else if (safeOldPos > safeNewPos && c.position >= safeNewPos && c.position < safeOldPos) {
         c.position += 1;
-        updates.push(this.cardRepository.save(c));
+        updates.push(cardRepo.save(c));
       }
     }
     await Promise.all(updates);
   }
 
-  private async removeFromColumn(columnId: number, position: number): Promise<void> {
-    const cards = await this.cardRepository.find({
+  private async removeFromColumn(
+    columnId: number,
+    position: number,
+    manager?: import('typeorm').EntityManager,
+  ): Promise<void> {
+    const cardRepo = manager ? manager.getRepository(Card) : this.cardRepository;
+    const cards = await cardRepo.find({
       where: { column_id: columnId },
       order: { position: 'ASC' },
     });
@@ -128,14 +154,19 @@ export class CardsService {
     for (const c of cards) {
       if (c.position > position) {
         c.position -= 1;
-        updates.push(this.cardRepository.save(c));
+        updates.push(cardRepo.save(c));
       }
     }
     await Promise.all(updates);
   }
 
-  private async insertIntoColumn(columnId: number, position: number): Promise<void> {
-    const cards = await this.cardRepository.find({
+  private async insertIntoColumn(
+    columnId: number,
+    position: number,
+    manager?: import('typeorm').EntityManager,
+  ): Promise<void> {
+    const cardRepo = manager ? manager.getRepository(Card) : this.cardRepository;
+    const cards = await cardRepo.find({
       where: { column_id: columnId },
       order: { position: 'ASC' },
     });
@@ -144,19 +175,114 @@ export class CardsService {
     for (const c of cards) {
       if (c.position >= position) {
         c.position += 1;
-        updates.push(this.cardRepository.save(c));
+        updates.push(cardRepo.save(c));
       }
     }
     await Promise.all(updates);
   }
 
-  private async getMaxPositionInColumn(columnId: number): Promise<number> {
-    const result = await this.cardRepository
+  private async getMaxPositionInColumn(
+    columnId: number,
+    manager?: import('typeorm').EntityManager,
+  ): Promise<number> {
+    const cardRepo = manager ? manager.getRepository(Card) : this.cardRepository;
+    const result = await cardRepo
       .createQueryBuilder('card')
       .where('card.column_id = :columnId', { columnId })
       .select('MAX(card.position)', 'max')
-      .getRawOne();
-    return result?.max ?? -1;
+      .getRawOne<{ max: string | number | null }>();
+    return Number(result?.max ?? -1);
+  }
+
+  async findById(id: number, userId: number): Promise<Card> {
+    const card = await this.findCardById(id, userId);
+    return this.cardRepository.findOne({
+      where: { id: card.id },
+      relations: ['cardLabels', 'cardLabels.label'],
+    }) as Promise<Card>;
+  }
+
+  async assignLabel(cardId: number, labelId: number, userId: number): Promise<Card> {
+    return this.dataSource.transaction(async (manager) => {
+      const card = await manager.getRepository(Card).findOne({
+        where: { id: cardId },
+        relations: ['column', 'column.board'],
+      });
+
+      if (!card) {
+        throw new NotFoundException('Card not found');
+      }
+
+      if (card.column.board.user_id !== userId) {
+        throw new ForbiddenException('Access denied');
+      }
+
+      const label = await manager.getRepository(Label).findOne({ where: { id: labelId } });
+
+      if (!label) {
+        throw new NotFoundException('Label not found');
+      }
+
+      if (label.user_id !== userId) {
+        throw new ForbiddenException('Access denied');
+      }
+
+      const existing = await manager.getRepository(CardLabel).findOne({
+        where: { cardId, labelId },
+      });
+
+      if (!existing) {
+        const cardLabel = manager.getRepository(CardLabel).create({
+          card: { id: cardId } as Card,
+          label: { id: labelId } as Label,
+          cardId,
+          labelId,
+        });
+        await manager.getRepository(CardLabel).save(cardLabel);
+      }
+
+      return manager.getRepository(Card).findOne({
+        where: { id: cardId },
+        relations: ['cardLabels', 'cardLabels.label'],
+      }) as Promise<Card>;
+    });
+  }
+
+  async removeLabel(cardId: number, labelId: number, userId: number): Promise<void> {
+    return this.dataSource.transaction(async (manager) => {
+      const card = await manager.getRepository(Card).findOne({
+        where: { id: cardId },
+        relations: ['column', 'column.board'],
+      });
+
+      if (!card) {
+        throw new NotFoundException('Card not found');
+      }
+
+      if (card.column.board.user_id !== userId) {
+        throw new ForbiddenException('Access denied');
+      }
+
+      const label = await manager.getRepository(Label).findOne({ where: { id: labelId } });
+
+      if (!label) {
+        throw new NotFoundException('Label not found');
+      }
+
+      if (label.user_id !== userId) {
+        throw new ForbiddenException('Access denied');
+      }
+
+      const existing = await manager.getRepository(CardLabel).findOne({
+        where: { cardId, labelId },
+      });
+
+      if (!existing) {
+        throw new NotFoundException('Label not assigned to this card');
+      }
+
+      await manager.getRepository(CardLabel).remove(existing);
+    });
   }
 
   async remove(id: number, userId: number): Promise<void> {

@@ -27,6 +27,8 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - React Query (TanStack Query) for server state
 - React Router for routing
 - dnd-kit for drag-drop interactions
+- react-markdown + rehype-highlight + remark-gfm for markdown rendering
+- mermaid (via remark-mermaidjs or @mermaid-js/mermaid) for diagram rendering
 
 ### Backend
 - NestJS (latest)
@@ -233,6 +235,14 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Migrations run explicitly — never auto-run on app start
 - Never modify applied migrations — create new one to fix
 - Backup before production migrations
+
+**Notes System Rules:**
+- Notes use nullable FKs (`board_id`, `project_id`, `card_id`) — all NULL = top-level note
+- Tags are cross-cutting: `Tag` entity with `note_tags` join table now; `card_tags`/`project_tags`/`board_tags` can be added later
+- Markdown rendering MUST be sanitized — use DOMPurify or equivalent on all rendered HTML
+- Mermaid diagrams render client-side only — no server-side mermaid processing
+- Note auto-save: debounced 2s after typing stops, show "Saved" indicator
+- Board view toggle preserves scroll position and filters when switching back
 
 ---
 

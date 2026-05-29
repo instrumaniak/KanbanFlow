@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from './auth-provider';
+import { AuthProvider } from './auth-provider';
+import { useAuth } from './use-auth';
 
 vi.mock('./auth.api', () => ({
   registerApi: vi.fn(),
@@ -183,10 +184,6 @@ describe('AuthProvider', () => {
 describe('useAuth', () => {
   it('throws error when used outside AuthProvider', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const TestComponent = () => {
-      useAuth();
-      return <div>Test</div>;
-    };
 
     expect(() => {
       const { result } = renderHook(() => useAuth());

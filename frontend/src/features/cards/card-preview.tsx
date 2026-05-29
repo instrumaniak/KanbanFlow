@@ -1,0 +1,41 @@
+import type { Card as CardType } from './use-cards';
+import type { ReactNode } from 'react';
+import { LabelBadge } from '../labels/label-badge';
+
+interface CardPreviewProps {
+  card: CardType;
+  actions?: ReactNode;
+}
+
+export function CardPreview({ card, actions }: CardPreviewProps) {
+  return (
+    <>
+      <div className="flex items-start justify-between gap-2">
+        <span className="flex-1 break-words">{card.title}</span>
+        {actions ? <div className="shrink-0">{actions}</div> : null}
+      </div>
+
+      {card.description?.trim() && (
+        <p
+          className="mt-1 overflow-hidden whitespace-pre-wrap text-ellipsis text-xs text-muted-foreground"
+          style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+        >
+          {card.description}
+        </p>
+      )}
+
+      {card.labels && card.labels.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {card.labels.slice(0, 3).map((label) => (
+            <LabelBadge key={label.id} label={label} />
+          ))}
+          {card.labels.length > 3 && (
+            <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+              +{card.labels.length - 3}
+            </span>
+          )}
+        </div>
+      )}
+    </>
+  );
+}

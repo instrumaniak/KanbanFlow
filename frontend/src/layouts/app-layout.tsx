@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Outlet, Navigate, useParams, useNavigate } from 'react-router-dom';
+import { Outlet, Navigate, useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/use-auth';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,9 +54,7 @@ export function AppLayout({ projectsData }: { projectsData?: ListResponse<Projec
 
   // Auto-collapse on tablet/mobile, re-expand on desktop
   useEffect(() => {
-    const tablet = window.matchMedia(
-      '(min-width: 640px) and (max-width: 1023px)',
-    );
+    const tablet = window.matchMedia('(min-width: 640px) and (max-width: 1023px)');
     const mobile = window.matchMedia('(max-width: 639px)');
 
     const handleResize = () => {
@@ -109,7 +107,8 @@ export function AppLayout({ projectsData }: { projectsData?: ListResponse<Projec
   const activeProject = projectId
     ? projectsData?.data.find((p) => String(p.id) === projectId)
     : undefined;
-  const breadcrumbProjectName = activeProject?.name ?? (projectId ? decodeURIComponent(projectId) : undefined);
+  const breadcrumbProjectName =
+    activeProject?.name ?? (projectId ? decodeURIComponent(projectId) : undefined);
   const breadcrumbBoardName = boardId ? decodeURIComponent(boardId) : undefined;
 
   return (
@@ -124,29 +123,22 @@ export function AppLayout({ projectsData }: { projectsData?: ListResponse<Projec
           >
             <Menu className="h-4 w-4" />
           </Button>
-          <h1 className="text-lg font-semibold text-foreground">KanbanFlow</h1>
+          <Link to="/">
+            <h1 className="text-lg font-semibold text-foreground">KanbanFlow</h1>
+          </Link>
         </div>
 
         <div className="hidden items-center gap-2 sm:flex">
-<Breadcrumbs
-              projectName={breadcrumbProjectName}
-              boardName={breadcrumbBoardName}
-              projectId={projectId}
-            />
+          <Breadcrumbs
+            projectName={breadcrumbProjectName}
+            boardName={breadcrumbBoardName}
+            projectId={projectId}
+          />
         </div>
 
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
+          <Button variant="ghost" size="icon-sm" onClick={toggleTheme} aria-label="Toggle theme">
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
 
           <DropdownMenu>

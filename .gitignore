@@ -1,5 +1,7 @@
 node_modules/
 dist/
+release/
+
 .env
 .env.local
 .env.test
@@ -10,3 +12,7 @@ dist/
 coverage/
 frontend/test-results/
 .codemogger/
+
+# graphify outputs & cache
+graphify-out/
+

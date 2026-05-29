@@ -1,8 +1,21 @@
+export type LabelColor = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple';
+
+export interface Label {
+  id: number;
+  name: string;
+  color: LabelColor;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Card {
   id: number;
   title: string;
   column_id: number;
   position: number;
+  description: string | null;
+  due_date: string | null;
+  labels?: Label[];
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +49,8 @@ export interface CreateCardData {
   title: string;
   column_id: number;
   position?: number;
+  description?: string;
+  due_date?: string;
 }
 
 export async function createCard(data: CreateCardData): Promise<ApiResponse<Card>> {
@@ -57,6 +72,8 @@ export interface UpdateCardData {
   title?: string;
   column_id?: number;
   position?: number;
+  description?: string;
+  due_date?: string;
 }
 
 export async function updateCard(id: number, data: UpdateCardData): Promise<ApiResponse<Card>> {
@@ -91,6 +108,34 @@ export async function fetchCards(columnId: number): Promise<ApiResponse<Card[]>>
   let response: Response;
   try {
     response = await fetch(`/api/columns/${columnId}/cards`, FETCH_OPTIONS);
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
+  return handleResponse(response);
+}
+
+export async function assignLabelToCard(cardId: number, labelId: number): Promise<ApiResponse<{ message: string }>> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/cards/${cardId}/labels`, {
+      ...FETCH_OPTIONS,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ labelId }),
+    });
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
+  return handleResponse(response);
+}
+
+export async function removeLabelFromCard(cardId: number, labelId: number): Promise<ApiResponse<void>> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/cards/${cardId}/labels/${labelId}`, {
+      ...FETCH_OPTIONS,
+      method: 'DELETE',
+    });
   } catch {
     throw new Error('Network error — please check your connection');
   }

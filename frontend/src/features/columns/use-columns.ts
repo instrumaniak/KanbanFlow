@@ -67,7 +67,7 @@ export function useSortCards() {
 export function useMoveAllCards() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ sourceColumnId, targetColumnId, boardId: _boardId }: { sourceColumnId: number; targetColumnId: number; boardId?: number }) =>
+    mutationFn: ({ sourceColumnId, targetColumnId }: { sourceColumnId: number; targetColumnId: number }) =>
       moveAllCards(sourceColumnId, targetColumnId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });

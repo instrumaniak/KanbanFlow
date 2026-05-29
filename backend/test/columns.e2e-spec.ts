@@ -1,12 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { setupFastifySession } from './test-utils';
+
+type ColumnResponse = {
+  id: number;
+  name: string;
+  position: number;
+  board_id: number;
+  created_at: string;
+  updated_at: string;
+};
+
+type ApiResponse<T> = {
+  data: T;
+  message?: string;
+};
 
 describe('Columns API (e2e)', () => {
-  let app: INestApplication<App>;
-  let agent: any;
+  let app: NestFastifyApplication;
+  let url: string;
+  let agent: ReturnType<typeof request.agent>;
   let boardId: number;
   let projectId: number;
 
@@ -18,11 +34,14 @@ describe('Columns API (e2e)', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    await setupFastifySession(app);
     await app.init();
+    await app.listen(0);
+    url = await app.getUrl();
 
-    agent = request.agent(app.getHttpServer());
+    agent = request.agent(url);
 
     // Register and Login
     await agent.post('/api/auth/register').send({ email: testEmail, password: testPassword });
@@ -30,14 +49,14 @@ describe('Columns API (e2e)', () => {
 
     // Create a project
     const projRes = await agent.post('/api/projects').send({ name: 'E2E Project' }).expect(201);
-    projectId = projRes.body.data.id;
+    projectId = (projRes.body as unknown as ApiResponse<{ id: number }>).data.id;
 
     // Create a board
     const boardRes = await agent
       .post('/api/boards')
       .send({ name: 'E2E Board', project_id: projectId })
       .expect(201);
-    boardId = boardRes.body.data.id;
+    boardId = (boardRes.body as unknown as ApiResponse<{ id: number }>).data.id;
   }, 30000);
 
   afterAll(async () => {
@@ -52,18 +71,20 @@ describe('Columns API (e2e)', () => {
         .post(`/api/boards/${boardId}/columns`)
         .send({ name: 'To Do' })
         .expect(201);
+      const body = res.body as unknown as ApiResponse<ColumnResponse>;
 
-      expect(res.body.data).toHaveProperty('id');
-      expect(res.body.data.name).toBe('To Do');
-      columnId = res.body.data.id;
+      expect(body.data).toHaveProperty('id');
+      expect(body.data.name).toBe('To Do');
+      columnId = body.data.id;
     });
 
     it('GET /api/boards/:boardId/columns - retrieves all columns', async () => {
       const res = await agent.get(`/api/boards/${boardId}/columns`).expect(200);
+      const body = res.body as unknown as ApiResponse<ColumnResponse[]>;
 
-      expect(Array.isArray(res.body.data)).toBe(true);
-      expect(res.body.data.length).toBeGreaterThan(0);
-      expect(res.body.data[0].name).toBe('To Do');
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data.length).toBeGreaterThan(0);
+      expect(body.data[0].name).toBe('To Do');
     });
 
     it('PATCH /api/columns/:id - updates a column', async () => {
@@ -71,15 +92,17 @@ describe('Columns API (e2e)', () => {
         .patch(`/api/columns/${columnId}`)
         .send({ name: 'Backlog' })
         .expect(200);
+      const body = res.body as unknown as ApiResponse<ColumnResponse>;
 
-      expect(res.body.data.name).toBe('Backlog');
+      expect(body.data.name).toBe('Backlog');
     });
 
     it('DELETE /api/columns/:id - deletes a column', async () => {
       await agent.delete(`/api/columns/${columnId}`).expect(200);
 
       const res = await agent.get(`/api/boards/${boardId}/columns`).expect(200);
-      const column = res.body.data.find((c: any) => c.id === columnId);
+      const body = res.body as unknown as ApiResponse<ColumnResponse[]>;
+      const column = body.data.find((item) => item.id === columnId);
       expect(column).toBeUndefined();
     });
   });
@@ -93,13 +116,13 @@ describe('Columns API (e2e)', () => {
         .post(`/api/boards/${boardId}/columns`)
         .send({ name: 'Source' })
         .expect(201);
-      sourceColId = res1.body.data.id;
+      sourceColId = (res1.body as unknown as ApiResponse<ColumnResponse>).data.id;
 
       const res2 = await agent
         .post(`/api/boards/${boardId}/columns`)
         .send({ name: 'Target' })
         .expect(201);
-      targetColId = res2.body.data.id;
+      targetColId = (res2.body as unknown as ApiResponse<ColumnResponse>).data.id;
 
       // Add a card to source column
       await agent
@@ -117,8 +140,9 @@ describe('Columns API (e2e)', () => {
         .post(`/api/columns/${sourceColId}/move-all`)
         .send({ targetColumnId: targetColId })
         .expect(201);
+      const body = res.body as unknown as ApiResponse<{ movedCount: number }>;
 
-      expect(res.body.data.movedCount).toBe(1);
+      expect(body.data.movedCount).toBe(1);
     });
   });
 });

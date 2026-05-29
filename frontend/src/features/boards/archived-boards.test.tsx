@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ArchivedBoards } from './archived-boards';
-import { ToastProvider } from '@/components/ui/use-toast';
+import { ToastProvider } from '@/components/ui/toast-provider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -58,7 +58,7 @@ describe('ArchivedBoards', () => {
 
   it('renders loading state', () => {
     const Wrapper = createWrapper();
-    render(<ArchivedBoards />, { wrapper: Wrapper as any });
+    render(<ArchivedBoards />, { wrapper: Wrapper });
     expect(screen.getByText('Archived Boards')).toBeInTheDocument();
   });
 
@@ -72,7 +72,7 @@ describe('ArchivedBoards', () => {
     });
 
     const Wrapper = createWrapper();
-    render(<ArchivedBoards />, { wrapper: Wrapper as any });
+    render(<ArchivedBoards />, { wrapper: Wrapper });
     expect(screen.getByText('No archived boards')).toBeInTheDocument();
   });
 
@@ -91,7 +91,7 @@ describe('ArchivedBoards', () => {
     });
 
     const Wrapper = createWrapper();
-    render(<ArchivedBoards />, { wrapper: Wrapper as any });
+    render(<ArchivedBoards />, { wrapper: Wrapper });
     expect(screen.getByText('Archived Board 1')).toBeInTheDocument();
   });
 });

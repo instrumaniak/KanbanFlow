@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,13 +23,8 @@ import { LoadingSkeleton } from '@/components/loading-skeleton';
 
 function InlineCreateForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
   const [name, setName] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
   const createMutation = useCreateProject();
   const { toast } = useToast();
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,10 +54,10 @@ function InlineCreateForm({ onSuccess, onCancel }: { onSuccess: () => void; onCa
   return (
     <form onSubmit={handleSubmit} className="flex items-center gap-2">
       <Input
-        ref={inputRef}
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={handleKeyDown}
+        autoFocus
         placeholder="Project name"
         aria-label="Project name"
         className="max-w-xs"
@@ -90,14 +85,8 @@ function InlineEdit({
   onCancel: () => void;
 }) {
   const [name, setName] = useState(initialValue);
-  const inputRef = useRef<HTMLInputElement>(null);
   const updateMutation = useUpdateProject();
   const { toast } = useToast();
-
-  useEffect(() => {
-    inputRef.current?.focus();
-    inputRef.current?.select();
-  }, []);
 
   const handleSave = async () => {
     if (updateMutation.isPending) return;
@@ -131,15 +120,16 @@ function InlineEdit({
 
   return (
     <Input
-      ref={inputRef}
-      value={name}
-      onChange={(e) => setName(e.target.value)}
-      onKeyDown={handleKeyDown}
-      onBlur={handleSave}
-      aria-label="Project name"
-      className="h-7 max-w-[200px] text-sm"
-      disabled={updateMutation.isPending}
-    />
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={handleSave}
+        aria-label="Project name"
+        autoFocus
+        onFocus={(e) => e.currentTarget.select()}
+        className="h-7 max-w-[200px] text-sm"
+        disabled={updateMutation.isPending}
+      />
   );
 }
 

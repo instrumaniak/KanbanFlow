@@ -9,6 +9,7 @@ import {
 import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
 import { Project } from '../../projects/entities/project.entity';
 import { Board } from '../../boards/entities/board.entity';
+import { Label } from '../../labels/entities/label.entity';
 
 @Entity('users')
 export class User {
@@ -41,4 +42,7 @@ export class User {
 
   @OneToMany(() => Board, (board) => board.user)
   boards!: Board[];
+
+  @OneToMany(() => Label, (label) => label.user)
+  labels!: Label[];
 }
