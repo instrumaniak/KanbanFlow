@@ -1,19 +1,18 @@
-import { INestApplication } from '@nestjs/common';
-import { FastifyAdapter } from '@nestjs/platform-fastify';
-import * as fastifyCookie from '@fastify/cookie';
-import * as fastifySession from '@fastify/session';
-import * as fastifyHelmet from '@fastify/helmet';
-import * as fastifyCompress from '@fastify/compress';
+import { NestFastifyApplication } from '@nestjs/platform-fastify';
+import fastifyCookie from '@fastify/cookie';
+import fastifySession from '@fastify/session';
+import fastifyHelmet from '@fastify/helmet';
+import fastifyCompress from '@fastify/compress';
 import { DataSource } from 'typeorm';
 import { Session } from '../src/sessions/entities/session.entity';
 import { TypeormStore } from 'connect-typeorm';
 
-export async function setupFastifySession(app: INestApplication): Promise<void> {
+export async function setupFastifySession(app: NestFastifyApplication): Promise<void> {
   const dataSource = app.get(DataSource);
   const sessionRepository = dataSource.getRepository(Session);
 
-  await app.register(fastifyCookie as any);
-  await app.register(fastifySession as any, {
+  await app.register(fastifyCookie);
+  await app.register(fastifySession, {
     store: new TypeormStore({
       ttl: 86400,
       cleanupLimit: 10,
@@ -30,11 +29,11 @@ export async function setupFastifySession(app: INestApplication): Promise<void> 
     },
   });
 
-  await app.register(fastifyHelmet as any, {
+  await app.register(fastifyHelmet, {
     contentSecurityPolicy: false,
   });
 
-  await app.register(fastifyCompress as any, {
+  await app.register(fastifyCompress, {
     global: true,
   });
 }

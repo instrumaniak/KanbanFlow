@@ -289,7 +289,7 @@ describe('CardsService', () => {
 
       expect(mockCardRepository.update).not.toHaveBeenCalledWith(
         1,
-        expect.objectContaining({ due_date: expect.anything() }),
+        expect.objectContaining({ due_date: expect.anything() as unknown }),
       );
     });
   });

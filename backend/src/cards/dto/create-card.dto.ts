@@ -8,7 +8,6 @@ import {
   ValidateIf,
   registerDecorator,
   ValidationOptions,
-  ValidationArguments,
 } from 'class-validator';
 
 function IsValidDate(validationOptions?: ValidationOptions) {
@@ -19,13 +18,13 @@ function IsValidDate(validationOptions?: ValidationOptions) {
       propertyName,
       options: validationOptions,
       validator: {
-        validate(value: unknown, _args: ValidationArguments) {
+        validate(value: unknown) {
           if (value === undefined || value === null) return true;
           if (typeof value !== 'string') return false;
           const date = new Date(value);
           return !isNaN(date.getTime());
         },
-        defaultMessage(_args: ValidationArguments) {
+        defaultMessage() {
           return 'due_date must be a valid ISO 8601 date string';
         },
       },

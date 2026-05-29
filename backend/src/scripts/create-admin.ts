@@ -111,11 +111,6 @@ async function promptPassword(): Promise<string> {
   return answers.password;
 }
 
-interface DatabaseError {
-  code?: string;
-  message?: string;
-}
-
 async function main(): Promise<void> {
   let exitCode = 0;
   let dataSource: DataSource | undefined;
@@ -211,4 +206,4 @@ process.on('SIGINT', () => {
 });
 
 // This script is always executed directly as a CLI tool.
-main();
+void main();

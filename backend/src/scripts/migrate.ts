@@ -34,4 +34,4 @@ async function runMigrations(): Promise<void> {
   }
 }
 
-runMigrations();
+void runMigrations();

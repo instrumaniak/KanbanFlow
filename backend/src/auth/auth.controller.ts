@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { FastifyReply } from 'fastify';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -57,7 +58,10 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Logout current user' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
-  async logout(@Session() session: Record<string, unknown>, @Res({ passthrough: true }) res: any) {
+  async logout(
+    @Session() session: Record<string, unknown>,
+    @Res({ passthrough: true }) res: FastifyReply,
+  ) {
     await this.authService.logout(session);
     res.clearCookie('connect.sid');
     return { message: 'Logout successful' };

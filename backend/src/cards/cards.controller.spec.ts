@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CardsController } from './cards.controller';
 import { CardsService } from './cards.service';
 import { Card } from './entities/card.entity';
-import { CardLabel } from './entities/card-label.entity';
 
 describe('CardsController', () => {
   let controller: CardsController;
@@ -92,7 +91,7 @@ describe('CardsController', () => {
             id: 2,
             title: 'Card 2',
             description: 'A description',
-            due_date: expect.any(String),
+            due_date: expect.any(String) as unknown,
           }),
         ]),
       );
@@ -127,8 +126,8 @@ describe('CardsController', () => {
         due_date: null,
       });
       expect(result.message).toBe('Card created');
-      expect(result.data.created_at).toEqual(expect.any(String));
-      expect(result.data.updated_at).toEqual(expect.any(String));
+      expect(result.data.created_at).toEqual(expect.any(String) as unknown);
+      expect(result.data.updated_at).toEqual(expect.any(String) as unknown);
     });
 
     it('should create a card with description and due_date', async () => {
@@ -153,7 +152,7 @@ describe('CardsController', () => {
         id: 1,
         title: 'New Card',
         description: 'A description',
-        due_date: expect.any(String),
+        due_date: expect.any(String) as unknown,
       });
     });
   });
@@ -185,8 +184,8 @@ describe('CardsController', () => {
         due_date: null,
       });
       expect(result.message).toBe('Card updated');
-      expect(result.data.created_at).toEqual(expect.any(String));
-      expect(result.data.updated_at).toEqual(expect.any(String));
+      expect(result.data.created_at).toEqual(expect.any(String) as unknown);
+      expect(result.data.updated_at).toEqual(expect.any(String) as unknown);
     });
 
     it('should update description and due_date', async () => {
@@ -209,7 +208,7 @@ describe('CardsController', () => {
 
       expect(result.data).toMatchObject({
         description: 'Updated description',
-        due_date: expect.any(String),
+        due_date: expect.any(String) as unknown,
       });
     });
   });
