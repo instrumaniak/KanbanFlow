@@ -14,19 +14,19 @@ describe('label colors', () => {
     expect(LABEL_COLOR_CLASS_MAP.red).toContain('dark:text-red-300');
 
     expect(LABEL_COLOR_CLASS_MAP.orange).toContain('bg-orange-100');
-    expect(LABEL_COLOR_CLASS_MAP.orange).toContain('text-orange-700');
+    expect(LABEL_COLOR_CLASS_MAP.orange).toContain('text-orange-800');
 
     expect(LABEL_COLOR_CLASS_MAP.yellow).toContain('bg-amber-100');
     expect(LABEL_COLOR_CLASS_MAP.yellow).toContain('text-amber-800');
 
     expect(LABEL_COLOR_CLASS_MAP.green).toContain('bg-emerald-100');
-    expect(LABEL_COLOR_CLASS_MAP.green).toContain('text-emerald-700');
+    expect(LABEL_COLOR_CLASS_MAP.green).toContain('text-emerald-800');
 
     expect(LABEL_COLOR_CLASS_MAP.blue).toContain('bg-blue-100');
-    expect(LABEL_COLOR_CLASS_MAP.blue).toContain('text-blue-700');
+    expect(LABEL_COLOR_CLASS_MAP.blue).toContain('text-blue-800');
 
     expect(LABEL_COLOR_CLASS_MAP.purple).toContain('bg-violet-100');
-    expect(LABEL_COLOR_CLASS_MAP.purple).toContain('text-violet-700');
+    expect(LABEL_COLOR_CLASS_MAP.purple).toContain('text-violet-800');
   });
 
   it('exposes picker options from the shared palette', () => {

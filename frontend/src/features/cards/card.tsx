@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useDeleteCard, useCreateCard, type Card as CardType } from './use-cards';
 import { CardDraggable } from './card-draggable';
 import { CardDetailPanel } from './card-detail-panel';
-import { LabelBadge } from '../labels/label-badge';
+import { CardPreview } from './card-preview';
 import { MoreHorizontal, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -112,52 +112,36 @@ export function Card({ card, index, isNew }: CardProps) {
               cursor: isDragging ? 'grabbing' : 'grab',
             }}
           >
-            <div className="flex items-center justify-between gap-2">
-              <span className="flex-1">{card.title}</span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-1 h-auto opacity-0 group-hover:opacity-100 focus:opacity-100"
-                    aria-label="Card menu"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDeleteDialog(true);
-                    }}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            {card.description?.trim() && (
-              <p className="mt-1 text-xs text-muted-foreground overflow-hidden text-ellipsis whitespace-pre-wrap"
-                 style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                {card.description}
-              </p>
-            )}
-            {card.labels && card.labels.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {card.labels.slice(0, 3).map((label) => (
-                  <LabelBadge key={label.id} label={label} />
-                ))}
-                {card.labels.length > 3 && (
-                  <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    +{card.labels.length - 3}
-                  </span>
-                )}
-              </div>
-            )}
+            <CardPreview
+              card={card}
+              actions={
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-1 h-auto opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      aria-label="Card menu"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDeleteDialog(true);
+                      }}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              }
+            />
           </div>
         )}
       </CardDraggable>

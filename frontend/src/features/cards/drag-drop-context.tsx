@@ -8,6 +8,7 @@ import type { DragData } from './use-cards';
 import { useToast } from '@/components/ui/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Column } from '../columns/columns.api';
+import { CardPreview } from './card-preview';
 
 function getCardIdFromDndId(id: string | number): number | undefined {
   if (typeof id === 'number') return id;
@@ -243,7 +244,7 @@ export function DragDropContext({ boardId, children }: DragDropContextProps) {
         <DragOverlay dropAnimation={dropAnimation}>
           {activeCard ? (
             <div className="rounded border bg-card p-3 text-sm shadow-xl opacity-90 scale-105 cursor-grabbing w-[280px]">
-              {activeCard.title}
+              <CardPreview card={activeCard} />
             </div>
           ) : null}
         </DragOverlay>,
