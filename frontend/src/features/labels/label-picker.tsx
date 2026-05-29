@@ -107,7 +107,7 @@ export function LabelPicker({ card }: LabelPickerProps) {
                     aria-label={isAssigned ? `Remove ${label.name}` : `Add ${label.name}`}
                     aria-pressed={isAssigned}
                     role="button"
-                    className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium text-white transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-ring ${colorClass} ${
+                    className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-ring ${colorClass} ${
                       isAssigned ? 'opacity-100 ring-2 ring-ring' : 'opacity-50'
                     }`}
                     title={isAssigned ? `Remove ${label.name}` : `Add ${label.name}`}

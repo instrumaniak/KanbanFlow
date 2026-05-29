@@ -46,8 +46,9 @@ test.describe('Labels E2E', () => {
       headers: { Cookie: cookies },
     });
     const labelsData = await labelsRes.json();
-    const bugLabel = labelsData.data.find((l: { name: string }) => l.name === 'Bug');
+    const bugLabel = labelsData.data.find((l: { name: string; color: string }) => l.name === 'Bug');
     expect(bugLabel).toBeDefined();
+    expect(bugLabel.color).toBeDefined();
 
     // Create a board
     const boardRes = await request.post('http://localhost:3000/api/boards', {
@@ -223,5 +224,146 @@ test.describe('Labels E2E', () => {
 
     const customLabelButton = page.locator('button').filter({ hasText: customLabelName }).first();
     await expect(customLabelButton).toBeVisible();
+  });
+
+  test('card label colors switch when toggling theme', async ({ page, request }) => {
+    const loginRes = await request.post('http://localhost:3000/api/auth/login', {
+      data: { email: TEST_EMAIL, password: TEST_PASSWORD },
+    });
+    const cookies = loginRes.headers()['set-cookie'] || '';
+
+    const labelsRes = await request.get('http://localhost:3000/api/labels', {
+      headers: { Cookie: cookies },
+    });
+    const labelsData = await labelsRes.json();
+    const bugLabel = labelsData.data.find((l: { name: string; color: string; id: number }) => l.name === 'Bug');
+    expect(bugLabel).toBeDefined();
+    if (!bugLabel) {
+      throw new Error('Expected Bug label to exist');
+    }
+
+    const boardRes = await request.post('http://localhost:3000/api/boards', {
+      data: { name: `Theme Label Board ${Date.now()}` },
+      headers: { Cookie: cookies },
+    });
+    const boardId = (await boardRes.json()).data.id;
+
+    const columnRes = await request.post(`http://localhost:3000/api/boards/${boardId}/columns`, {
+      data: { name: 'To Do' },
+      headers: { Cookie: cookies },
+    });
+    const columnId = (await columnRes.json()).data.id;
+
+    const cardRes = await request.post('http://localhost:3000/api/cards', {
+      data: { title: 'Theme Toggle Card', column_id: columnId, position: 0 },
+      headers: { Cookie: cookies },
+    });
+    const cardId = (await cardRes.json()).data.id;
+
+    const assignRes = await request.post(`http://localhost:3000/api/cards/${cardId}/labels`, {
+      data: { labelId: bugLabel.id },
+      headers: { Cookie: cookies },
+    });
+    expect(assignRes.status()).toBe(200);
+
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(TEST_EMAIL);
+    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('/');
+
+    await page.goto(`/board/${boardId}`);
+    const cardButton = page.locator('div[role="button"][aria-label="Open card details"]', {
+      hasText: /Theme Toggle Card/i,
+    });
+    await expect(cardButton).toBeVisible({ timeout: 10000 });
+
+    const cardBadge = cardButton.locator('span').filter({ hasText: 'Bug' });
+    await expect(cardBadge).toBeVisible();
+
+    const html = page.locator('html');
+    const themeToggle = page.getByRole('button', { name: 'Toggle theme' });
+    const referenceClassNames: Record<string, string> = {
+      red: `
+        inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium
+        bg-red-100 text-red-700 border border-red-200
+        dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/20
+      `,
+      orange: `
+        inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium
+        bg-orange-100 text-orange-700 border border-orange-200
+        dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/20
+      `,
+      yellow: `
+        inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium
+        bg-amber-100 text-amber-800 border border-amber-200
+        dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/20
+      `,
+      green: `
+        inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium
+        bg-emerald-100 text-emerald-700 border border-emerald-200
+        dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/20
+      `,
+      blue: `
+        inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium
+        bg-blue-100 text-blue-700 border border-blue-200
+        dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/20
+      `,
+      purple: `
+        inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium
+        bg-violet-100 text-violet-700 border border-violet-200
+        dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-500/20
+      `,
+    };
+    const referenceClassName = referenceClassNames[bugLabel.color as keyof typeof referenceClassNames];
+    if (!referenceClassName) {
+      throw new Error(`Unexpected label color: ${bugLabel.color}`);
+    }
+
+    await expect(html).toHaveClass(/light/);
+    const readBadgeStyles = async () =>
+      cardBadge.evaluate((el) => {
+        const styles = getComputedStyle(el);
+        return {
+          backgroundColor: styles.backgroundColor,
+          color: styles.color,
+          borderColor: styles.borderColor,
+        };
+      });
+
+    const readReferenceStyles = async () =>
+      page.evaluate((className) => {
+        const probe = document.createElement('span');
+        probe.className = className;
+        probe.style.position = 'fixed';
+        probe.style.left = '-9999px';
+        probe.style.top = '-9999px';
+        document.body.appendChild(probe);
+
+        const styles = getComputedStyle(probe);
+        const result = {
+          backgroundColor: styles.backgroundColor,
+          color: styles.color,
+          borderColor: styles.borderColor,
+        };
+
+        probe.remove();
+        return result;
+      }, referenceClassName);
+
+    const lightStyles = await readBadgeStyles();
+    const lightReferenceStyles = await readReferenceStyles();
+    expect(lightStyles).toEqual(lightReferenceStyles);
+
+    await themeToggle.click();
+    await expect(html).toHaveClass(/dark/);
+    const darkStyles = await readBadgeStyles();
+    const darkReferenceStyles = await readReferenceStyles();
+    expect(darkStyles).toEqual(darkReferenceStyles);
+
+    await themeToggle.click();
+    await expect(html).toHaveClass(/light/);
+    const restoredStyles = await readBadgeStyles();
+    expect(restoredStyles).toEqual(lightStyles);
   });
 });
