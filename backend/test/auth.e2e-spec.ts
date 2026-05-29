@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { FastifyAdapter } from '@nestjs/platform-fastify';
+import { ValidationPipe } from '@nestjs/common';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
@@ -8,7 +8,7 @@ import { Session } from './../src/sessions/entities/session.entity';
 import { setupFastifySession } from './test-utils';
 
 describe('Auth API (e2e)', () => {
-  let app: INestApplication;
+  let app: NestFastifyApplication;
   let url: string;
   let dataSource: DataSource;
   const testEmail = `api-e2e-${Date.now()}@example.com`;
@@ -19,7 +19,7 @@ describe('Auth API (e2e)', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication(new FastifyAdapter());
+    app = moduleFixture.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     await setupFastifySession(app);
     await app.init();
@@ -223,7 +223,8 @@ describe('Auth API (e2e)', () => {
       const moduleFixture2: TestingModule = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
-      const app2: INestApplication = moduleFixture2.createNestApplication(new FastifyAdapter());
+      const app2: NestFastifyApplication =
+        moduleFixture2.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
       app2.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
       await setupFastifySession(app2);
       await app2.init();

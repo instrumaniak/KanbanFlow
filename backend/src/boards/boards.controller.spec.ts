@@ -5,6 +5,21 @@ import { Board } from './entities/board.entity';
 
 describe('BoardsController', () => {
   let controller: BoardsController;
+  const createBoardFixture = (overrides: Partial<Board> = {}): Board =>
+    ({
+      id: 1,
+      name: 'Board',
+      background_color: '#0079BF',
+      user_id: 1,
+      project_id: null,
+      is_archived: false,
+      user: { id: 1 } as Board['user'],
+      project: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+      columns: [],
+      ...overrides,
+    }) as Board;
 
   const mockBoardsService: jest.Mocked<
     Pick<
@@ -48,18 +63,8 @@ describe('BoardsController', () => {
 
   describe('findAll', () => {
     it('should return list of boards', async () => {
-      const boards = [
-        {
-          id: 1,
-          name: 'Board 1',
-          background_color: '#0079BF',
-          project_id: null,
-          project: null,
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
-      ];
-      mockBoardsService.findAllByUserId.mockResolvedValue(boards as Board[]);
+      const boards = [createBoardFixture({ id: 1, name: 'Board 1' })];
+      mockBoardsService.findAllByUserId.mockResolvedValue(boards);
 
       const result = await controller.findAll(mockSession);
 
@@ -78,21 +83,15 @@ describe('BoardsController', () => {
 
   describe('create', () => {
     it('should create a board and return it with columns', async () => {
-      const board = {
-        id: 1,
+      const board = createBoardFixture({
         name: 'New Board',
-        background_color: '#0079BF',
-        project_id: null,
-        project: null,
-        created_at: new Date(),
-        updated_at: new Date(),
         columns: [
-          { id: 1, name: 'To Do', position: 0 },
-          { id: 2, name: 'In Progress', position: 1 },
-          { id: 3, name: 'Done', position: 2 },
+          { id: 1, name: 'To Do', position: 0 } as Board['columns'][number],
+          { id: 2, name: 'In Progress', position: 1 } as Board['columns'][number],
+          { id: 3, name: 'Done', position: 2 } as Board['columns'][number],
         ],
-      };
-      mockBoardsService.create.mockResolvedValue(board as Board);
+      });
+      mockBoardsService.create.mockResolvedValue(board);
 
       const result = await controller.create(mockSession, {
         name: 'New Board',
@@ -106,17 +105,8 @@ describe('BoardsController', () => {
 
   describe('findOne', () => {
     it('should return a single board', async () => {
-      const board = {
-        id: 1,
-        name: 'Board',
-        background_color: '#0079BF',
-        project_id: null,
-        project: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-        columns: [],
-      };
-      mockBoardsService.findOne.mockResolvedValue(board as Board);
+      const board = createBoardFixture();
+      mockBoardsService.findOne.mockResolvedValue(board);
 
       const result = await controller.findOne(mockSession, 1);
 
@@ -126,16 +116,8 @@ describe('BoardsController', () => {
 
   describe('update', () => {
     it('should update a board', async () => {
-      const board = {
-        id: 1,
-        name: 'Updated Board',
-        background_color: '#0079BF',
-        project_id: null,
-        project: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
-      mockBoardsService.update.mockResolvedValue(board as Board);
+      const board = createBoardFixture({ name: 'Updated Board' });
+      mockBoardsService.update.mockResolvedValue(board);
 
       const result = await controller.update(mockSession, 1, { name: 'Updated Board' });
 
@@ -156,19 +138,8 @@ describe('BoardsController', () => {
 
   describe('findArchived', () => {
     it('should return list of archived boards', async () => {
-      const boards = [
-        {
-          id: 1,
-          name: 'Archived Board',
-          background_color: '#0079BF',
-          project_id: null,
-          project: null,
-          created_at: new Date(),
-          updated_at: new Date(),
-          is_archived: true,
-        },
-      ];
-      mockBoardsService.findAllArchivedByUserId.mockResolvedValue(boards as Board[]);
+      const boards = [createBoardFixture({ name: 'Archived Board', is_archived: true })];
+      mockBoardsService.findAllArchivedByUserId.mockResolvedValue(boards);
 
       const result = await controller.findArchived(mockSession);
 
@@ -180,17 +151,8 @@ describe('BoardsController', () => {
 
   describe('archive', () => {
     it('should archive a board', async () => {
-      const board = {
-        id: 1,
-        name: 'Board',
-        background_color: '#0079BF',
-        project_id: null,
-        project: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-        is_archived: true,
-      };
-      mockBoardsService.archive.mockResolvedValue(board as Board);
+      const board = createBoardFixture({ is_archived: true });
+      mockBoardsService.archive.mockResolvedValue(board);
 
       const result = await controller.archive(mockSession, 1);
 
@@ -202,17 +164,8 @@ describe('BoardsController', () => {
 
   describe('restore', () => {
     it('should restore an archived board', async () => {
-      const board = {
-        id: 1,
-        name: 'Board',
-        background_color: '#0079BF',
-        project_id: null,
-        project: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-        is_archived: false,
-      };
-      mockBoardsService.restore.mockResolvedValue(board as Board);
+      const board = createBoardFixture({ is_archived: false });
+      mockBoardsService.restore.mockResolvedValue(board);
 
       const result = await controller.restore(mockSession, 1);
 
