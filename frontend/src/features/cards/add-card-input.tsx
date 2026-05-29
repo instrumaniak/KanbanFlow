@@ -41,6 +41,8 @@ export function AddCardInput({ columnId, nextColumnId, onCardCreated, onCardCrea
           title: trimmedTitle,
           column_id: columnId,
           position: 0,
+          description: null,
+          due_date: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };

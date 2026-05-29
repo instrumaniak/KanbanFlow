@@ -106,7 +106,7 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
           },
           onError: () => {
             setTitle(latestCardRef.current.title);
-            toast({ title: 'Failed to save title', variant: 'destructive' });
+            toast({ title: 'Failed to save title', type: 'destructive' });
           },
         },
       );
@@ -125,7 +125,7 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
       pendingSaveRef.current = true;
       setIsSavingDescription(true);
       updateCard.mutate(
-        { id: currentCard.id, data: { description: newValue || null } },
+        { id: currentCard.id, data: { description: newValue || undefined } },
         {
           onSettled: () => {
             pendingSaveRef.current = false;
@@ -133,7 +133,7 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
           },
           onError: () => {
             setDescription(latestCardRef.current.description ?? '');
-            toast({ title: 'Failed to save description', variant: 'destructive' });
+            toast({ title: 'Failed to save description', type: 'destructive' });
           },
         },
       );

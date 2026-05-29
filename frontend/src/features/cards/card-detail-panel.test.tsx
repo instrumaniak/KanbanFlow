@@ -160,7 +160,7 @@ describe('CardDetailPanel', () => {
 
     await waitFor(() => {
       expect(mockMutate).toHaveBeenCalledWith(
-        { id: 1, data: { description: null } },
+        { id: 1, data: { description: undefined } },
         expect.objectContaining({ onSettled: expect.any(Function) }),
       );
     });

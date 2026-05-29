@@ -30,7 +30,7 @@ export function LabelPicker({ card }: LabelPickerProps) {
         { cardId: card.id, labelId: label.id },
         {
           onError: () => {
-            toast({ title: 'Failed to remove label', variant: 'destructive' });
+            toast({ title: 'Failed to remove label', type: 'destructive' });
           },
         },
       );
@@ -39,7 +39,7 @@ export function LabelPicker({ card }: LabelPickerProps) {
         { cardId: card.id, labelId: label.id },
         {
           onError: () => {
-            toast({ title: 'Failed to assign label', variant: 'destructive' });
+            toast({ title: 'Failed to assign label', type: 'destructive' });
           },
         },
       );
@@ -59,7 +59,7 @@ export function LabelPicker({ card }: LabelPickerProps) {
           toast({ title: 'Label created' });
         },
         onError: () => {
-          toast({ title: 'Failed to create label', variant: 'destructive' });
+          toast({ title: 'Failed to create label', type: 'destructive' });
         },
       },
     );
