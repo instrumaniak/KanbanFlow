@@ -35,6 +35,7 @@ interface ColumnResponse {
     description: string | null;
     column_id: number;
     position: number;
+    due_date: string | null;
     labels: { id: number; name: string; color: string }[];
     created_at: string;
     updated_at: string;
@@ -72,6 +73,7 @@ export class ColumnsController {
               description: c.description,
               column_id: c.column_id,
               position: c.position,
+              due_date: c.due_date ? c.due_date.toISOString() : null,
               labels: c.cardLabels
                 ? c.cardLabels.map((cl) => ({
                     id: cl.label.id,
@@ -163,7 +165,7 @@ export class ColumnsController {
       name: column.name,
       position: column.position,
       board_id: column.board_id,
-      cards: column.cards
+        cards: column.cards
         ? [...column.cards]
             .sort((a, b) => a.position - b.position)
             .map((c) => ({
@@ -172,6 +174,7 @@ export class ColumnsController {
               description: c.description,
               column_id: c.column_id,
               position: c.position,
+              due_date: c.due_date ? c.due_date.toISOString() : null,
               labels: c.cardLabels
                 ? c.cardLabels.map((cl) => ({
                     id: cl.label.id,

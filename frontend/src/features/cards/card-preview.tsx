@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import type { Card as CardType } from './use-cards';
 import type { ReactNode } from 'react';
 import { LabelBadge } from '../labels/label-badge';
+import { getDueDateBadge } from './date-utils';
 
 interface CardPreviewProps {
   card: CardType;
@@ -8,6 +10,11 @@ interface CardPreviewProps {
 }
 
 export function CardPreview({ card, actions }: CardPreviewProps) {
+  const dueDateBadge = useMemo(
+    () => getDueDateBadge(card.due_date),
+    [card.due_date],
+  );
+
   return (
     <>
       <div className="flex items-start justify-between gap-2">
@@ -35,6 +42,15 @@ export function CardPreview({ card, actions }: CardPreviewProps) {
             </span>
           )}
         </div>
+      )}
+
+      {dueDateBadge && (
+        <span
+          className={`mt-2 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${dueDateBadge.className}`}
+          aria-label={`Due date: ${dueDateBadge.text}`}
+        >
+          {dueDateBadge.text}
+        </span>
       )}
     </>
   );

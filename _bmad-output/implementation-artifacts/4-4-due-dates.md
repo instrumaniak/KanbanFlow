@@ -1,6 +1,6 @@
 # Story 4.4: Due Dates
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -38,7 +38,7 @@ So that I can track deadlines and prioritize time-sensitive tasks.
 
 - [ ] Frontend: Install `date-fns` dependency
 - [ ] Frontend: Add shadcn/ui `Calendar` component (`npx shadcn@latest add calendar`)
-- [ ] Frontend: Create `DueDatePicker` component (`src/features/cards/components/due-date-picker.tsx`)
+- [ ] Frontend: Create `DueDatePicker` component (`src/features/cards/due-date-picker.tsx`)
   - [ ] Uses shadcn Calendar + Popover for date selection
   - [ ] Integrates with `date-fns` for formatting
   - [ ] Handles date selection and clearing
@@ -94,7 +94,7 @@ The backend already supports due dates:
 
 1. **DueDatePicker** (new component):
    ```tsx
-   // frontend/src/features/cards/components/due-date-picker.tsx
+   // frontend/src/features/cards/due-date-picker.tsx
    interface DueDatePickerProps {
      dueDate: string | null;
      onDateChange: (date: string | null) => void;
@@ -227,9 +227,9 @@ _(To be filled by dev agent)_
 ### File List
 
 Frontend (to be created/modified):
-- `frontend/src/features/cards/components/due-date-picker.tsx` — new
+- `frontend/src/features/cards/due-date-picker.tsx` — new
 - `frontend/src/features/cards/card-detail-panel.tsx` — modified (integrate DueDatePicker)
 - `frontend/src/features/cards/card-preview.tsx` — modified (add due date badge)
-- `frontend/src/features/cards/components/due-date-picker.test.tsx` — new
+- `frontend/src/features/cards/due-date-picker.test.tsx` — new
 - `frontend/src/features/cards/card-preview.test.tsx` — modified (add due date badge tests)
 - `frontend/e2e/due-dates.spec.ts` — new

@@ -57,6 +57,7 @@ export class UpdateCardDto {
 
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z', required: false })
   @IsOptional()
+  @ValidateIf((_object, value) => value !== null)
   @IsValidDate()
-  due_date?: string;
+  due_date?: string | null;
 }

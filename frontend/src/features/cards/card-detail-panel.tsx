@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { useUpdateCard, type Card as CardType } from './use-cards';
 import { LabelPicker } from '../labels/label-picker';
+import { DueDatePicker } from './due-date-picker';
 
 const MarkdownPreview = lazy(() =>
   import('./markdown-preview').then((m) => ({ default: m.MarkdownPreview }))
@@ -16,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+
 import { useToast } from '@/components/ui/use-toast';
 
 interface CardDetailPanelProps {
@@ -139,13 +140,31 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
     [],
   );
 
-  const formattedDueDate = card.due_date
-    ? new Date(card.due_date).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : null;
+  const [isSavingDueDate, setIsSavingDueDate] = useState(false);
+
+  const handleDueDateChange = useCallback(
+    (dueDate: string | null) => {
+      const currentCard = latestCardRef.current;
+      setIsSavingDueDate(true);
+      updateCard.mutate(
+        { id: currentCard.id, data: { due_date: dueDate } },
+        {
+          onSettled: () => {
+            if (isMountedRef.current) setIsSavingDueDate(false);
+          },
+          onError: (error) => {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            toast({
+              title: 'Failed to save due date',
+              description: `Please try again. Error: ${message}`,
+              type: 'destructive',
+            });
+          },
+        },
+      );
+    },
+    [updateCard, toast],
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={true}>
@@ -251,10 +270,13 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
 
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Due Date</h3>
-              {formattedDueDate ? (
-                <Badge variant="secondary">{formattedDueDate}</Badge>
-              ) : (
-                <p className="text-muted-foreground text-sm">No due date</p>
+              <DueDatePicker
+                dueDate={card.due_date}
+                onDateChange={handleDueDateChange}
+                disabled={isSavingDueDate}
+              />
+              {isSavingDueDate && (
+                <span className="text-xs text-muted-foreground">Saving...</span>
               )}
             </div>
 

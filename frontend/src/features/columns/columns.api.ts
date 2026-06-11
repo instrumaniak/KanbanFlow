@@ -12,6 +12,7 @@ export interface Card {
   description: string | null;
   column_id: number;
   position: number;
+  due_date: string | null;
   labels?: Label[];
   created_at: string;
   updated_at: string;
