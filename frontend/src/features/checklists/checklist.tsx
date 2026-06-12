@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Checklist as ChecklistType } from './checklists.api';
+import type { Checklist as ChecklistType } from './checklists.api';
 import { ChecklistItem } from './checklist-item';
 import { AddChecklistItemForm } from './add-checklist-item-form';
 import { useDeleteChecklist, useUpdateChecklist } from './use-checklists';

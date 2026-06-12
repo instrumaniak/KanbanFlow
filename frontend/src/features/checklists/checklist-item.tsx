@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUpdateChecklistItem, useDeleteChecklistItem } from './use-checklists';
-import { ChecklistItem as ChecklistItemType } from './checklists.api';
+import type { ChecklistItem as ChecklistItemType } from './checklists.api';
 import { useToast } from '@/components/ui/use-toast';
 
 interface ChecklistItemProps {
