@@ -14,37 +14,52 @@ So that I can break down tasks into subtasks and see completion status.
 
 1. **Given** I am viewing the card detail panel
    **When** I click "Add Checklist"
-   **Then** a checklist section appears with an input for the first item
+   **Then** a new checklist section appears
+   **And** the checklist has an editable title prefilled with "Checklist"
+   **And** the checklist shows an input for the first item
 
 2. **Given** I type a checklist item and press Enter
    **When** the item is added
    **Then** it appears as a checkbox with label text
    **And** the input stays focused for adding more items
 
-3. **Given** I check/uncheck a checklist item
-   **When** the state changes
-   **Then** a progress bar updates showing completion percentage
-   **And** the progress bar appears on the card face on the board
+3. **Given** I edit a checklist title
+   **When** I blur the title input or press Enter
+   **Then** the title is saved automatically
+   **And** empty titles are rejected and revert to the previous value
+   **And** the updated title persists when I reopen the card
 
-4. **Given** a checklist is complete (100%)
+4. **Given** I edit a checklist item label
+   **When** I blur the item text field or press Enter
+   **Then** the item text is saved automatically
+   **And** empty item text is rejected and reverts to the previous value
+   **And** the updated text persists when I reopen the card
+
+5. **Given** I check or uncheck a checklist item
+   **When** the state changes
+   **Then** the checklist progress updates immediately
+   **And** the progress bar appears on the card face on the board
+   **And** the card face progress reflects the aggregate completion across all checklist items on the card
+
+6. **Given** a checklist is complete (100%)
    **When** viewing the card
    **Then** the progress bar shows full green fill with a checkmark
 
-5. **Given** a checklist is partially complete
+7. **Given** a checklist is partially complete
    **When** viewing the card
    **Then** the progress bar shows teal fill proportional to completion
 
-6. **Given** I want to delete a checklist item
+8. **Given** I want to delete a checklist item
    **When** I click the delete icon on an item
    **Then** the item is removed and progress recalculates
    **And** an undo toast notification appears for 5 seconds
 
-7. **Given** a checklist has no items or is newly created
+9. **Given** a checklist has no items or is newly created
    **When** viewing the card
    **Then** the progress bar shows empty gray bar at 0%
    **And** no division-by-zero occurs (0/0 renders as 0%)
 
-8. **Given** I want to delete the entire checklist
+10. **Given** I want to delete the entire checklist
    **When** I click the delete checklist button
    **Then** the checklist and all its items are removed
 
@@ -55,22 +70,25 @@ So that I can break down tasks into subtasks and see completion status.
   - [ ] Create `backend/src/checklists/entities/checklist.entity.ts`
   - [ ] Create `backend/src/checklists/entities/checklist-item.entity.ts`
   - [ ] Create `backend/src/checklists/dto/create-checklist.dto.ts`
+  - [ ] Create `backend/src/checklists/dto/update-checklist.dto.ts`
   - [ ] Create `backend/src/checklists/dto/create-checklist-item.dto.ts`
   - [ ] Create `backend/src/checklists/dto/update-checklist-item.dto.ts`
   - [ ] Create `backend/src/checklists/checklists.service.ts`
   - [ ] Create `backend/src/checklists/checklists.controller.ts`
-- [ ] Backend: Create database migrations
-  - [ ] Create migration for `checklists` table
-  - [ ] Create migration for `checklist_items` table
+- [ ] Backend: Create database migration
+  - [ ] Create migration for `checklists` and `checklist_items` tables
 - [ ] Backend: Update Card entity
   - [ ] Add `@OneToMany` relation to Checklist entity
-  - [ ] Update Card response to include checklist data via relations/join
-  - [ ] Ensure board-level card queries eager-load checklists for CardPreview badge
+  - [ ] Update card detail response to include checklist titles and items
+  - [ ] Update board-level card responses to include checklist progress summary for CardPreview
 - [ ] Backend: Run migrations
-  - [ ] Generate and run `typeorm migration:generate` for checklists & checklist_items tables
+  - [ ] Apply the hand-written migration with `typeorm migration:run`
   - [ ] Verify rollback works: `typeorm migration:revert`
 - [ ] Backend: Register module in app.module.ts
+  - [ ] Import `ChecklistsModule` after `CardsModule`
 - [ ] Backend: Implement checklist-level delete endpoint (`DELETE /api/checklists/:id`) with CASCADE
+  - [ ] Implement checklist title update endpoint (`PATCH /api/checklists/:id`)
+  - [ ] Implement checklist item create/update/delete endpoints
 - [ ] Frontend: Create `checklists` feature folder
   - [ ] Create `frontend/src/features/checklists/checklist-section.tsx`
   - [ ] Create `frontend/src/features/checklists/checklist.tsx`
@@ -79,27 +97,34 @@ So that I can break down tasks into subtasks and see completion status.
   - [ ] Create `frontend/src/features/checklists/checklists.api.ts`
   - [ ] Create `frontend/src/features/checklists/use-checklists.ts`
 - [ ] Frontend: Integrate into CardDetailPanel
-  - [ ] Add "Add Checklist" button in header area near other card actions (following 4.4 Due Date section pattern)
-  - [ ] Render ChecklistSection when checklists exist
-  - [ ] Ensure checklist data is loaded via card query (no separate fetch)
+  - [ ] Add "Add Checklist" button inside the Checklist section wrapper
+  - [ ] Render ChecklistSection when a card has one or more checklists
+  - [ ] Support inline editing for checklist titles and item text
+  - [ ] Load full checklist data for the detail panel
+  - [ ] Add a dedicated card detail query hook for the panel data shape
+  - [ ] Update card data types to include checklist detail payloads and board progress summary
 - [ ] Frontend: Update CardPreview
-  - [ ] Add progress badge showing completion percentage
+  - [ ] Add progress badge showing aggregated completion percentage
   - [ ] Show green checkmark when 100% complete
 - [ ] Tests: Backend unit tests for checklists service
-  - [ ] Test create checklist, add item, toggle item, delete item, delete checklist
+  - [ ] Test create checklist, rename checklist, add item, edit item, toggle item, delete item, delete checklist
   - [ ] Test CASCADE delete: deleting card removes its checklists
   - [ ] Test CASCADE delete: deleting checklist removes its items
+  - [ ] Verify persistence after each POST/PATCH/DELETE with a follow-up API call or DB query
 - [ ] Tests: Frontend unit tests for checklist components
   - [ ] ProgressBar renders correctly at 0%, partial, 100%
   - [ ] ProgressBar handles `total=0` without division error
-  - [ ] ChecklistSection renders "Add Checklist" button when empty
+  - [ ] ChecklistSection renders "Add Checklist" button when empty and when populated
+  - [ ] Checklist title input auto-saves on blur/Enter
   - [ ] Adding item focuses input for next entry
+  - [ ] Checklist item text auto-saves on blur/Enter
   - [ ] Deleting item recalculates progress and shows undo toast
   - [ ] CardPreview badge shows aggregated progress from all checklists
 - [ ] Tests: E2E test for checklist CRUD operations
-  - [ ] Full flow: add card → add checklist → add items → toggle → verify progress on card face
+  - [ ] Full flow: add card → add checklist → rename checklist → add items → edit item text → toggle → verify progress on card face
   - [ ] Delete checklist item → verify progress updates on card face
   - [ ] Delete checklist → verify all items removed
+  - [ ] Verify persistence after each mutation with a second API call or DB query
 
 ## Dev Notes
 
@@ -110,7 +135,7 @@ So that I can break down tasks into subtasks and see completion status.
 - **Registration:** Import `ChecklistsModule` in `app.module.ts` after `CardsModule`
 - **Entity Relationships:** Checklist belongs to Card (CASCADE delete), ChecklistItem belongs to Checklist (CASCADE delete)
 - **Feature-based Frontend:** Create `features/checklists/` following existing patterns (boards, cards, labels)
-- **React Query:** Use mutations with optimistic updates for all checklist operations
+- **React Query:** Use mutations with optimistic updates for checklist title, item text, toggle, and delete operations
 
 ### Migration Strategy (MUST follow existing hand-written pattern)
 
@@ -134,8 +159,10 @@ export class CreateChecklists<timestamp> implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX ...`);
-    await queryRunner.query(`ALTER TABLE ... DROP FOREIGN KEY ...`);
+    await queryRunner.query(`ALTER TABLE \`checklist_items\` DROP FOREIGN KEY \`FK_checklist_items_checklist_id\``);
+    await queryRunner.query(`ALTER TABLE \`checklists\` DROP FOREIGN KEY \`FK_checklists_card_id\``);
+    await queryRunner.query(`DROP INDEX \`IDX_checklist_items_checklist_id\` ON \`checklist_items\``);
+    await queryRunner.query(`DROP INDEX \`IDX_checklists_card_id\` ON \`checklists\``);
     await queryRunner.query(`DROP TABLE \`checklist_items\``);
     await queryRunner.query(`DROP TABLE \`checklists\``);
   }
@@ -179,16 +206,18 @@ export const migrations = [
 - `@IsString()`, `@IsNotEmpty()`, `@MaxLength(255)`, `@IsOptional()`, `@IsNumber()` from `class-validator`
 - `@ApiProperty({ example: ... })` on every field for Swagger
 - `@ValidateIf((_object, value) => value !== null)` for nullable optional fields
-- File naming: `create-checklist.dto.ts`, `create-checklist-item.dto.ts`, `update-checklist-item.dto.ts`
-- No separate `update-checklist.dto.ts` needed (no checklist title edit in this story)
+- File naming: `create-checklist.dto.ts`, `update-checklist.dto.ts`, `create-checklist-item.dto.ts`, `update-checklist-item.dto.ts`
+- `update-checklist.dto.ts` handles editable checklist titles
+- `update-checklist-item.dto.ts` handles editable item text plus completion state
 
 **Controller patterns** (follow existing conventions):
 - Route prefix: `api/checklists` / `api/checklist-items` (flat pattern, like `api/labels`)
 - Endpoints:
   - `POST /api/cards/:cardId/checklists` — Create checklist (nested, like `api/columns/:columnId/cards`)
+  - `PATCH /api/checklists/:id` — Rename checklist
   - `DELETE /api/checklists/:id` — Delete checklist
   - `POST /api/checklists/:checklistId/items` — Create item
-  - `PATCH /api/checklist-items/:id` — Update item (toggle)
+  - `PATCH /api/checklist-items/:id` — Update item text and/or completion
   - `DELETE /api/checklist-items/:id` — Delete item
 - Class decorator: `@UseGuards(SessionGuard)`, `@ApiTags('checklists')`
 - `@Session() session: SessionData` for userId extraction
@@ -237,7 +266,7 @@ const checklistKeys = {
 ```
 - Invalidation: `queryClient.invalidateQueries({ queryKey: checklistKeys.byCard(cardId) })`
 - Also invalidate `['cards']` and `['columns']` so CardPreview updates on the board
-- Use `useMutation` with `mutationFn`, `onSuccess`, `onError` (no optimistic updates for this story — simpler toggle)
+- Use `useMutation` with `mutationFn`, `onSuccess`, `onError`, and optimistic updates for snappy checklist interactions
 
 **Component patterns:**
 - Import via `@/` alias (e.g., `@/features/checklists/checklist-section`)
@@ -259,10 +288,11 @@ const checklistKeys = {
 ```
 
 **CardPreview integration** (at `card-preview.tsx`):
-- Query keys: Card data already loaded includes `checklists` via relations
+- Card previews should not need full checklist item payloads if a progress summary is present on the board card response
+- Board card responses should expose `checklist_progress` with `completed`, `total`, and `percent` fields
 - Add progress badge after labels, before dueDateBadge:
 ```tsx
-{card.checklists && card.checklists.length > 0 && (
+{card.checklist_progress && (
   /* aggregated progress across all checklists */
 )}
 ```
@@ -481,13 +511,17 @@ interface ProgressBarProps {
 
 - Use React Query mutations for all checklist operations
 - Optimistic updates: Update cache immediately, rollback on error
-- Query invalidation: Use exact query key convention from existing codebase — likely `['card', cardId]` for individual card, `['boards', boardId]` for board-level data. Invalidate both after mutations so CardPreview badge updates.
-- Progress calculation: Client-side aggregation (no stored aggregate). Guard against `total === 0` returning `NaN`.
+- Query invalidation: Use `['checklists', cardId]` for checklist data, `['cards']` for board cards, and `['columns']` for column/card counts. Invalidate all relevant keys after mutations so the detail panel and board stay in sync.
+- Progress calculation: Client-side aggregation from checklist items for the detail panel. Guard against `total === 0` returning `NaN`.
+- Board cards should receive a checklist progress summary so the board view does not need to fetch every checklist item for every card.
+- Keep board progress summary in sync with the detail payload so a checklist edit immediately updates the card face.
+- The detail panel should fetch the rich card response shape that includes full checklist titles and items.
 
 ### Accessibility
 
 - Checklist items: Native `<input type="checkbox">` with associated label (handles `role="checkbox"`, `aria-checked`, keyboard natively)
 - Or use custom `role="checkbox"` with `aria-checked` if styling requires it
+- Checklist title and item text fields must have clear ARIA labels
 - Progress bar: `role="progressbar"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax`
 - Delete item button: `aria-label="Delete item"` with undo toast on action
 - Delete checklist button: `aria-label="Delete checklist"` with confirmation dialog
@@ -518,6 +552,7 @@ interface ProgressBarProps {
 - Code style: single quotes, trailing commas, printWidth 100, explicit semicolons
 - Tests co-located with source files (`.spec.ts` / `.test.tsx`)
 - E2E tests in `frontend/e2e/<feature>.spec.ts` with shared `test-utils.ts`
+- For this feature, keep the board response light and the detail response rich to avoid unnecessary card-face payload growth.
 
 ## References
 
@@ -551,14 +586,16 @@ Backend (to be created):
 - `backend/src/checklists/entities/checklist.entity.ts` — new
 - `backend/src/checklists/entities/checklist-item.entity.ts` — new
 - `backend/src/checklists/dto/create-checklist.dto.ts` — new
+- `backend/src/checklists/dto/update-checklist.dto.ts` — new
 - `backend/src/checklists/dto/create-checklist-item.dto.ts` — new
 - `backend/src/checklists/dto/update-checklist-item.dto.ts` — new
 - `backend/src/checklists/checklists.service.ts` — new
 - `backend/src/checklists/checklists.service.spec.ts` — new
 - `backend/src/checklists/checklists.controller.ts` — new
 - `backend/src/checklists/checklists.controller.spec.ts` — new
-- `backend/src/migrations/*-CreateChecklistsTable.ts` — new
-- `backend/src/migrations/*-CreateChecklistItemsTable.ts` — new
+- `backend/src/migrations/*-CreateChecklistsAndChecklistItems.ts` — new
+- `backend/src/cards/cards.service.ts` — modified (include checklist detail/progress data)
+- `backend/src/cards/cards.controller.ts` — modified (return checklist detail/progress data)
 - `backend/src/cards/entities/card.entity.ts` — modified (add checklists relation)
 - `backend/src/app.module.ts` — modified (register checklists module)
 - `backend/src/database/typeorm-registry.ts` — modified (register entities + migrations)
@@ -574,6 +611,8 @@ Frontend (to be created/modified):
 - `frontend/src/features/checklists/checklist.test.tsx` — new
 - `frontend/src/features/checklists/checklist-item.test.tsx` — new
 - `frontend/src/features/checklists/progress-bar.test.tsx` — new
+- `frontend/src/features/cards/cards.api.ts` — modified (checklist detail payload + progress summary types)
+- `frontend/src/features/cards/use-cards.ts` — modified (invalidate checklist-sensitive card queries)
 - `frontend/src/features/cards/card-detail-panel.tsx` — modified (add checklist section)
 - `frontend/src/features/cards/card-preview.tsx` — modified (add progress badge)
 - `frontend/e2e/checklists.spec.ts` — new
