@@ -34,10 +34,35 @@ interface CardResponse {
   created_at: string;
   updated_at: string;
   labels: { id: number; name: string; color: string }[];
+  checklist_progress?: { completed: number; total: number; percent: number };
+}
+
+interface CardDetailResponse extends CardResponse {
+  checklists: {
+    id: number;
+    title: string;
+    card_id: number;
+    created_at: string;
+    updated_at: string;
+    items: {
+      id: number;
+      text: string;
+      is_completed: boolean;
+      checklist_id: number;
+      position: number;
+      created_at: string;
+      updated_at: string;
+    }[];
+  }[];
 }
 
 function toCardResponse(card: Card): CardResponse {
-  return {
+  const allItems = card.checklists?.flatMap((cl) => cl.items ?? []) ?? [];
+  const total = allItems.length;
+  const completed = allItems.filter((item) => item.is_completed).length;
+  const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+  const response: CardResponse = {
     id: card.id,
     title: card.title,
     column_id: card.column_id,
@@ -51,6 +76,37 @@ function toCardResponse(card: Card): CardResponse {
         id: cl.label.id,
         name: cl.label.name,
         color: cl.label.color,
+      })) || [],
+  };
+
+  if (total > 0 || (card.checklists && card.checklists.length > 0)) {
+    response.checklist_progress = { completed, total, percent };
+  }
+
+  return response;
+}
+
+function toCardDetailResponse(card: Card): CardDetailResponse {
+  const base = toCardResponse(card);
+  return {
+    ...base,
+    checklists:
+      card.checklists?.map((cl) => ({
+        id: cl.id,
+        title: cl.title,
+        card_id: cl.card_id,
+        created_at: cl.created_at.toISOString(),
+        updated_at: cl.updated_at.toISOString(),
+        items:
+          cl.items?.map((item) => ({
+            id: item.id,
+            text: item.text,
+            is_completed: item.is_completed,
+            checklist_id: item.checklist_id,
+            position: item.position,
+            created_at: item.created_at.toISOString(),
+            updated_at: item.updated_at.toISOString(),
+          })) || [],
       })) || [],
   };
 }
@@ -106,9 +162,9 @@ export class CardsController {
   async findOne(
     @Session() session: SessionData,
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<{ data: CardResponse }> {
+  ): Promise<{ data: CardDetailResponse }> {
     const card = await this.cardsService.findById(id, session.userId);
-    return { data: toCardResponse(card) };
+    return { data: toCardDetailResponse(card) };
   }
 
   @Post('cards/:id/labels')

@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
 import { useUpdateCard, type Card as CardType } from './use-cards';
 import { LabelPicker } from '../labels/label-picker';
 import { DueDatePicker } from './due-date-picker';
+import { Checklist, AddChecklistForm } from '../checklists';
 
 const MarkdownPreview = lazy(() =>
   import('./markdown-preview').then((m) => ({ default: m.MarkdownPreview }))
@@ -282,11 +283,18 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
 
             <Separator />
 
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Checklist</h3>
-              <p className="text-muted-foreground text-sm">
-                Checklists will be available in a future update.
-              </p>
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Checklists</h3>
+              {card.checklists && card.checklists.length > 0 ? (
+                <div className="space-y-4">
+                  {card.checklists.map((checklist) => (
+                    <Checklist key={checklist.id} checklist={checklist} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No checklists yet</p>
+              )}
+              <AddChecklistForm cardId={card.id} onComplete={() => {}} />
             </div>
           </div>
         </ScrollArea>

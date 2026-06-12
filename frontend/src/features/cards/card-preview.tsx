@@ -52,6 +52,20 @@ export function CardPreview({ card, actions }: CardPreviewProps) {
           {dueDateBadge.text}
         </span>
       )}
+
+      {card.checklist_progress && (
+        <div className="mt-2 flex items-center gap-2">
+          <div className="w-16 bg-secondary rounded-full h-1.5">
+            <div
+              className="bg-primary h-1.5 rounded-full"
+              style={{ width: `${card.checklist_progress.percent}%` }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {card.checklist_progress.completed}/{card.checklist_progress.total}
+          </span>
+        </div>
+      )}
     </>
   );
 }

@@ -8,6 +8,25 @@ export interface Label {
   updated_at: string;
 }
 
+export interface ChecklistItemData {
+  id: number;
+  text: string;
+  is_completed: boolean;
+  checklist_id: number;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChecklistData {
+  id: number;
+  title: string;
+  card_id: number;
+  items: ChecklistItemData[];
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Card {
   id: number;
   title: string;
@@ -16,11 +35,13 @@ export interface Card {
   description: string | null;
   due_date: string | null;
   labels?: Label[];
+  checklists?: ChecklistData[];
+  checklist_progress?: { completed: number; total: number; percent: number };
   created_at: string;
   updated_at: string;
 }
 
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   data: T;
   message?: string;
 }
@@ -142,4 +163,3 @@ export async function removeLabelFromCard(cardId: number, labelId: number): Prom
   return handleResponse(response);
 }
 
-export type { ApiResponse };
