@@ -89,6 +89,24 @@ describe('CardPreview', () => {
     expect(screen.queryByLabelText(/Due date:/)).not.toBeInTheDocument();
   });
 
+  it('renders checklist progress with complete state', () => {
+    render(
+      <CardPreview
+        card={{
+          ...baseCard,
+          due_date: null,
+          checklist_progress: { completed: 2, total: 2, percent: 100 },
+        }}
+      />,
+    );
+
+    expect(screen.getByText('2/2 (100%)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Checklist progress: 2/2 (100%)')).toHaveAttribute(
+      'data-progress-state',
+      'complete',
+    );
+  });
+
   it('has accessible due date badge with proper aria-label', () => {
     render(<CardPreview card={{ ...baseCard, due_date: '2026-06-15T00:00:00.000Z' }} />);
 

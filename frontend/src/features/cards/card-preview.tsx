@@ -3,6 +3,7 @@ import type { Card as CardType } from './use-cards';
 import type { ReactNode } from 'react';
 import { LabelBadge } from '../labels/label-badge';
 import { getDueDateBadge } from './date-utils';
+import { ProgressBar } from '../checklists/progress-bar';
 
 interface CardPreviewProps {
   card: CardType;
@@ -55,14 +56,14 @@ export function CardPreview({ card, actions }: CardPreviewProps) {
 
       {card.checklist_progress && (
         <div className="mt-2 flex items-center gap-2">
-          <div className="w-16 bg-secondary rounded-full h-1.5">
-            <div
-              className="bg-primary h-1.5 rounded-full"
-              style={{ width: `${card.checklist_progress.percent}%` }}
-            />
-          </div>
+          <ProgressBar
+            completed={card.checklist_progress.completed}
+            total={card.checklist_progress.total}
+            className="w-16 shrink-0"
+          />
           <span className="text-xs text-muted-foreground">
-            {card.checklist_progress.completed}/{card.checklist_progress.total}
+            {card.checklist_progress.completed}/{card.checklist_progress.total} (
+            {card.checklist_progress.percent}%)
           </span>
         </div>
       )}

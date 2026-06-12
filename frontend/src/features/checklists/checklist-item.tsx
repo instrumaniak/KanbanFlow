@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUpdateChecklistItem, useDeleteChecklistItem } from './use-checklists';
 import type { ChecklistItem as ChecklistItemType } from './checklists.api';
+import { createChecklistItem, updateChecklistItem } from './checklists.api';
 import { useToast } from '@/components/ui/use-toast';
 
 interface ChecklistItemProps {
@@ -71,18 +72,27 @@ export function ChecklistItem({ item }: ChecklistItemProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                updateMutation.mutate(
-                  {
-                    itemId: previousItem.id,
-                    data: { text: previousItem.text, is_completed: previousItem.is_completed },
-                  },
-                  {
-                    onSettled: () => {
-                      queryClient.invalidateQueries({ queryKey: ['cards'] });
-                    },
-                  },
-                );
+              onClick={async () => {
+                try {
+                  const restored = await createChecklistItem(previousItem.checklist_id, {
+                    text: previousItem.text,
+                    position: previousItem.position,
+                  });
+
+                  if (previousItem.is_completed) {
+                    await updateChecklistItem(restored.data.id, { is_completed: true });
+                  }
+
+                  queryClient.invalidateQueries({ queryKey: ['cards'] });
+                  queryClient.invalidateQueries({ queryKey: ['columns'] });
+                } catch (error) {
+                  const message = error instanceof Error ? error.message : 'Unknown error';
+                  toast({
+                    title: 'Failed to undo delete',
+                    description: message,
+                    type: 'destructive',
+                  });
+                }
               }}
             >
               Undo

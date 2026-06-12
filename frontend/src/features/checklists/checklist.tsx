@@ -3,6 +3,7 @@ import type { Checklist as ChecklistType } from './checklists.api';
 import { ChecklistItem } from './checklist-item';
 import { AddChecklistItemForm } from './add-checklist-item-form';
 import { useDeleteChecklist, useUpdateChecklist } from './use-checklists';
+import { ProgressBar } from './progress-bar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,7 +18,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
-import { Check } from 'lucide-react';
 
 interface ChecklistProps {
   checklist: ChecklistType;
@@ -34,8 +34,6 @@ export function Checklist({ checklist }: ChecklistProps) {
   const completedCount = checklist.items.filter((item) => item.is_completed).length;
   const totalCount = checklist.items.length;
   const percent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
-  const isComplete = percent === 100 && totalCount > 0;
-
   const handleDelete = () => {
     deleteMutation.mutate(checklist.id, {
       onError: () => {
@@ -123,20 +121,7 @@ export function Checklist({ checklist }: ChecklistProps) {
           </AlertDialog>
         </div>
       </div>
-      <div className="w-full bg-secondary rounded-full h-2">
-        <div
-          className={`h-2 rounded-full transition-all ${
-            isComplete ? 'bg-emerald-500' : 'bg-primary'
-          }`}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-      {isComplete && (
-        <div className="flex items-center gap-1 text-emerald-500">
-          <Check className="h-4 w-4" />
-          <span className="text-xs font-medium">Complete</span>
-        </div>
-      )}
+      <ProgressBar completed={completedCount} total={totalCount} className="w-full" />
       <div className="space-y-1">
         {checklist.items.map((item) => (
           <ChecklistItem key={item.id} item={item} />

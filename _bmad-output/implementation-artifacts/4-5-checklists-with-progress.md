@@ -1,6 +1,6 @@
 # Story 4.5: Checklists with Progress
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -569,50 +569,35 @@ interface ProgressBarProps {
 
 ### Agent Model Used
 
-_(To be filled by dev agent)_
+Codex GPT-5
 
 ### Debug Log References
 
-_(To be filled by dev agent)_
+Frontend checklist-focused Vitest run passed after replacing the stale card-detail placeholder test and adding shared progress-bar coverage.
+Backend `checklists.service.spec.ts` passed with `--watchman=false`.
+Checklist e2e run was blocked by environment DB access: `connect EPERM 127.0.0.1:3306`.
 
 ### Completion Notes List
 
-_(To be filled by dev agent)_
+- Replaced the stale checklist placeholder flow in the card detail panel with a real checklist section wrapper and conditional "Add Checklist" trigger.
+- Added a shared progress bar component that handles `0/0`, partial, and complete states, including the 100% checkmark.
+- Fixed item deletion undo so it restores the checklist item instead of attempting to update a deleted row.
+- Updated checklist and card preview rendering to use the shared progress component and show aggregate progress consistently.
+- Updated tests to cover the new checklist section toggle and progress-bar states.
 
 ### File List
 
-Backend (to be created):
-- `backend/src/checklists/checklists.module.ts` — new
-- `backend/src/checklists/entities/checklist.entity.ts` — new
-- `backend/src/checklists/entities/checklist-item.entity.ts` — new
-- `backend/src/checklists/dto/create-checklist.dto.ts` — new
-- `backend/src/checklists/dto/update-checklist.dto.ts` — new
-- `backend/src/checklists/dto/create-checklist-item.dto.ts` — new
-- `backend/src/checklists/dto/update-checklist-item.dto.ts` — new
-- `backend/src/checklists/checklists.service.ts` — new
-- `backend/src/checklists/checklists.service.spec.ts` — new
-- `backend/src/checklists/checklists.controller.ts` — new
-- `backend/src/checklists/checklists.controller.spec.ts` — new
-- `backend/src/migrations/*-CreateChecklistsAndChecklistItems.ts` — new
-- `backend/src/cards/cards.service.ts` — modified (include checklist detail/progress data)
-- `backend/src/cards/cards.controller.ts` — modified (return checklist detail/progress data)
-- `backend/src/cards/entities/card.entity.ts` — modified (add checklists relation)
-- `backend/src/app.module.ts` — modified (register checklists module)
-- `backend/src/database/typeorm-registry.ts` — modified (register entities + migrations)
+Backend:
+- `backend/src/checklists/checklists.service.spec.ts` — existing tests verified
 
-Frontend (to be created/modified):
+Frontend:
 - `frontend/src/features/checklists/checklist-section.tsx` — new
-- `frontend/src/features/checklists/checklist.tsx` — new
-- `frontend/src/features/checklists/checklist-item.tsx` — new
 - `frontend/src/features/checklists/progress-bar.tsx` — new
-- `frontend/src/features/checklists/checklists.api.ts` — new
-- `frontend/src/features/checklists/use-checklists.ts` — new
-- `frontend/src/features/checklists/checklist-section.test.tsx` — new
-- `frontend/src/features/checklists/checklist.test.tsx` — new
-- `frontend/src/features/checklists/checklist-item.test.tsx` — new
+- `frontend/src/features/checklists/checklist.tsx` — modified
+- `frontend/src/features/checklists/checklist-item.tsx` — modified
+- `frontend/src/features/checklists/index.ts` — modified
+- `frontend/src/features/cards/card-detail-panel.tsx` — modified
+- `frontend/src/features/cards/card-detail-panel.test.tsx` — modified
+- `frontend/src/features/cards/card-preview.tsx` — modified
+- `frontend/src/features/cards/card-preview.test.tsx` — modified
 - `frontend/src/features/checklists/progress-bar.test.tsx` — new
-- `frontend/src/features/cards/cards.api.ts` — modified (checklist detail payload + progress summary types)
-- `frontend/src/features/cards/use-cards.ts` — modified (invalidate checklist-sensitive card queries)
-- `frontend/src/features/cards/card-detail-panel.tsx` — modified (add checklist section)
-- `frontend/src/features/cards/card-preview.tsx` — modified (add progress badge)
-- `frontend/e2e/checklists.spec.ts` — new

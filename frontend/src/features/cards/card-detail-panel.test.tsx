@@ -94,9 +94,14 @@ describe('CardDetailPanel', () => {
     expect(screen.getByText('Add labels')).toBeInTheDocument();
   });
 
-  it('shows checklist placeholder', () => {
+  it('shows the add checklist button and opens the form', async () => {
     renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
-    expect(screen.getByText('Checklists will be available in a future update.')).toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: /\+ Add Checklist/i })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /\+ Add Checklist/i }));
+
+    expect(screen.getByPlaceholderText('Checklist title...')).toBeInTheDocument();
   });
 
   it('saves title on blur when changed', async () => {
