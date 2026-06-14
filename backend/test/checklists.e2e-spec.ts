@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ValidationPipe } from '@nestjs/common';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import request from 'supertest';
+import { DataSource } from 'typeorm';
 import { AppModule } from './../src/app.module';
 import { setupFastifySession } from './test-utils';
 
@@ -39,6 +40,7 @@ describe('Checklists API (e2e)', () => {
   let app: NestFastifyApplication;
   let url: string;
   let agent: ReturnType<typeof request.agent>;
+  let dataSource: DataSource;
   let boardId: number;
   let projectId: number;
   let columnId: number;
@@ -58,6 +60,7 @@ describe('Checklists API (e2e)', () => {
     await app.init();
     await app.listen(0);
     url = await app.getUrl();
+    dataSource = app.get(DataSource);
 
     agent = request.agent(url);
 
@@ -111,6 +114,14 @@ describe('Checklists API (e2e)', () => {
       expect(body.data.card_id).toBe(cardId);
       expect(body.data.items).toEqual([]);
       checklistId = body.data.id;
+
+      const rows = await dataSource.query(
+        'SELECT id, title, card_id FROM checklists WHERE id = ?',
+        [checklistId],
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].title).toBe('My Checklist');
+      expect(rows[0].card_id).toBe(cardId);
     });
 
     it('GET /api/checklists/:id - retrieves a checklist', async () => {
@@ -130,6 +141,13 @@ describe('Checklists API (e2e)', () => {
 
       const body = res.body as unknown as ApiResponse<ChecklistResponse>;
       expect(body.data.title).toBe('Updated Checklist');
+
+      const rows = await dataSource.query(
+        'SELECT id, title FROM checklists WHERE id = ?',
+        [checklistId],
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].title).toBe('Updated Checklist');
     });
 
     it('POST /api/checklists/:checklistId/items - creates a checklist item', async () => {
@@ -144,6 +162,16 @@ describe('Checklists API (e2e)', () => {
       expect(body.data.is_completed).toBe(false);
       expect(body.data.position).toBe(0);
       itemId = body.data.id;
+
+      const rows = await dataSource.query(
+        'SELECT id, text, is_completed, checklist_id, position FROM checklist_items WHERE id = ?',
+        [itemId],
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].text).toBe('First item');
+      expect(Number(rows[0].is_completed)).toBe(0);
+      expect(rows[0].checklist_id).toBe(checklistId);
+      expect(rows[0].position).toBe(0);
     });
 
     it('PATCH /api/checklist-items/:id - updates item text', async () => {
@@ -154,6 +182,14 @@ describe('Checklists API (e2e)', () => {
 
       const body = res.body as unknown as ApiResponse<ChecklistItemResponse>;
       expect(body.data.text).toBe('Updated item');
+
+      const rows = await dataSource.query(
+        'SELECT id, text, is_completed FROM checklist_items WHERE id = ?',
+        [itemId],
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].text).toBe('Updated item');
+      expect(Number(rows[0].is_completed)).toBe(0);
     });
 
     it('PATCH /api/checklist-items/:id - toggles item completion', async () => {
@@ -164,6 +200,13 @@ describe('Checklists API (e2e)', () => {
 
       const body = res.body as unknown as ApiResponse<ChecklistItemResponse>;
       expect(body.data.is_completed).toBe(true);
+
+      const rows = await dataSource.query(
+        'SELECT id, is_completed FROM checklist_items WHERE id = ?',
+        [itemId],
+      );
+      expect(rows).toHaveLength(1);
+      expect(Number(rows[0].is_completed)).toBe(1);
     });
 
     it('GET /api/checklists/:id - retrieves checklist with items', async () => {
@@ -181,6 +224,8 @@ describe('Checklists API (e2e)', () => {
 
       expect(body.data.checklists).toHaveLength(1);
       expect(body.data.checklists[0].id).toBe(checklistId);
+      expect(body.data.checklists[0].items).toHaveLength(1);
+      expect(body.data.checklists[0].items[0].text).toBe('Updated item');
     });
 
     it('DELETE /api/checklist-items/:id - deletes an item', async () => {
@@ -189,6 +234,12 @@ describe('Checklists API (e2e)', () => {
       const res = await agent.get(`/api/checklists/${checklistId}`).expect(200);
       const body = res.body as unknown as ApiResponse<ChecklistResponse>;
       expect(body.data.items).toHaveLength(0);
+
+      const rows = await dataSource.query(
+        'SELECT id FROM checklist_items WHERE id = ?',
+        [itemId],
+      );
+      expect(rows).toHaveLength(0);
     });
 
     it('DELETE /api/checklists/:id - deletes a checklist', async () => {
@@ -197,6 +248,12 @@ describe('Checklists API (e2e)', () => {
       const res = await agent.get(`/api/cards/${cardId}`).expect(200);
       const body = res.body as unknown as ApiResponse<{ checklists: ChecklistResponse[] }>;
       expect(body.data.checklists).toHaveLength(0);
+
+      const checklistRows = await dataSource.query(
+        'SELECT id FROM checklists WHERE id = ?',
+        [checklistId],
+      );
+      expect(checklistRows).toHaveLength(0);
     });
   });
 

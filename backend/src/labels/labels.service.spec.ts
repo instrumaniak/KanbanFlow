@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { LabelsService } from './labels.service';
 import { Label } from './entities/label.entity';
-import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
 
 describe('LabelsService', () => {
   let service: LabelsService;
@@ -101,9 +101,9 @@ describe('LabelsService', () => {
       );
     });
 
-    it('should throw ConflictException for empty name', async () => {
+    it('should throw BadRequestException for empty name', async () => {
       await expect(service.create(mockUserId, { name: '   ', color: 'red' })).rejects.toThrow(
-        ConflictException,
+        BadRequestException,
       );
     });
 
@@ -151,7 +151,7 @@ describe('LabelsService', () => {
       );
     });
 
-    it('should throw ConflictException for empty name', async () => {
+    it('should throw BadRequestException for empty name', async () => {
       mockLabelsRepository.findOne.mockResolvedValue({
         id: 1,
         name: 'Old',
@@ -159,7 +159,7 @@ describe('LabelsService', () => {
       } as Label);
 
       await expect(service.update(1, mockUserId, { name: '   ' })).rejects.toThrow(
-        ConflictException,
+        BadRequestException,
       );
     });
 

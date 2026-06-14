@@ -46,6 +46,26 @@ describe('CardDetailPanel', () => {
     position: 0,
     description: 'A description',
     due_date: '2026-06-15T00:00:00.000Z',
+    checklists: [
+      {
+        id: 10,
+        title: 'API Checklist',
+        card_id: 1,
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+        items: [
+          {
+            id: 100,
+            text: 'Fetched from API',
+            is_completed: true,
+            checklist_id: 10,
+            position: 0,
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+        ],
+      },
+    ],
     created_at: '2024-01-01',
     updated_at: '2024-01-01',
   };
@@ -102,6 +122,14 @@ describe('CardDetailPanel', () => {
     await userEvent.click(screen.getByRole('button', { name: /\+ Add Checklist/i }));
 
     expect(screen.getByPlaceholderText('Checklist title...')).toBeInTheDocument();
+  });
+
+  it('renders checklist data from the api response', () => {
+    renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
+
+    expect(screen.getByText('API Checklist')).toBeInTheDocument();
+    expect(screen.getByText('Fetched from API')).toBeInTheDocument();
+    expect(screen.getByText('1/1 (100%)')).toBeInTheDocument();
   });
 
   it('saves title on blur when changed', async () => {
