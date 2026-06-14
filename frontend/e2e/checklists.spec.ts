@@ -90,7 +90,7 @@ test.describe('Checklist Feature', () => {
     await expect(checklistTitle).toBeVisible();
 
     // Verify progress shows 0/0 (0%)
-    await expect(page.getByText('0/0 (0%)')).toBeVisible();
+    await expect(page.getByRole('dialog').getByText('0/0 (0%)')).toBeVisible();
 
     // Click "+ Add item"
     await page.getByRole('button', { name: /add item/i }).click();
@@ -112,13 +112,9 @@ test.describe('Checklist Feature', () => {
 
     await expect(page.getByText('Second item')).toBeVisible();
 
-    // Close the add-item form by pressing Escape
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
-
-    // Verify progress shows 0/2 (0%)
-    await expect(page.getByText('0/2 (0%)')).toBeVisible();
-    await expect(page.getByLabel('Checklist progress: 0/2 (0%)')).toBeVisible();
+    // Verify progress shows 0/2 (0%) (add-item form stays open, doesn't block visibility)
+    await expect(page.getByRole('dialog').getByText('0/2 (0%)')).toBeVisible();
+    await expect(page.getByRole('dialog').getByLabel('Checklist progress: 0/2 (0%)')).toBeVisible();
 
     // Toggle first item completion - click its checkbox
     const checkboxes = page.getByRole('checkbox');
@@ -127,8 +123,8 @@ test.describe('Checklist Feature', () => {
     await page.waitForTimeout(500);
 
     // Verify progress bar updates to 1/2 (50%)
-    await expect(page.getByText('1/2 (50%)')).toBeVisible();
-    await expect(page.getByLabel('Checklist progress: 1/2 (50%)')).toBeVisible();
+    await expect(page.getByRole('dialog').getByText('1/2 (50%)')).toBeVisible();
+    await expect(page.getByRole('dialog').getByLabel('Checklist progress: 1/2 (50%)')).toBeVisible();
 
     // Close panel
     await page.keyboard.press('Escape');
@@ -151,8 +147,8 @@ test.describe('Checklist Feature', () => {
     await expect(page.getByText('My Checklist')).toBeVisible();
 
     // Verify progress persists at 1/2 (50%)
-    await expect(page.getByText('1/2 (50%)')).toBeVisible();
-    await expect(page.getByLabel('Checklist progress: 1/2 (50%)')).toBeVisible();
+    await expect(page.getByRole('dialog').getByText('1/2 (50%)')).toBeVisible();
+    await expect(page.getByRole('dialog').getByLabel('Checklist progress: 1/2 (50%)')).toBeVisible();
 
     // Verify the first item checkbox is checked
     const persistedCheckboxes = page.getByRole('checkbox');

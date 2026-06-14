@@ -90,15 +90,16 @@ test.describe('Move All Cards', () => {
     await page.waitForTimeout(300);
 
     // Click "Move All Cards" to show the submenu
-    await page.getByRole('button', { name: /move all cards/i }).click();
+    const moveMenuButton = page.getByRole('button', { name: /move all cards/i });
+    await moveMenuButton.click();
     await page.waitForTimeout(300);
 
-    // Click the target column name in the submenu
-    await page.getByRole('button', { name: column2Name }).click();
+    // Click the target column name in the submenu (scoped to avoid matching column header)
+    await moveMenuButton.locator('..').getByRole('button', { name: column2Name }).click();
     await page.waitForTimeout(1000);
 
     // Verify success toast appears
-    const successToast = page.locator('[data-testid="toast-success"], [role="status"]');
+    const successToast = page.locator('[data-testid="toast-success"]');
     await expect(successToast).toBeVisible({ timeout: 5000 });
 
     // Verify the card moved to column 2

@@ -11,9 +11,6 @@ export interface CardResponse {
   updated_at: string;
   labels: { id: number; name: string; color: string }[];
   checklist_progress?: { completed: number; total: number; percent: number };
-}
-
-export interface CardDetailResponse extends CardResponse {
   checklists: {
     id: number;
     title: string;
@@ -31,6 +28,8 @@ export interface CardDetailResponse extends CardResponse {
     }[];
   }[];
 }
+
+export type CardDetailResponse = CardResponse;
 
 export function toCardResponse(card: Card): CardResponse {
   const allItems = card.checklists?.flatMap((cl) => cl.items ?? []) ?? [];
@@ -52,6 +51,24 @@ export function toCardResponse(card: Card): CardResponse {
         id: cl.label.id,
         name: cl.label.name,
         color: cl.label.color,
+      })) || [],
+    checklists:
+      card.checklists?.map((cl) => ({
+        id: cl.id,
+        title: cl.title,
+        card_id: cl.card_id,
+        created_at: cl.created_at.toISOString(),
+        updated_at: cl.updated_at.toISOString(),
+        items:
+          cl.items?.map((item) => ({
+            id: item.id,
+            text: item.text,
+            is_completed: item.is_completed,
+            checklist_id: item.checklist_id,
+            position: item.position,
+            created_at: item.created_at.toISOString(),
+            updated_at: item.updated_at.toISOString(),
+          })) || [],
       })) || [],
   };
 
