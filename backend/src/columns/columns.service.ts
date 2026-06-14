@@ -34,7 +34,13 @@ export class ColumnsService {
 
     return this.columnRepository.find({
       where: { board_id: boardId },
-      relations: ['cards', 'cards.cardLabels', 'cards.cardLabels.label'],
+      relations: [
+        'cards',
+        'cards.cardLabels',
+        'cards.cardLabels.label',
+        'cards.checklists',
+        'cards.checklists.items',
+      ],
       order: { position: 'ASC' },
     });
   }

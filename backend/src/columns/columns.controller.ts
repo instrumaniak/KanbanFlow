@@ -19,6 +19,7 @@ import { CreateColumnDto } from './dto/create-column.dto';
 import { UpdateColumnDto } from './dto/update-column.dto';
 import { SortCardsDto } from './dto/sort-cards.dto';
 import { MoveCardsDto } from './dto/move-cards.dto';
+import { CardResponse, toCardResponse } from '../cards/dto/card-response.dto';
 
 interface SessionData {
   userId: number;
@@ -29,17 +30,7 @@ interface ColumnResponse {
   name: string;
   position: number;
   board_id: number;
-  cards: {
-    id: number;
-    title: string;
-    description: string | null;
-    column_id: number;
-    position: number;
-    due_date: string | null;
-    labels: { id: number; name: string; color: string }[];
-    created_at: string;
-    updated_at: string;
-  }[];
+  cards: CardResponse[];
   created_at: string;
   updated_at: string;
 }
@@ -65,25 +56,7 @@ export class ColumnsController {
       position: col.position,
       board_id: col.board_id,
       cards: col.cards
-        ? [...col.cards]
-            .sort((a, b) => a.position - b.position)
-            .map((c) => ({
-              id: c.id,
-              title: c.title,
-              description: c.description,
-              column_id: c.column_id,
-              position: c.position,
-              due_date: c.due_date ? c.due_date.toISOString() : null,
-              labels: c.cardLabels
-                ? c.cardLabels.map((cl) => ({
-                    id: cl.label.id,
-                    name: cl.label.name,
-                    color: cl.label.color,
-                  }))
-                : [],
-              created_at: c.created_at.toISOString(),
-              updated_at: c.updated_at.toISOString(),
-            }))
+        ? [...col.cards].sort((a, b) => a.position - b.position).map((c) => toCardResponse(c))
         : [],
       created_at: col.created_at.toISOString(),
       updated_at: col.updated_at.toISOString(),
@@ -165,26 +138,8 @@ export class ColumnsController {
       name: column.name,
       position: column.position,
       board_id: column.board_id,
-        cards: column.cards
-        ? [...column.cards]
-            .sort((a, b) => a.position - b.position)
-            .map((c) => ({
-              id: c.id,
-              title: c.title,
-              description: c.description,
-              column_id: c.column_id,
-              position: c.position,
-              due_date: c.due_date ? c.due_date.toISOString() : null,
-              labels: c.cardLabels
-                ? c.cardLabels.map((cl) => ({
-                    id: cl.label.id,
-                    name: cl.label.name,
-                    color: cl.label.color,
-                  }))
-                : [],
-              created_at: c.created_at.toISOString(),
-              updated_at: c.updated_at.toISOString(),
-            }))
+      cards: column.cards
+        ? [...column.cards].sort((a, b) => a.position - b.position).map((c) => toCardResponse(c))
         : [],
       created_at: column.created_at.toISOString(),
       updated_at: column.updated_at.toISOString(),

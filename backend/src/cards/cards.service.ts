@@ -197,7 +197,14 @@ export class CardsService {
   async findById(id: number, userId: number): Promise<Card> {
     const card = await this.cardRepository.findOne({
       where: { id },
-      relations: ['column', 'column.board', 'cardLabels', 'cardLabels.label', 'checklists', 'checklists.items'],
+      relations: [
+        'column',
+        'column.board',
+        'cardLabels',
+        'cardLabels.label',
+        'checklists',
+        'checklists.items',
+      ],
     });
 
     if (!card) {

@@ -120,7 +120,13 @@ describe('ColumnsService', () => {
       });
       expect(mockColumnRepository.find).toHaveBeenCalledWith({
         where: { board_id: 1 },
-        relations: ['cards', 'cards.cardLabels', 'cards.cardLabels.label'],
+        relations: [
+          'cards',
+          'cards.cardLabels',
+          'cards.cardLabels.label',
+          'cards.checklists',
+          'cards.checklists.items',
+        ],
         order: { position: 'ASC' },
       });
     });
