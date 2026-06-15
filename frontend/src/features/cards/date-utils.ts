@@ -1,14 +1,14 @@
-import { isPast, isToday, format } from 'date-fns';
+import { isPast, isToday, format, parse } from 'date-fns';
 
 export function isValidDate(dateString: string | null | undefined): boolean {
-  if (!dateString) return false;
-  const date = new Date(dateString);
-  return !Number.isNaN(date.getTime());
+  return parseDate(dateString) !== null;
 }
 
 export function parseDate(dateString: string | null | undefined): Date | null {
   if (!dateString) return null;
-  const date = new Date(dateString);
+  const datePart = dateString.split('T')[0];
+  if (!datePart) return null;
+  const date = parse(datePart, 'yyyy-MM-dd', new Date());
   return Number.isNaN(date.getTime()) ? null : date;
 }
 

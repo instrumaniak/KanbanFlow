@@ -148,7 +148,7 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
       const currentCard = latestCardRef.current;
       setIsSavingDueDate(true);
       updateCard.mutate(
-        { id: currentCard.id, data: { due_date: dueDate } },
+        { id: currentCard.id, data: { due_date: dueDate ?? undefined } },
         {
           onSettled: () => {
             if (isMountedRef.current) setIsSavingDueDate(false);

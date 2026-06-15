@@ -18,9 +18,9 @@ describe('DueDatePicker', () => {
   });
 
   it('renders formatted date when dueDate is set', () => {
-    render(<DueDatePicker dueDate="2026-06-15T00:00:00.000Z" onDateChange={onDateChange} />);
+    render(<DueDatePicker dueDate="2026-07-20T00:00:00.000Z" onDateChange={onDateChange} />);
 
-    expect(screen.getByText('Jun 15, 2026')).toBeInTheDocument();
+    expect(screen.getByText('Jul 20, 2026')).toBeInTheDocument();
   });
 
   it('renders "Today" when due date is today', () => {

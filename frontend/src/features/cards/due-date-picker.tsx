@@ -39,7 +39,7 @@ export function DueDatePicker({ dueDate, onDateChange, disabled }: DueDatePicker
               onDateChange(date ? date.toISOString() : null);
               setOpen(false);
             }}
-            initialFocus
+            autoFocus
           />
         </PopoverContent>
       </Popover>

@@ -65,39 +65,33 @@ export function ChecklistItem({ item }: ChecklistItemProps) {
     const previousItem = { ...item };
     deleteMutation.mutate(item.id, {
       onSuccess: () => {
-        toast({
-          title: 'Item deleted',
-          duration: 5000,
-          action: (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                try {
-                  const restored = await createChecklistItem(previousItem.checklist_id, {
-                    text: previousItem.text,
-                    position: previousItem.position,
-                  });
+          toast({
+            title: 'Item deleted',
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              try {
+                const restored = await createChecklistItem(previousItem.checklist_id, {
+                  text: previousItem.text,
+                  position: previousItem.position,
+                });
 
-                  if (previousItem.is_completed) {
-                    await updateChecklistItem(restored.data.id, { is_completed: true });
-                  }
-
-                  queryClient.invalidateQueries({ queryKey: ['cards'] });
-                  queryClient.invalidateQueries({ queryKey: ['columns'] });
-                } catch (error) {
-                  const message = error instanceof Error ? error.message : 'Unknown error';
-                  toast({
-                    title: 'Failed to undo delete',
-                    description: message,
-                    type: 'destructive',
-                  });
+                if (previousItem.is_completed) {
+                  await updateChecklistItem(restored.data.id, { is_completed: true });
                 }
-              }}
-            >
-              Undo
-            </Button>
-          ),
+
+                queryClient.invalidateQueries({ queryKey: ['cards'] });
+                queryClient.invalidateQueries({ queryKey: ['columns'] });
+              } catch (error) {
+                const message = error instanceof Error ? error.message : 'Unknown error';
+                toast({
+                  title: 'Failed to undo delete',
+                  description: message,
+                  type: 'destructive',
+                });
+              }
+            },
+          },
         });
       },
     });

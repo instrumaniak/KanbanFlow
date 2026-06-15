@@ -45,7 +45,7 @@ describe('CardDetailPanel', () => {
     column_id: 1,
     position: 0,
     description: 'A description',
-    due_date: '2026-06-15T00:00:00.000Z',
+    due_date: '2026-07-20T00:00:00.000Z',
     checklists: [
       {
         id: 10,
@@ -101,7 +101,7 @@ describe('CardDetailPanel', () => {
 
   it('shows formatted due date when set', () => {
     renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
-    expect(screen.getByText(/Jun 15, 2026/)).toBeInTheDocument();
+    expect(screen.getByText(/Jul 20, 2026/)).toBeInTheDocument();
   });
 
   it('shows no due date placeholder when due_date is null', () => {
@@ -236,6 +236,10 @@ describe('CardDetailPanel', () => {
   });
 
   describe('Markdown description editor', () => {
+    beforeAll(async () => {
+      await import('./markdown-preview');
+    });
+
     it('defaults to Edit tab with textarea visible', () => {
       renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
 
