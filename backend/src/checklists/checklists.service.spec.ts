@@ -100,7 +100,10 @@ describe('ChecklistsService', () => {
     });
 
     it('should throw ForbiddenException if user does not own the card', async () => {
-      const otherUserCard = { ...mockCard, column: { ...mockColumn, board: { id: 1, user_id: 999 } } };
+      const otherUserCard = {
+        ...mockCard,
+        column: { ...mockColumn, board: { id: 1, user_id: 999 } },
+      };
       mockCardRepository.findOne.mockResolvedValue(otherUserCard);
 
       await expect(
@@ -211,8 +214,18 @@ describe('ChecklistsService', () => {
         getRawOne: jest.fn().mockResolvedValue({ max: null }),
       };
       mockChecklistItemRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
-      mockChecklistItemRepository.create.mockReturnValue({ id: 1, text: 'New Item', checklist_id: 1, position: 0 });
-      mockChecklistItemRepository.save.mockResolvedValue({ id: 1, text: 'New Item', checklist_id: 1, position: 0 });
+      mockChecklistItemRepository.create.mockReturnValue({
+        id: 1,
+        text: 'New Item',
+        checklist_id: 1,
+        position: 0,
+      });
+      mockChecklistItemRepository.save.mockResolvedValue({
+        id: 1,
+        text: 'New Item',
+        checklist_id: 1,
+        position: 0,
+      });
 
       const result = await service.createItem(1, mockUserId, { text: 'New Item' });
 
@@ -232,8 +245,18 @@ describe('ChecklistsService', () => {
         card: mockCard,
       };
       mockChecklistRepository.findOne.mockResolvedValue(checklist);
-      mockChecklistItemRepository.create.mockReturnValue({ id: 1, text: 'Item', checklist_id: 1, position: 5 });
-      mockChecklistItemRepository.save.mockResolvedValue({ id: 1, text: 'Item', checklist_id: 1, position: 5 });
+      mockChecklistItemRepository.create.mockReturnValue({
+        id: 1,
+        text: 'Item',
+        checklist_id: 1,
+        position: 5,
+      });
+      mockChecklistItemRepository.save.mockResolvedValue({
+        id: 1,
+        text: 'Item',
+        checklist_id: 1,
+        position: 5,
+      });
 
       const result = await service.createItem(1, mockUserId, { text: 'Item', position: 5 });
 

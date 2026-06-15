@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createCard, updateCard, deleteCard, fetchCards } from './cards.api';
+import { createCard, updateCard, deleteCard, fetchCards, fetchCard } from './cards.api';
 
 global.fetch = vi.fn();
 
@@ -37,6 +37,39 @@ describe('cards.api', () => {
       });
 
       await expect(fetchCards(999)).rejects.toThrow('Column not found');
+    });
+  });
+
+  describe('fetchCard', () => {
+    it('fetches a single card by id', async () => {
+      const mockResponse = {
+        data: { id: 1, title: 'Card 1', column_id: 1, position: 0, description: 'A detail', created_at: '2024-01-01', updated_at: '2024-01-01' }
+      };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse)
+      });
+
+      const result = await fetchCard(1);
+      expect(mockFetch).toHaveBeenCalledWith('/api/cards/1', { credentials: 'include' });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('throws error on failed fetch', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        json: () => Promise.resolve({ message: 'Card not found' }),
+      });
+
+      await expect(fetchCard(999)).rejects.toThrow('Card not found');
+    });
+
+    it('throws network error when fetch fails', async () => {
+      mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+      await expect(fetchCard(1)).rejects.toThrow('Network error');
     });
   });
 

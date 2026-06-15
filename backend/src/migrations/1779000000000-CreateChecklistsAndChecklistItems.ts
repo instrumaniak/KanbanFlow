@@ -25,9 +25,15 @@ export class CreateChecklistsAndChecklistItems1779000000000 implements Migration
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE \`checklist_items\` DROP FOREIGN KEY \`FK_checklist_items_checklist_id\``);
-    await queryRunner.query(`ALTER TABLE \`checklists\` DROP FOREIGN KEY \`FK_checklists_card_id\``);
-    await queryRunner.query(`DROP INDEX \`IDX_checklist_items_checklist_id\` ON \`checklist_items\``);
+    await queryRunner.query(
+      `ALTER TABLE \`checklist_items\` DROP FOREIGN KEY \`FK_checklist_items_checklist_id\``,
+    );
+    await queryRunner.query(
+      `ALTER TABLE \`checklists\` DROP FOREIGN KEY \`FK_checklists_card_id\``,
+    );
+    await queryRunner.query(
+      `DROP INDEX \`IDX_checklist_items_checklist_id\` ON \`checklist_items\``,
+    );
     await queryRunner.query(`DROP INDEX \`IDX_checklists_card_id\` ON \`checklists\``);
     await queryRunner.query(`DROP TABLE \`checklist_items\``);
     await queryRunner.query(`DROP TABLE \`checklists\``);

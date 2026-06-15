@@ -96,10 +96,7 @@ describe('Boards API (e2e)', () => {
     });
 
     it('POST /api/boards - creates a board', async () => {
-      const res = await agent
-        .post('/api/boards')
-        .send({ name: 'E2E Test Board' })
-        .expect(201);
+      const res = await agent.post('/api/boards').send({ name: 'E2E Test Board' }).expect(201);
 
       const body = res.body as unknown as ApiResponse<BoardResponse>;
       expect(body.data).toHaveProperty('id');
@@ -141,9 +138,7 @@ describe('Boards API (e2e)', () => {
     });
 
     it('PATCH /api/boards/:id/archive - archives the board', async () => {
-      const res = await agent
-        .patch(`/api/boards/${boardId}/archive`)
-        .expect(200);
+      const res = await agent.patch(`/api/boards/${boardId}/archive`).expect(200);
 
       const body = res.body as unknown as ApiResponse<BoardResponse>;
       expect(body.data.is_archived).toBe(true);
@@ -160,9 +155,7 @@ describe('Boards API (e2e)', () => {
     });
 
     it('PATCH /api/boards/:id/restore - restores the board', async () => {
-      const res = await agent
-        .patch(`/api/boards/${boardId}/restore`)
-        .expect(200);
+      const res = await agent.patch(`/api/boards/${boardId}/restore`).expect(200);
 
       const body = res.body as unknown as ApiResponse<BoardResponse>;
       expect(body.data.is_archived).toBe(false);
@@ -178,10 +171,7 @@ describe('Boards API (e2e)', () => {
     });
 
     it('permanent delete: archive + permanent delete a board', async () => {
-      const createRes = await agent
-        .post('/api/boards')
-        .send({ name: 'Temp Board' })
-        .expect(201);
+      const createRes = await agent.post('/api/boards').send({ name: 'Temp Board' }).expect(201);
       const tempBoardId = (createRes.body as unknown as ApiResponse<BoardResponse>).data.id;
 
       await agent.patch(`/api/boards/${tempBoardId}/archive`).expect(200);

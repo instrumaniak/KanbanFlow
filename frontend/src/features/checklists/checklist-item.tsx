@@ -10,9 +10,10 @@ import { useToast } from '@/components/ui/use-toast';
 
 interface ChecklistItemProps {
   item: ChecklistItemType;
+  cardId: number;
 }
 
-export function ChecklistItem({ item }: ChecklistItemProps) {
+export function ChecklistItem({ item, cardId }: ChecklistItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(item.text);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -26,6 +27,7 @@ export function ChecklistItem({ item }: ChecklistItemProps) {
     updateMutation.mutate({
       itemId: item.id,
       data: { is_completed: checked },
+      cardId,
     });
   };
 
@@ -40,6 +42,7 @@ export function ChecklistItem({ item }: ChecklistItemProps) {
         {
           itemId: item.id,
           data: { text: text.trim() },
+          cardId,
         },
         {
           onError: () => {
@@ -63,7 +66,7 @@ export function ChecklistItem({ item }: ChecklistItemProps) {
 
   const handleDelete = () => {
     const previousItem = { ...item };
-    deleteMutation.mutate(item.id, {
+    deleteMutation.mutate({ itemId: item.id, cardId }, {
       onSuccess: () => {
           toast({
             title: 'Item deleted',
@@ -80,7 +83,7 @@ export function ChecklistItem({ item }: ChecklistItemProps) {
                   await updateChecklistItem(restored.data.id, { is_completed: true });
                 }
 
-                queryClient.invalidateQueries({ queryKey: ['cards'] });
+                queryClient.invalidateQueries({ queryKey: ['card', cardId] });
                 queryClient.invalidateQueries({ queryKey: ['columns'] });
               } catch (error) {
                 const message = error instanceof Error ? error.message : 'Unknown error';

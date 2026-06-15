@@ -186,11 +186,10 @@ describe('ChecklistsController', () => {
       } as ChecklistItem;
       mockChecklistsService.updateItem.mockResolvedValue(updatedItem);
 
-      const result = await controller.updateItem(
-        { userId: 1 },
-        1,
-        { text: 'Updated text', is_completed: true },
-      );
+      const result = await controller.updateItem({ userId: 1 }, 1, {
+        text: 'Updated text',
+        is_completed: true,
+      });
 
       expect(result).toEqual({
         data: {

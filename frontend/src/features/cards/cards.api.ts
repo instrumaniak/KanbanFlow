@@ -150,6 +150,16 @@ export async function assignLabelToCard(cardId: number, labelId: number): Promis
   return handleResponse(response);
 }
 
+export async function fetchCard(id: number): Promise<ApiResponse<Card>> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/cards/${id}`, FETCH_OPTIONS);
+  } catch {
+    throw new Error('Network error — please check your connection');
+  }
+  return handleResponse(response);
+}
+
 export async function removeLabelFromCard(cardId: number, labelId: number): Promise<ApiResponse<void>> {
   let response: Response;
   try {

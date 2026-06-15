@@ -23,15 +23,6 @@ export function CardPreview({ card, actions }: CardPreviewProps) {
         {actions ? <div className="shrink-0">{actions}</div> : null}
       </div>
 
-      {card.description?.trim() && (
-        <p
-          className="mt-1 overflow-hidden whitespace-pre-wrap text-ellipsis text-xs text-muted-foreground"
-          style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
-        >
-          {card.description}
-        </p>
-      )}
-
       {card.labels && card.labels.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {card.labels.slice(0, 3).map((label) => (

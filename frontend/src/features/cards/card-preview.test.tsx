@@ -8,7 +8,6 @@ describe('CardPreview', () => {
     title: 'Preview Card',
     column_id: 1,
     position: 0,
-    description: 'Preview description',
     labels: [
       { id: 1, name: 'Bug', color: 'red', created_at: '2024-01-01', updated_at: '2024-01-01' },
       { id: 2, name: 'Feature', color: 'green', created_at: '2024-01-01', updated_at: '2024-01-01' },
@@ -38,7 +37,6 @@ describe('CardPreview', () => {
     render(<CardPreview card={{ ...baseCard, due_date: null }} />);
 
     expect(screen.getByText('Preview Card')).toBeInTheDocument();
-    expect(screen.getByText('Preview description')).toBeInTheDocument();
     expect(screen.getByText('Bug')).toBeInTheDocument();
     expect(screen.getByText('Feature')).toBeInTheDocument();
     expect(screen.getByText('Urgent')).toBeInTheDocument();

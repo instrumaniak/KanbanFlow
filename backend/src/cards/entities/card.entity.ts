@@ -56,4 +56,6 @@ export class Card {
 
   @OneToMany(() => Checklist, (checklist) => checklist.card)
   checklists!: Checklist[];
+
+  checklist_progress?: { completed: number; total: number; percent: number };
 }

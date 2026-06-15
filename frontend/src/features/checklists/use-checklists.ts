@@ -26,8 +26,8 @@ export function useCreateChecklist() {
 
   return useMutation({
     mutationFn: (data: CreateChecklistData) => createChecklist(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['card', variables.card_id] });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
     onError: (error: Error) => {
@@ -40,10 +40,10 @@ export function useUpdateChecklist() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateChecklistData }) =>
+    mutationFn: ({ id, data, cardId }: { id: number; data: UpdateChecklistData; cardId: number }) =>
       updateChecklist(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['card', variables.cardId] });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
     onError: (error: Error) => {
@@ -56,9 +56,9 @@ export function useDeleteChecklist() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => deleteChecklist(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+    mutationFn: ({ id, cardId }: { id: number; cardId: number }) => deleteChecklist(id),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['card', variables.cardId] });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
     onError: (error: Error) => {
@@ -74,12 +74,14 @@ export function useCreateChecklistItem() {
     mutationFn: ({
       checklistId,
       data,
+      cardId,
     }: {
       checklistId: number;
       data: CreateChecklistItemData;
+      cardId: number;
     }) => createChecklistItem(checklistId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['card', variables.cardId] });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
     onError: (error: Error) => {
@@ -95,48 +97,40 @@ export function useUpdateChecklistItem() {
     mutationFn: ({
       itemId,
       data,
+      cardId,
     }: {
       itemId: number;
       data: UpdateChecklistItemData;
+      cardId: number;
     }) => updateChecklistItem(itemId, data),
-    onMutate: async ({ itemId, data }) => {
-      await queryClient.cancelQueries({ queryKey: ['cards'] });
+    onMutate: async ({ itemId, data, cardId }) => {
+      await queryClient.cancelQueries({ queryKey: ['card', cardId] });
 
-      const previousCards = queryClient.getQueriesData({ queryKey: ['cards'] });
+      const previousCardData = queryClient.getQueryData(['card', cardId]);
 
-      queryClient.setQueriesData(
-        { queryKey: ['cards'] },
-        (old: unknown) => {
-          if (!old) return old;
-          const data_ = (old as { data?: unknown }).data ?? old;
-          if (Array.isArray(data_)) {
-            return (data_ as Array<{ checklists?: Array<Checklist & { items: ChecklistItem[] }> }>).map(
-              (card) => ({
-                ...card,
-                checklists: card.checklists?.map((cl) => ({
-                  ...cl,
-                  items: cl.items.map((item) =>
-                    item.id === itemId ? { ...item, ...data } : item
-                  ),
-                })),
-              }),
-            );
-          }
-          return old;
-        },
-      );
+      queryClient.setQueryData(['card', cardId], (old: unknown) => {
+        if (!old) return old;
+        const card = (old as { checklists?: Array<Checklist & { items: ChecklistItem[] }> });
+        return {
+          ...card,
+          checklists: card.checklists?.map((cl) => ({
+            ...cl,
+            items: cl.items.map((item) =>
+              item.id === itemId ? { ...item, ...data } : item
+            ),
+          })),
+        };
+      });
 
-      return { previousCards };
+      return { previousCardData };
     },
     onError: (_error: Error, _variables, context) => {
-      if (context?.previousCards) {
-        for (const [key, data] of context.previousCards) {
-          queryClient.setQueryData(key, data);
-        }
+      if (context?.previousCardData) {
+        queryClient.setQueryData(['card', _variables.cardId], context.previousCardData);
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+    onSettled: (_data, _err, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['card', variables.cardId] });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
   });
@@ -146,9 +140,9 @@ export function useDeleteChecklistItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (itemId: number) => deleteChecklistItem(itemId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+    mutationFn: ({ itemId, cardId }: { itemId: number; cardId: number }) => deleteChecklistItem(itemId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['card', variables.cardId] });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
     onError: (error: Error) => {

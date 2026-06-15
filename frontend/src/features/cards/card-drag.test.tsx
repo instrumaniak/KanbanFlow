@@ -7,6 +7,7 @@ vi.mock('./use-cards', () => ({
   useUpdateCard: () => ({ mutate: vi.fn(), mutateAsync: Promise.resolve({}) }),
   useDeleteCard: () => ({ mutate: vi.fn(), mutateAsync: Promise.resolve({}) }),
   useCreateCard: () => ({ mutate: vi.fn(), mutateAsync: Promise.resolve({}) }),
+  useCard: () => ({ data: undefined, isLoading: false, isError: false, refetch: vi.fn() }),
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({

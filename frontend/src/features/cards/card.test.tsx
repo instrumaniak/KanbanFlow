@@ -22,6 +22,7 @@ vi.mock('./use-cards', () => ({
   useCreateCard: () => mockCreateMutateObj,
   useAssignCardLabel: () => ({ mutate: vi.fn(), isPending: false }),
   useRemoveCardLabel: () => ({ mutate: vi.fn(), isPending: false }),
+  useCard: () => ({ data: undefined, isLoading: false, isError: false, refetch: vi.fn() }),
 }));
 
 vi.mock('../labels/use-labels', () => ({
@@ -98,11 +99,11 @@ describe('Card', () => {
   });
 
   describe('Card description preview', () => {
-    it('shows description preview below title when description exists', () => {
+    it('does not show description preview when description exists (removed from tile for performance)', () => {
       const cardWithDesc = { ...mockCard, description: 'A task description' };
       renderWithProviders(<Card card={cardWithDesc} index={0} />);
 
-      expect(screen.getByText('A task description')).toBeInTheDocument();
+      expect(screen.queryByText('A task description')).not.toBeInTheDocument();
     });
 
     it('does not show description preview when description is null', () => {
@@ -116,20 +117,6 @@ describe('Card', () => {
       renderWithProviders(<Card card={cardWithSpaces} index={0} />);
 
       expect(screen.queryByText(/\s{3}/)).not.toBeInTheDocument();
-    });
-
-    it('truncates long descriptions', () => {
-      const longDesc = 'A '.repeat(200);
-      const cardWithLongDesc = { ...mockCard, description: longDesc };
-      renderWithProviders(<Card card={cardWithLongDesc} index={0} />);
-
-      const preview = screen.getByText(longDesc.trim());
-      expect(preview).toBeInTheDocument();
-      expect(preview).toHaveClass('overflow-hidden');
-      expect(preview).toHaveClass('text-ellipsis');
-      expect(preview).toHaveClass('whitespace-pre-wrap');
-      const style = window.getComputedStyle(preview);
-      expect(style.display).toBe('-webkit-box');
     });
   });
 

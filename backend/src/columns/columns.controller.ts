@@ -19,7 +19,7 @@ import { CreateColumnDto } from './dto/create-column.dto';
 import { UpdateColumnDto } from './dto/update-column.dto';
 import { SortCardsDto } from './dto/sort-cards.dto';
 import { MoveCardsDto } from './dto/move-cards.dto';
-import { CardResponse, toCardResponse } from '../cards/dto/card-response.dto';
+import { CardSummaryResponse, toCardSummaryResponse } from '../cards/dto/card-response.dto';
 
 interface SessionData {
   userId: number;
@@ -30,7 +30,7 @@ interface ColumnResponse {
   name: string;
   position: number;
   board_id: number;
-  cards: CardResponse[];
+  cards: CardSummaryResponse[];
   created_at: string;
   updated_at: string;
 }
@@ -56,7 +56,9 @@ export class ColumnsController {
       position: col.position,
       board_id: col.board_id,
       cards: col.cards
-        ? [...col.cards].sort((a, b) => a.position - b.position).map((c) => toCardResponse(c))
+        ? [...col.cards]
+            .sort((a, b) => a.position - b.position)
+            .map((c) => toCardSummaryResponse(c))
         : [],
       created_at: col.created_at.toISOString(),
       updated_at: col.updated_at.toISOString(),
@@ -139,7 +141,9 @@ export class ColumnsController {
       position: column.position,
       board_id: column.board_id,
       cards: column.cards
-        ? [...column.cards].sort((a, b) => a.position - b.position).map((c) => toCardResponse(c))
+        ? [...column.cards]
+            .sort((a, b) => a.position - b.position)
+            .map((c) => toCardSummaryResponse(c))
         : [],
       created_at: column.created_at.toISOString(),
       updated_at: column.updated_at.toISOString(),

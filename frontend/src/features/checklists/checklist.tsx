@@ -21,9 +21,10 @@ import { useToast } from '@/components/ui/use-toast';
 
 interface ChecklistProps {
   checklist: ChecklistType;
+  cardId: number;
 }
 
-export function Checklist({ checklist }: ChecklistProps) {
+export function Checklist({ checklist, cardId }: ChecklistProps) {
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(checklist.title);
@@ -35,7 +36,7 @@ export function Checklist({ checklist }: ChecklistProps) {
   const totalCount = checklist.items.length;
   const percent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
   const handleDelete = () => {
-    deleteMutation.mutate(checklist.id, {
+    deleteMutation.mutate({ id: checklist.id, cardId }, {
       onError: () => {
         toast({ title: 'Failed to delete checklist', type: 'destructive' });
       },
@@ -50,7 +51,7 @@ export function Checklist({ checklist }: ChecklistProps) {
     }
     if (title.trim() !== checklist.title) {
       updateMutation.mutate(
-        { id: checklist.id, data: { title: title.trim() } },
+        { id: checklist.id, data: { title: title.trim() }, cardId },
         {
           onError: () => {
             setTitle(checklist.title);
@@ -124,12 +125,13 @@ export function Checklist({ checklist }: ChecklistProps) {
       <ProgressBar completed={completedCount} total={totalCount} className="w-full" />
       <div className="space-y-1">
         {checklist.items.map((item) => (
-          <ChecklistItem key={item.id} item={item} />
+          <ChecklistItem key={item.id} item={item} cardId={cardId} />
         ))}
       </div>
       {isAddingItem ? (
         <AddChecklistItemForm
           checklistId={checklist.id}
+          cardId={cardId}
           onComplete={() => setIsAddingItem(false)}
         />
       ) : (

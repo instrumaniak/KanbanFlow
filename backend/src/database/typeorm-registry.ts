@@ -24,8 +24,16 @@ import { CreateChecklistsAndChecklistItems1779000000000 } from '../migrations/17
  * MUST be imported and registered here manually.
  */
 export const entities = [
-  User, Project, Board, BoardColumn, Card, CardLabel, Label, Session,
-  Checklist, ChecklistItem,
+  User,
+  Project,
+  Board,
+  BoardColumn,
+  Card,
+  CardLabel,
+  Label,
+  Session,
+  Checklist,
+  ChecklistItem,
 ];
 
 /**

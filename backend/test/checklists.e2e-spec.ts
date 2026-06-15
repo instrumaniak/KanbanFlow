@@ -5,6 +5,8 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from './../src/app.module';
 import { setupFastifySession } from './test-utils';
+import { Checklist } from '../src/checklists/entities/checklist.entity';
+import { ChecklistItem } from '../src/checklists/entities/checklist-item.entity';
 
 type ChecklistResponse = {
   id: number;
@@ -115,13 +117,10 @@ describe('Checklists API (e2e)', () => {
       expect(body.data.items).toEqual([]);
       checklistId = body.data.id;
 
-      const rows = await dataSource.query(
-        'SELECT id, title, card_id FROM checklists WHERE id = ?',
-        [checklistId],
-      );
-      expect(rows).toHaveLength(1);
-      expect(rows[0].title).toBe('My Checklist');
-      expect(rows[0].card_id).toBe(cardId);
+      const row = await dataSource.getRepository(Checklist).findOneBy({ id: checklistId });
+      expect(row).toBeDefined();
+      expect(row!.title).toBe('My Checklist');
+      expect(row!.card_id).toBe(cardId);
     });
 
     it('GET /api/checklists/:id - retrieves a checklist', async () => {
@@ -142,12 +141,9 @@ describe('Checklists API (e2e)', () => {
       const body = res.body as unknown as ApiResponse<ChecklistResponse>;
       expect(body.data.title).toBe('Updated Checklist');
 
-      const rows = await dataSource.query(
-        'SELECT id, title FROM checklists WHERE id = ?',
-        [checklistId],
-      );
-      expect(rows).toHaveLength(1);
-      expect(rows[0].title).toBe('Updated Checklist');
+      const row = await dataSource.getRepository(Checklist).findOneBy({ id: checklistId });
+      expect(row).toBeDefined();
+      expect(row!.title).toBe('Updated Checklist');
     });
 
     it('POST /api/checklists/:checklistId/items - creates a checklist item', async () => {
@@ -163,15 +159,12 @@ describe('Checklists API (e2e)', () => {
       expect(body.data.position).toBe(0);
       itemId = body.data.id;
 
-      const rows = await dataSource.query(
-        'SELECT id, text, is_completed, checklist_id, position FROM checklist_items WHERE id = ?',
-        [itemId],
-      );
-      expect(rows).toHaveLength(1);
-      expect(rows[0].text).toBe('First item');
-      expect(Number(rows[0].is_completed)).toBe(0);
-      expect(rows[0].checklist_id).toBe(checklistId);
-      expect(rows[0].position).toBe(0);
+      const row = await dataSource.getRepository(ChecklistItem).findOneBy({ id: itemId });
+      expect(row).toBeDefined();
+      expect(row!.text).toBe('First item');
+      expect(row!.is_completed).toBe(false);
+      expect(row!.checklist_id).toBe(checklistId);
+      expect(row!.position).toBe(0);
     });
 
     it('PATCH /api/checklist-items/:id - updates item text', async () => {
@@ -183,13 +176,10 @@ describe('Checklists API (e2e)', () => {
       const body = res.body as unknown as ApiResponse<ChecklistItemResponse>;
       expect(body.data.text).toBe('Updated item');
 
-      const rows = await dataSource.query(
-        'SELECT id, text, is_completed FROM checklist_items WHERE id = ?',
-        [itemId],
-      );
-      expect(rows).toHaveLength(1);
-      expect(rows[0].text).toBe('Updated item');
-      expect(Number(rows[0].is_completed)).toBe(0);
+      const row = await dataSource.getRepository(ChecklistItem).findOneBy({ id: itemId });
+      expect(row).toBeDefined();
+      expect(row!.text).toBe('Updated item');
+      expect(row!.is_completed).toBe(false);
     });
 
     it('PATCH /api/checklist-items/:id - toggles item completion', async () => {
@@ -201,12 +191,9 @@ describe('Checklists API (e2e)', () => {
       const body = res.body as unknown as ApiResponse<ChecklistItemResponse>;
       expect(body.data.is_completed).toBe(true);
 
-      const rows = await dataSource.query(
-        'SELECT id, is_completed FROM checklist_items WHERE id = ?',
-        [itemId],
-      );
-      expect(rows).toHaveLength(1);
-      expect(Number(rows[0].is_completed)).toBe(1);
+      const row = await dataSource.getRepository(ChecklistItem).findOneBy({ id: itemId });
+      expect(row).toBeDefined();
+      expect(row!.is_completed).toBe(true);
     });
 
     it('GET /api/checklists/:id - retrieves checklist with items', async () => {
@@ -235,11 +222,8 @@ describe('Checklists API (e2e)', () => {
       const body = res.body as unknown as ApiResponse<ChecklistResponse>;
       expect(body.data.items).toHaveLength(0);
 
-      const rows = await dataSource.query(
-        'SELECT id FROM checklist_items WHERE id = ?',
-        [itemId],
-      );
-      expect(rows).toHaveLength(0);
+      const row = await dataSource.getRepository(ChecklistItem).findOneBy({ id: itemId });
+      expect(row).toBeNull();
     });
 
     it('DELETE /api/checklists/:id - deletes a checklist', async () => {
@@ -249,11 +233,8 @@ describe('Checklists API (e2e)', () => {
       const body = res.body as unknown as ApiResponse<{ checklists: ChecklistResponse[] }>;
       expect(body.data.checklists).toHaveLength(0);
 
-      const checklistRows = await dataSource.query(
-        'SELECT id FROM checklists WHERE id = ?',
-        [checklistId],
-      );
-      expect(checklistRows).toHaveLength(0);
+      const deleted = await dataSource.getRepository(Checklist).findOneBy({ id: checklistId });
+      expect(deleted).toBeNull();
     });
   });
 
@@ -269,7 +250,9 @@ describe('Checklists API (e2e)', () => {
       // Create another user
       const otherEmail = `other-checklists-${Date.now()}@example.com`;
       const otherAgent = request.agent(url);
-      await otherAgent.post('/api/auth/register').send({ email: otherEmail, password: testPassword });
+      await otherAgent
+        .post('/api/auth/register')
+        .send({ email: otherEmail, password: testPassword });
       await otherAgent.post('/api/auth/login').send({ email: otherEmail, password: testPassword });
 
       // Try to access the first user's checklist
@@ -282,10 +265,7 @@ describe('Checklists API (e2e)', () => {
 
   describe('Validation', () => {
     it('should reject checklist without title', async () => {
-      await agent
-        .post(`/api/cards/${cardId}/checklists`)
-        .send({})
-        .expect(400);
+      await agent.post(`/api/cards/${cardId}/checklists`).send({}).expect(400);
     });
 
     it('should reject checklist item without text', async () => {
@@ -295,10 +275,7 @@ describe('Checklists API (e2e)', () => {
         .expect(201);
       const checklistId = (createRes.body as unknown as ApiResponse<{ id: number }>).data.id;
 
-      await agent
-        .post(`/api/checklists/${checklistId}/items`)
-        .send({})
-        .expect(400);
+      await agent.post(`/api/checklists/${checklistId}/items`).send({}).expect(400);
 
       // Cleanup
       await agent.delete(`/api/checklists/${checklistId}`).expect(200);

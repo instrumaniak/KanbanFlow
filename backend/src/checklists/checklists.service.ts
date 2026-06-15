@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Checklist } from './entities/checklist.entity';
@@ -173,7 +178,12 @@ export class ChecklistsService {
   private async findChecklistItemById(id: number, userId: number): Promise<ChecklistItem> {
     const item = await this.checklistItemRepository.findOne({
       where: { id },
-      relations: ['checklist', 'checklist.card', 'checklist.card.column', 'checklist.card.column.board'],
+      relations: [
+        'checklist',
+        'checklist.card',
+        'checklist.card.column',
+        'checklist.card.column.board',
+      ],
     });
 
     if (!item) {

@@ -32,17 +32,48 @@ export class ColumnsService {
       throw new NotFoundException('Board not found');
     }
 
-    return this.columnRepository.find({
+    const columns = await this.columnRepository.find({
       where: { board_id: boardId },
-      relations: [
-        'cards',
-        'cards.cardLabels',
-        'cards.cardLabels.label',
-        'cards.checklists',
-        'cards.checklists.items',
-      ],
+      relations: ['cards', 'cards.cardLabels', 'cards.cardLabels.label'],
       order: { position: 'ASC' },
     });
+
+    await this.enrichWithProgress(columns);
+
+    return columns;
+  }
+
+  private async enrichWithProgress(columns: BoardColumn[]): Promise<void> {
+    const cardIds = columns.flatMap((col) => col.cards.map((c) => c.id));
+    if (cardIds.length === 0) return;
+
+    const placeholders = cardIds.map(() => '?').join(',');
+    const progressRaw: { card_id: number; total: number; completed: number }[] =
+      await this.cardRepository.query(
+        `SELECT cl.card_id, COUNT(ci.id) AS total, COALESCE(SUM(ci.is_completed), 0) AS completed
+         FROM checklists cl
+         LEFT JOIN checklist_items ci ON ci.checklist_id = cl.id
+         WHERE cl.card_id IN (${placeholders})
+         GROUP BY cl.card_id`,
+        cardIds,
+      );
+
+    const progressMap = new Map<number, { completed: number; total: number; percent: number }>();
+    for (const row of progressRaw) {
+      const total = Number(row.total);
+      const completed = Number(row.completed);
+      progressMap.set(row.card_id, {
+        completed,
+        total,
+        percent: total === 0 ? 0 : Math.round((completed / total) * 100),
+      });
+    }
+
+    for (const column of columns) {
+      for (const card of column.cards) {
+        card.checklist_progress = progressMap.get(card.id);
+      }
+    }
   }
 
   async create(boardId: number, userId: number, dto: CreateColumnDto): Promise<BoardColumn> {

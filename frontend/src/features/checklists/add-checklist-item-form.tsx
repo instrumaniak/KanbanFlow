@@ -6,10 +6,11 @@ import { useToast } from '@/components/ui/use-toast';
 
 interface AddChecklistItemFormProps {
   checklistId: number;
+  cardId: number;
   onComplete: () => void;
 }
 
-export function AddChecklistItemForm({ checklistId, onComplete }: AddChecklistItemFormProps) {
+export function AddChecklistItemForm({ checklistId, cardId, onComplete }: AddChecklistItemFormProps) {
   const [text, setText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const createMutation = useCreateChecklistItem();
@@ -23,6 +24,7 @@ export function AddChecklistItemForm({ checklistId, onComplete }: AddChecklistIt
       {
         checklistId,
         data: { text: text.trim() },
+        cardId,
       },
       {
         onSuccess: () => {

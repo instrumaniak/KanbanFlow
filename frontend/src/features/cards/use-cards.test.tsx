@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import { useDeleteCard, useCreateCard, useCards } from './use-cards';
+import { useDeleteCard, useCreateCard, useCards, useCard } from './use-cards';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,13 +17,15 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 
 vi.mock('./cards.api', () => ({
   fetchCards: vi.fn(),
+  fetchCard: vi.fn(),
   createCard: vi.fn(),
   updateCard: vi.fn(),
   deleteCard: vi.fn(),
 }));
 
-import { fetchCards, createCard, deleteCard } from './cards.api';
+import { fetchCards, fetchCard, createCard, deleteCard } from './cards.api';
 const mockFetchCards = fetchCards as ReturnType<typeof vi.fn>;
+const mockFetchCard = fetchCard as ReturnType<typeof vi.fn>;
 const mockCreateCard = createCard as ReturnType<typeof vi.fn>;
 const mockDeleteCard = deleteCard as ReturnType<typeof vi.fn>;
 
@@ -134,5 +136,32 @@ describe('useCards', () => {
 
     expect(result.current.data).toEqual(mockCards);
     expect(mockFetchCards).toHaveBeenCalledWith(1);
+  });
+});
+
+describe('useCard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient.clear();
+  });
+
+  it('fetches a single card by id', async () => {
+    const mockCard = { id: 1, title: 'Card 1', column_id: 1, position: 0, description: 'Detail', created_at: '2024-01-01', updated_at: '2024-01-01' };
+
+    mockFetchCard.mockResolvedValue({ data: mockCard });
+
+    const { result } = renderHook(() => useCard(1), { wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data).toEqual(mockCard);
+    expect(mockFetchCard).toHaveBeenCalledWith(1);
+  });
+
+  it('does not fetch when id is 0', async () => {
+    const { result } = renderHook(() => useCard(0), { wrapper });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(mockFetchCard).not.toHaveBeenCalled();
   });
 });

@@ -13,10 +13,18 @@ const mockMutateObj = {
 
 const mockToast = vi.fn();
 
+const mockUseCardState = vi.hoisted(() => ({
+  data: undefined as any,
+  isLoading: false,
+  isError: false,
+  refetch: vi.fn(),
+}));
+
 vi.mock('./use-cards', () => ({
   useUpdateCard: () => mockMutateObj,
   useAssignCardLabel: () => ({ mutate: vi.fn(), isPending: false }),
   useRemoveCardLabel: () => ({ mutate: vi.fn(), isPending: false }),
+  useCard: () => mockUseCardState,
 }));
 
 vi.mock('../labels/use-labels', () => ({
@@ -83,10 +91,47 @@ describe('CardDetailPanel', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseCardState.data = { ...mockCard, description: 'A description' };
+    mockUseCardState.isLoading = false;
+    mockUseCardState.isError = false;
+    mockUseCardState.refetch = vi.fn();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  describe('loading state', () => {
+    it('shows skeleton placeholders when loading and hides card content', () => {
+      mockUseCardState.isLoading = true;
+      mockUseCardState.data = undefined;
+      renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
+      expect(screen.queryByDisplayValue('Test Card')).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Card details')).toBeInTheDocument();
+    });
+  });
+
+  describe('error state', () => {
+    it('shows error message and retry button when fetch fails', () => {
+      mockUseCardState.isError = true;
+      mockUseCardState.data = undefined;
+      mockUseCardState.isLoading = false;
+      renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
+      expect(screen.getByText('Failed to load card details.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+      expect(screen.queryByDisplayValue('Test Card')).not.toBeInTheDocument();
+    });
+
+    it('calls refetch when retry button is clicked', () => {
+      const refetch = vi.fn();
+      mockUseCardState.isError = true;
+      mockUseCardState.data = undefined;
+      mockUseCardState.isLoading = false;
+      mockUseCardState.refetch = refetch;
+      renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
+      fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+      expect(refetch).toHaveBeenCalled();
+    });
   });
 
   it('renders card title in input', () => {
@@ -94,9 +139,11 @@ describe('CardDetailPanel', () => {
     expect(screen.getByDisplayValue('Test Card')).toBeInTheDocument();
   });
 
-  it('renders description textarea with card description', () => {
+  it('renders description textarea with card description', async () => {
     renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
-    expect(screen.getByDisplayValue('A description')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('A description')).toBeInTheDocument();
+    });
   });
 
   it('shows formatted due date when set', () => {
@@ -105,6 +152,7 @@ describe('CardDetailPanel', () => {
   });
 
   it('shows no due date placeholder when due_date is null', () => {
+    mockUseCardState.data = { ...mockCardNoExtras };
     renderWithProviders(<CardDetailPanel card={mockCardNoExtras} open={true} onOpenChange={vi.fn()} />);
     expect(screen.getByText('No due date')).toBeInTheDocument();
   });
@@ -209,7 +257,7 @@ describe('CardDetailPanel', () => {
     expect(screen.getByText('Saving...')).toBeInTheDocument();
   });
 
-  it('updates local state when card prop changes', () => {
+  it('updates local state when card prop changes', async () => {
     const { rerender } = renderWithProviders(
       <CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />,
     );
@@ -222,7 +270,9 @@ describe('CardDetailPanel', () => {
       </QueryClientProvider>,
     );
 
-    expect(screen.getByDisplayValue('New Title')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('New Title')).toBeInTheDocument();
+    });
   });
 
   it('calls onOpenChange when dialog is dismissed', async () => {
@@ -240,16 +290,19 @@ describe('CardDetailPanel', () => {
       await import('./markdown-preview');
     });
 
-    it('defaults to Edit tab with textarea visible', () => {
+    it('defaults to Edit tab with textarea visible', async () => {
       renderWithProviders(<CardDetailPanel card={mockCard} open={true} onOpenChange={vi.fn()} />);
 
       expect(screen.getByRole('tab', { name: /edit/i })).toHaveAttribute('data-state', 'active');
       expect(screen.getByRole('tab', { name: /preview/i })).toHaveAttribute('data-state', 'inactive');
-      expect(screen.getByLabelText('Card description')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('A description')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByLabelText('Card description')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('A description')).toBeInTheDocument();
+      });
     });
 
     it('switches to Preview tab and renders markdown', async () => {
+      mockUseCardState.data = { ...mockCard, description: '# Hello\n\n- item 1\n- item 2' };
       const markdownCard = { ...mockCard, description: '# Hello\n\n- item 1\n- item 2' };
       renderWithProviders(<CardDetailPanel card={markdownCard} open={true} onOpenChange={vi.fn()} />);
 
@@ -274,7 +327,9 @@ describe('CardDetailPanel', () => {
       const editTab = screen.getByRole('tab', { name: /edit/i });
       await userEvent.click(editTab);
 
-      expect(screen.getByLabelText('Card description')).toHaveValue('A description');
+      await waitFor(() => {
+        expect(screen.getByLabelText('Card description')).toHaveValue('A description');
+      });
     });
 
     it('auto-saves raw markdown on blur in Edit mode', async () => {
@@ -294,6 +349,7 @@ describe('CardDetailPanel', () => {
     });
 
     it('shows "Nothing to preview" when description is empty in Preview mode', async () => {
+      mockUseCardState.data = { ...mockCard, description: '' };
       const emptyCard = { ...mockCard, description: '' };
       renderWithProviders(<CardDetailPanel card={emptyCard} open={true} onOpenChange={vi.fn()} />);
 
@@ -306,7 +362,9 @@ describe('CardDetailPanel', () => {
     });
 
     it('sanitizes XSS payload in Preview mode', async () => {
-      const xssCard = { ...mockCard, description: '<script>alert("xss")</script>\n\n[link](javascript:alert(1))' };
+      const xssDescription = '<script>alert("xss")</script>\n\n[link](javascript:alert(1))';
+      mockUseCardState.data = { ...mockCard, description: xssDescription };
+      const xssCard = { ...mockCard, description: xssDescription };
       renderWithProviders(<CardDetailPanel card={xssCard} open={true} onOpenChange={vi.fn()} />);
 
       const previewTab = screen.getByRole('tab', { name: /preview/i });
@@ -324,6 +382,7 @@ describe('CardDetailPanel', () => {
 
     it('sanitizes dangerous HTML tags in Preview mode', async () => {
       const payload = '<img src=x onerror=alert(1)>\n\n<iframe src="javascript:alert(1)">\n\n<svg onload=alert(1)>';
+      mockUseCardState.data = { ...mockCard, description: payload };
       const xssCard = { ...mockCard, description: payload };
       renderWithProviders(<CardDetailPanel card={xssCard} open={true} onOpenChange={vi.fn()} />);
 

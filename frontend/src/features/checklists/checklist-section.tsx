@@ -17,7 +17,7 @@ export function ChecklistSection({ cardId, checklists }: ChecklistSectionProps) 
       {checklists.length > 0 ? (
         <div className="space-y-4">
           {checklists.map((checklist) => (
-            <Checklist key={checklist.id} checklist={checklist} />
+            <Checklist key={checklist.id} checklist={checklist} cardId={cardId} />
           ))}
         </div>
       ) : (

@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ValidationPipe } from '@nestjs/common';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import request from 'supertest';
-import { DataSource } from 'typeorm';
 import { AppModule } from './../src/app.module';
 import { setupFastifySession } from './test-utils';
 
@@ -30,7 +29,6 @@ describe('Labels API (e2e)', () => {
   let app: NestFastifyApplication;
   let url: string;
   let agent: ReturnType<typeof request.agent>;
-  let dataSource: DataSource;
   let boardId: number;
   let projectId: number;
   let columnId: number;
@@ -50,7 +48,6 @@ describe('Labels API (e2e)', () => {
     await app.init();
     await app.listen(0);
     url = await app.getUrl();
-    dataSource = app.get(DataSource);
 
     agent = request.agent(url);
 
@@ -121,10 +118,7 @@ describe('Labels API (e2e)', () => {
     });
 
     it('POST /api/labels - rejects duplicate name', async () => {
-      await agent
-        .post('/api/labels')
-        .send({ name: 'Custom Label', color: 'blue' })
-        .expect(409);
+      await agent.post('/api/labels').send({ name: 'Custom Label', color: 'blue' }).expect(409);
     });
 
     it('PATCH /api/labels/:id - updates label name and color', async () => {
@@ -169,10 +163,7 @@ describe('Labels API (e2e)', () => {
     });
 
     it('POST /api/cards/:id/labels - assigns label to card', async () => {
-      const res = await agent
-        .post(`/api/cards/${cardId}/labels`)
-        .send({ labelId })
-        .expect(200);
+      const res = await agent.post(`/api/cards/${cardId}/labels`).send({ labelId }).expect(200);
 
       const body = res.body as unknown as ApiResponse<CardResponse>;
       expect(body.data.labels).toBeDefined();
@@ -210,7 +201,9 @@ describe('Labels API (e2e)', () => {
 
       const otherEmail = `other-labels-${Date.now()}@example.com`;
       const otherAgent = request.agent(url);
-      await otherAgent.post('/api/auth/register').send({ email: otherEmail, password: testPassword });
+      await otherAgent
+        .post('/api/auth/register')
+        .send({ email: otherEmail, password: testPassword });
       await otherAgent.post('/api/auth/login').send({ email: otherEmail, password: testPassword });
 
       await otherAgent.get(`/api/labels`).expect(200);
@@ -223,31 +216,19 @@ describe('Labels API (e2e)', () => {
 
   describe('Validation', () => {
     it('POST /api/labels - returns 400 without name', async () => {
-      await agent
-        .post('/api/labels')
-        .send({ color: 'red' })
-        .expect(400);
+      await agent.post('/api/labels').send({ color: 'red' }).expect(400);
     });
 
     it('POST /api/labels - returns 400 without color', async () => {
-      await agent
-        .post('/api/labels')
-        .send({ name: 'No Color' })
-        .expect(400);
+      await agent.post('/api/labels').send({ name: 'No Color' }).expect(400);
     });
 
     it('POST /api/labels - returns 400 with invalid color', async () => {
-      await agent
-        .post('/api/labels')
-        .send({ name: 'Bad Color', color: 'chartreuse' })
-        .expect(400);
+      await agent.post('/api/labels').send({ name: 'Bad Color', color: 'chartreuse' }).expect(400);
     });
 
     it('POST /api/labels - returns 400 with empty trimmed name', async () => {
-      await agent
-        .post('/api/labels')
-        .send({ name: '   ', color: 'red' })
-        .expect(400);
+      await agent.post('/api/labels').send({ name: '   ', color: 'red' }).expect(400);
     });
   });
 });
