@@ -59,9 +59,9 @@ export function CardPreview({ card, actions }: CardPreviewProps) {
           <ProgressBar
             completed={card.checklist_progress.completed}
             total={card.checklist_progress.total}
-            className="w-16 shrink-0"
+            className="flex-1"
           />
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
             {card.checklist_progress.completed}/{card.checklist_progress.total} (
             {card.checklist_progress.percent}%)
           </span>
