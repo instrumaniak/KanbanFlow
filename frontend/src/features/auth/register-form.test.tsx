@@ -145,4 +145,48 @@ describe('RegisterForm', () => {
       });
     });
   });
+
+  it('renders password visibility toggle buttons for both password fields', () => {
+    render(<RegisterForm />, { wrapper: createWrapper() });
+
+    const toggles = screen.getAllByRole('button', { name: /show password/i });
+    expect(toggles).toHaveLength(2);
+  });
+
+  it('toggles password field visibility independently', () => {
+    render(<RegisterForm />, { wrapper: createWrapper() });
+
+    const passwordInput = screen.getByLabelText(/^password$/i);
+    const confirmInput = screen.getByLabelText(/confirm password/i);
+    const toggles = screen.getAllByRole('button', { name: /show password/i });
+
+    expect(passwordInput).toHaveAttribute('type', 'password');
+    expect(confirmInput).toHaveAttribute('type', 'password');
+
+    fireEvent.click(toggles[0]);
+
+    expect(passwordInput).toHaveAttribute('type', 'text');
+    expect(confirmInput).toHaveAttribute('type', 'password');
+
+    fireEvent.click(toggles[1]);
+
+    expect(passwordInput).toHaveAttribute('type', 'text');
+    expect(confirmInput).toHaveAttribute('type', 'text');
+  });
+
+  it('toggles confirm password visibility on button click', () => {
+    render(<RegisterForm />, { wrapper: createWrapper() });
+
+    const confirmInput = screen.getByLabelText(/confirm password/i);
+    const toggleButtons = screen.getAllByRole('button', { name: /show password/i });
+
+    fireEvent.click(toggleButtons[1]);
+
+    expect(confirmInput).toHaveAttribute('type', 'text');
+    expect(screen.getAllByRole('button', { name: /hide password/i })).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: /hide password/i }));
+
+    expect(confirmInput).toHaveAttribute('type', 'password');
+  });
 });
