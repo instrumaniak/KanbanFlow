@@ -2,8 +2,8 @@
 title: 'Card & Checklist Performance Optimization'
 slug: 'card-checklist-performance-optimization'
 created: '2026-06-15'
-status: 'spec'
-steps_completed: []
+status: 'ready-for-dev'
+steps_completed: ['party-mode-review']
 tech_stack: ['React 19', 'NestJS 11', 'TypeORM 0.3', 'MySQL 8', 'TanStack Query v5', 'TypeScript']
 files_to_modify:
   [
@@ -48,6 +48,17 @@ The kanban board view (`GET /api/boards/:boardId/columns`) eagerly loads every c
 2. **Cascading re-renders** — full card objects (with nested checklists) are passed 7 component levels deep through `BoardView → Column → ColumnCardList → Card → CardDetailPanel → ChecklistSection → Checklist → ChecklistItem`
 3. **Cache invalidation bloat** — toggling a single checklist item invalidates ALL `['cards']` and `['columns']` queries, triggering a full board refetch
 4. **Stale card detail data** — `CardDetailPanel` uses the card object passed as a prop (pre-loaded with column data) instead of fetching fresh data on open
+
+### Acceptance Criteria
+
+| Phase | Metric | Target |
+|-------|--------|--------|
+| All | Board column response size | **< 60% reduction** in payload bytes vs current |
+| **Phase 1** | Board view load time | **< 200ms** p95 for boards with 50+ cards, measured on warm cache (subsequent navigations, not cold start) |
+| **Phase 2** | Card detail panel time-to-content | **< 300ms** from click to rendered checklists |
+| **Phase 3** | Checklist toggle cascade | **0 full-board refetches** — only single-card and columns queries affected |
+| **Phase 4** | Card tile render cost | **No description DOM** in card tiles — confirmed by snapshot |
+| **All** | Existing E2E pass rate | **100%** — all existing Playwright tests pass without modification |
 
 ### Solution
 
@@ -158,11 +169,11 @@ export interface CardSummaryResponse {
 
 export function toCardSummaryResponse(card: Card): CardSummaryResponse {
   // Same as toCardResponse but WITHOUT description, WITHOUT checklists array
-  // Still computes checklist_progress from card.checklists items
-  const allItems = card.checklists?.flatMap((cl) => cl.items ?? []) ?? [];
-  const total = allItems.length;
-  const completed = allItems.filter((item) => item.is_completed).length;
-  const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+  // checklist_progress is pre-computed by enrichWithProgress() and attached
+  // as a virtual property on the card entity — NOT computed here from card.checklists
+  const progress = (card as any).checklist_progress as
+    | { completed: number; total: number; percent: number }
+    | undefined;
 
   return {
     id: card.id,
@@ -177,9 +188,7 @@ export function toCardSummaryResponse(card: Card): CardSummaryResponse {
       name: cl.label.name,
       color: cl.label.color,
     })) || [],
-    ...(total > 0 || (card.checklists && card.checklists.length > 0)
-      ? { checklist_progress: { completed, total, percent } }
-      : {}),
+    ...(progress ? { checklist_progress: progress } : {}),
   };
 }
 ```
@@ -218,13 +227,17 @@ private async enrichWithProgress(columns: BoardColumn[]): Promise<void> {
   if (cardIds.length === 0) return;
 
   // Single aggregated query: per-card completed/total counts
+  // Use parameterized query to avoid SQL injection (cardIds are numeric PKs but
+  // using parameterized placeholders is the correct pattern regardless)
+  const placeholders = cardIds.map(() => '?').join(',');
   const progressRaw: { card_id: number; total: number; completed: number }[] =
     await this.cardRepository.query(
       `SELECT cl.card_id, COUNT(ci.id) AS total, COALESCE(SUM(ci.is_completed), 0) AS completed
        FROM checklists cl
        LEFT JOIN checklist_items ci ON ci.checklist_id = cl.id
-       WHERE cl.card_id IN (${cardIds.join(',')})
+       WHERE cl.card_id IN (${placeholders})
        GROUP BY cl.card_id`,
+      cardIds,
     );
 
   const progressMap = new Map<number, { completed: number; total: number; percent: number }>();
@@ -238,7 +251,8 @@ private async enrichWithProgress(columns: BoardColumn[]): Promise<void> {
     });
   }
 
-  // Attach progress metadata to each card
+  // Attach progress metadata to each card as a virtual property
+  // This is read by toCardSummaryResponse() — not computed from card.checklists
   for (const column of columns) {
     for (const card of column.cards) {
       (card as any).checklist_progress = progressMap.get(card.id);
@@ -247,7 +261,11 @@ private async enrichWithProgress(columns: BoardColumn[]): Promise<void> {
 }
 ```
 
-> **Note on the raw query approach:** TypeORM's `QueryBuilder` with `.loadRelationCountAndMap()` would also work but generates subqueries per card. A single raw `GROUP BY` query is more efficient for batch loading. If `cardIds` is very large (1000+), batch in chunks of 500.
+> **Note on the raw query approach:** TypeORM's `QueryBuilder` with `.loadRelationCountAndMap()` would also work but generates subqueries per card. A single raw `GROUP BY` query is more efficient for batch loading. Parameterized placeholders (`?`) are used instead of string interpolation to prevent SQL injection. If `cardIds` is very large (1000+), batch in chunks of 500.
+
+> **Note on `toCardResponse` vs `toCardSummaryResponse`:** `toCardResponse` remains unchanged and is still used by `cards.controller.ts:findOne` for the card detail endpoint (`GET /api/cards/:id`). That endpoint returns full card data including `description`, `checklists[]`, and `checklists.items[]`. Only the board view endpoints (`columns.controller.ts:findAll`, `columns.controller.ts:sort`) switch to `toCardSummaryResponse`.
+
+> **Note on `sortCards` controller alignment:** The `sort` endpoint (`PATCH columns/:id/sort`) at `columns.controller.ts:142` also maps cards through `toCardResponse(c)`. It must be updated to use `toCardSummaryResponse` alongside `findAll`. The `sortCards` service method already uses relations `['cards', 'cards.cardLabels', 'cards.cardLabels.label']` (no checklists), so the service side requires no changes — only the controller mapping.
 
 **Task 1.3** — Update `columns.controller.ts` to use `toCardSummaryResponse` for serialization
 
@@ -266,6 +284,32 @@ async findAll(
     cards: col.cards.map((card) => toCardSummaryResponse(card)),
   }));
   return { data: result };
+}
+```
+
+Apply the same change to the `sort` endpoint:
+
+```typescript
+// columns.controller.ts — sort (previously used toCardResponse(c))
+@Patch('columns/:id/sort')
+async sort(
+  @Session() session: SessionData,
+  @Param('id', ParseIntPipe) id: number,
+  @Body() dto: SortCardsDto,
+): Promise<{ data: ColumnResponse; message: string }> {
+  const column = await this.columnsService.sortCards(id, session.userId, dto.order);
+  const data: ColumnResponse = {
+    id: column.id,
+    name: column.name,
+    position: column.position,
+    board_id: column.board_id,
+    cards: column.cards
+      ? [...column.cards].sort((a, b) => a.position - b.position).map((c) => toCardSummaryResponse(c))
+      : [],
+    created_at: column.created_at.toISOString(),
+    updated_at: column.updated_at.toISOString(),
+  };
+  return { data, message: 'Cards sorted' };
 }
 ```
 
@@ -323,6 +367,8 @@ export function useCard(id: number) {
 }
 ```
 
+> **Type safety note:** The `enabled: !!id` guard prevents fetching with ID 0. If `id` could be `number | undefined`, use `enabled: id !== undefined && id > 0` instead.
+
 Also update the query key factory:
 
 ```typescript
@@ -342,10 +388,10 @@ Replace card prop usage with `useCard` hook:
 import { useCard } from './use-cards';
 
 export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelProps) {
-  const { data: cardDetail, isLoading, isError } = useCard(open ? card.id : 0);
+  const { data: cardDetail, isLoading, isError, refetch } = useCard(open ? card.id : 0);
   // Use cardDetail (from API) instead of card (from props) for rendering
-  // Show loading spinner when isLoading
-  // Show error state when isError
+  // Show skeleton loading state when isLoading
+  // Show error state with retry when isError
 
   // Critical: still use card prop for id, title fallback, column_id
   // Use cardDetail for full description, checklists, labels, due_date
@@ -355,11 +401,73 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
 ```
 
 Key integration points:
-- `open` prop controls whether the query fires (`enabled: !!id && open`)
-- Show loading state: `<p>Saving...</p>`-style spinner while fetching
+- `open` prop controls whether the query fires (`enabled: open && !!card.id`)
 - Title input still uses prop `card.title` for initial value (instant), but saves against `cardDetail` after load
 - Description, labels, due date, checklists all use `cardDetail` once loaded
 - `cardDetail` auto-refreshes via TanStack Query cache
+
+Additional changes required in `CardDetailPanel`:
+
+**2.3.1 — Use `displayCard` for `LabelPicker` and `SheetTitle`**
+
+Replace raw prop references with `displayCard`:
+
+```typescript
+// Before:
+<SheetTitle className="sr-only">Card details: {card.title}</SheetTitle>
+<LabelPicker card={card} />
+
+// After:
+<SheetTitle className="sr-only">Card details: {displayCard.title}</SheetTitle>
+<LabelPicker card={displayCard} />
+```
+
+This ensures that once `cardDetail` loads from the API, the label picker and accessibility title reflect fresh data.
+
+**2.3.2 — Rework prop-sync `useEffect` to not depend on `card.description`**
+
+The current sync effect (lines 55-60 in `card-detail-panel.tsx`) watches `card.description` which will be `undefined` after Phase 1. The effect should only sync title (which is still available on the prop), and skip description sync entirely since it will come from `cardDetail`:
+
+```typescript
+// Updated effect — removes card.description from deps
+useEffect(() => {
+  if (!isDirtyRef.current && !pendingSaveRef.current) {
+    setTitle(card.title);
+    // description is no longer synced from props — it comes from cardDetail via useCard
+    // if cardDetail is loaded, its description will set this via a separate effect
+  }
+}, [card.title, card.id]);
+```
+
+Add a companion effect to populate description when `cardDetail` first loads:
+
+```typescript
+// When cardDetail loads from API, populate the description field
+useEffect(() => {
+  if (cardDetail && !isDirtyRef.current && !pendingSaveRef.current) {
+    setDescription(cardDetail.description ?? '');
+  }
+}, [cardDetail?.description, cardDetail?.id]);
+```
+
+**Loading State UI Spec:**
+
+When `isLoading` is true, render a skeleton placeholder matching the panel layout:
+- Title: `<Skeleton className="h-8 w-3/4" />` (gray bar, 75% width)
+- Description: 3x `<Skeleton className="h-4 w-full" />` (3 gray lines)
+- Labels: `<Skeleton className="h-6 w-1/2" />` (small bar)
+- Due Date: `<Skeleton className="h-6 w-1/3" />`
+- Checklists: 2x `<Skeleton className="h-20 w-full" />` (checklist card placeholders)
+
+When `isError`, render an inline error message with a retry button:
+```tsx
+<div className="p-4 text-center text-sm text-muted-foreground">
+  <p>Failed to load card details.</p>
+  <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-2">
+    Retry
+  </Button>
+</div>
+```
 
 ---
 
@@ -418,17 +526,39 @@ export function useCreateChecklist() {
 
 // useUpdateChecklistItem — needs cardId context
 // Approach: accept cardId as part of mutationFn params
+// NOTE: The existing code has an optimistic update that walks ['cards'] query data.
+// This optimistic update must be refactored to target ['card', cardId] instead.
+// Remove or update the onMutate to operate on the card-specific query key.
 export function useUpdateChecklistItem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ itemId, data, cardId }: { itemId: number; data: UpdateChecklistItemData; cardId: number }) =>
       updateChecklistItem(itemId, data),
     onMutate: async ({ itemId, data, cardId }) => {
-      // ... existing optimistic update logic ...
-      return { previousCards, cardId };
+      await queryClient.cancelQueries({ queryKey: ['card', cardId] });
+
+      const previousCardData = queryClient.getQueryData(['card', cardId]);
+
+      queryClient.setQueryData(['card', cardId], (old: unknown) => {
+        if (!old) return old;
+        const card = (old as { checklists?: Array<Checklist & { items: ChecklistItem[] }> });
+        return {
+          ...card,
+          checklists: card.checklists?.map((cl) => ({
+            ...cl,
+            items: cl.items.map((item) =>
+              item.id === itemId ? { ...item, ...data } : item
+            ),
+          })),
+        };
+      });
+
+      return { previousCardData };
     },
-    onError: (_err, _vars, context) => {
-      // rollback
+    onError: (_error: Error, _variables, context) => {
+      if (context?.previousCardData) {
+        queryClient.setQueryData(['card', _variables.cardId], context.previousCardData);
+      }
     },
     onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: ['card', variables.cardId] });
@@ -441,16 +571,66 @@ export function useUpdateChecklistItem() {
 // All need cardId passed through and invalidate ['card', cardId] + ['columns']
 ```
 
-This requires updating the components that call these hooks to pass `cardId`:
-- `ChecklistSection` → receives `cardId` prop → passes to child components
-- `Checklist` → receives `cardId` prop
-- `ChecklistItem` → receives `cardId` prop
-- `AddChecklistForm` → receives `cardId` prop
-- `AddChecklistItemForm` → receives `cardId` + `checklistId`
+This requires updating the components that call these hooks to pass `cardId`. The prop interface changes are:
+
+In addition, the **`ChecklistItem` undo function** (in `checklist-item.tsx:83-84`) has a hardcoded broad invalidation that must be updated:
+
+```typescript
+// Before (checklist-item.tsx — undo handler):
+queryClient.invalidateQueries({ queryKey: ['cards'] });
+queryClient.invalidateQueries({ queryKey: ['columns'] });
+
+// After:
+queryClient.invalidateQueries({ queryKey: ['card', cardId] });
+queryClient.invalidateQueries({ queryKey: ['columns'] });
+```
+
+This requires the `ChecklistItem` component to receive `cardId` as a prop (see prop interface below).
+
+```typescript
+// ChecklistSection — new prop
+interface ChecklistSectionProps {
+  cardId: number;
+  // ... existing props
+}
+
+// Checklist — new prop
+interface ChecklistProps {
+  cardId: number;
+  // ... existing props
+}
+
+// ChecklistItem — new prop
+interface ChecklistItemProps {
+  cardId: number;
+  // ... existing props
+}
+
+// AddChecklistForm — new prop
+interface AddChecklistFormProps {
+  cardId: number;
+  // ... existing props
+}
+
+// AddChecklistItemForm — new props
+interface AddChecklistItemFormProps {
+  cardId: number;
+  checklistId: number;
+  // ... existing props
+}
+```
+
+These props flow from `CardDetailPanel` (which receives `card.id` from the column data) down to each checklist subcomponent. No prop-drilling library needed — max depth is 4 levels.
 
 ---
 
 ### Phase 4: Frontend — Remove description from card tiles
+
+**Grep-verify precondition:** Before making any changes, run:
+```
+grep -rn 'card\.description' frontend/src/features/ --include='*.tsx' --include='*.ts'
+```
+to confirm that `CardPreview` is the **only** consumer of `card.description` from the column-context `Card` type. If any other component references it, update that component first or keep the field in the interface.
 
 **Task 4.1** — Remove description rendering from `CardPreview`
 
@@ -475,17 +655,21 @@ This requires updating the components that call these hooks to pass `cardId`:
 - [ ] **1.1** Add `toCardSummaryResponse()` DTO + function in `backend/src/cards/dto/card-response.dto.ts`
 - [ ] **1.2** Modify `columns.service.ts:findAllByBoardId` — remove checklist relations, add `enrichWithProgress` batch aggregation
 - [ ] **1.3** Update `columns.controller.ts:findAll` — map cards through `toCardSummaryResponse`
+- [ ] **1.3.5** Update `columns.controller.ts:sort` — also map cards through `toCardSummaryResponse` (currently uses `toCardResponse`)
 - [ ] **1.4** Update `frontend/src/features/columns/columns.api.ts` — remove `description` from column-context `Card` type
 - [ ] **1.5** **Test:** Update `columns.service.spec.ts` — update `findAllByBoardId` relations assertion; add test for progress aggregation
 - [ ] **1.6** **Test:** Update `columns.controller.spec.ts` — mock response shape to use sparse card format
 - [ ] **1.7** **Test:** Update `columns.api.test.ts` — remove `description` from mock card data
+- [ ] **1.8** **Entity dependency audit** — Verify no other service method (e.g., `cards.service`, `search.service`) depends on `cards.checklists` or `cards.checklists.items` being loaded as part of column-level relations
 
 ### Phase 2: Frontend — Lazy-load card detail on panel open
 
 - [ ] **2.1** Add `fetchCard(id)` to `frontend/src/features/cards/cards.api.ts`
 - [ ] **2.2** Add `useCard(id)` hook with `['card', cardId]` query key to `use-cards.ts`
 - [ ] **2.3** Update `CardDetailPanel` — call `useCard(id)` on panel open; use `cardDetail` for description, checklists, labels; fallback to prop `card` while loading
-- [ ] **2.4** Update `CardDetailPanel` — add loading state (spinner/skeleton) while card detail is being fetched
+- [ ] **2.3.1** Update `LabelPicker` and `SheetTitle` to use `displayCard` instead of raw prop `card`
+- [ ] **2.3.2** Rework prop-sync `useEffect` — remove `card.description` from deps, add companion effect that syncs description when `cardDetail` loads
+- [ ] **2.4** Update `CardDetailPanel` — add skeleton loading state and error state with retry button while card detail is being fetched (see Loading State UI Spec above)
 - [ ] **2.5** **Test:** Add `fetchCard` test in `cards.api.test.ts` — success + error + network error
 - [ ] **2.6** **Test:** Add `useCard` hook test in `use-cards.test.tsx` — fetches on mount, returns data
 - [ ] **2.7** **Test:** Update `card-detail-panel.test.tsx` — mock `useCard` hook instead of prop data; test loading state, fetch success, fetch error
@@ -494,6 +678,8 @@ This requires updating the components that call these hooks to pass `cardId`:
 
 - [ ] **3.1** Update `use-cards.ts` — all mutations invalidate `['card', cardId]` + `['columns']` instead of broad `['cards']`
 - [ ] **3.2** Update `use-checklists.ts` — all mutations accept `cardId` param, invalidate `['card', cardId]` + `['columns']` instead of `['cards']`
+- [ ] **3.2.1** Refactor `useUpdateChecklistItem` optimistic update — target `['card', cardId]` instead of broad `['cards']`
+- [ ] **3.2.2** Fix `ChecklistItem` undo handler — replace broad `['cards']` invalidation with `['card', cardId]`
 - [ ] **3.3** Update `ChecklistSection`, `Checklist`, `ChecklistItem`, `AddChecklistForm`, `AddChecklistItemForm` to pass `cardId` through to hooks
 - [ ] **3.4** **Test:** Update `use-cards.test.tsx` — verify invalidation targets `['card', id]` not `['cards']`
 - [ ] **3.5** **Test:** Update `use-checklists` test (create if none exists) — verify invalidation targets `['card', cardId]`
@@ -502,6 +688,14 @@ This requires updating the components that call these hooks to pass `cardId`:
 
 - [ ] **4.1** Remove description `<p>` block from `CardPreview`
 - [ ] **4.2** **Test:** Update `card-preview.test.tsx` — remove assertions that check for description rendering
+
+### Acceptance Criteria Verification
+
+- [ ] **AC.1** Measure board column response size — confirm **< 60% reduction** in payload bytes
+- [ ] **AC.2** Profile board view p95 load time — confirm **< 200ms** for 50+ card boards
+- [ ] **AC.3** Measure card detail panel time-to-content — confirm **< 300ms** from click to checklists
+- [ ] **AC.4** Verify checklist toggle triggers **0 full-board refetches** (check Network tab)
+- [ ] **AC.5** Snapshot card tiles — confirm **no description DOM** renders on the board view
 
 ### E2E Verification
 
@@ -534,6 +728,27 @@ it('should attach checklist_progress to cards via batch aggregation', async () =
   ]);
   // ... verify result cards have checklist_progress
 });
+
+it('should handle cards with zero checklists gracefully', async () => {
+  // Cards that have no checklists at all — query returns no rows for them
+  mockCardRepository.query.mockResolvedValueOnce([]);
+  // ... verify progressMap.get(card.id) is undefined / cards have no checklist_progress
+});
+
+it('should handle cards with empty checklists (no items)', async () => {
+  // Checklists exist but have zero items
+  mockCardRepository.query.mockResolvedValueOnce([
+    { card_id: 1, total: 0, completed: 0 },
+  ]);
+  // ... verify checklist_progress = { completed: 0, total: 0, percent: 0 }
+});
+
+it('should handle cards with all items completed', async () => {
+  mockCardRepository.query.mockResolvedValueOnce([
+    { card_id: 1, total: 5, completed: 5 },
+  ]);
+  // ... verify checklist_progress = { completed: 5, total: 5, percent: 100 }
+});
 ```
 
 ### Frontend Tests
@@ -552,7 +767,7 @@ All existing e2e tests should pass without modification:
 
 | Test file | Confidence |
 |-----------|------------|
-| `checklists.spec.ts` | High — card detail API unchanged, panel loads checklists via fetch |
+| `checklists.spec.ts` | High — card detail API unchanged (`GET /api/cards/:id`), panel now fetches via this endpoint instead of props; mock server handles both patterns |
 | `drag-drop.spec.ts` | High — drag uses same data shape |
 | `columns.spec.ts` | High — cards still display on board |
 | `due-dates.spec.ts` | High — due dates still show on tiles |
@@ -579,6 +794,20 @@ If any phase causes issues:
 - [Source: frontend/src/features/cards/cards.api.ts] — Full Card interface for detail context
 - [Source: backend/src/columns/columns.service.ts:35-45] — Current eager loading query
 - [Source: backend/src/cards/dto/card-response.dto.ts] — `toCardResponse` and `toCardDetailResponse`
+
+---
+
+## Pre-Implementation Readiness Checklist
+
+These items must be confirmed **before** development begins:
+
+- [ ] **R1. Acceptance criteria verified** — Measurable targets accepted by PM/stakeholders
+- [ ] **R2. Entity dependency audit complete** — No other service depends on `cards.checklists` being loaded via column relations
+- [ ] **R3. Grep-verify complete** — No component besides `CardPreview` references `card.description` from column-context type
+- [ ] **R4. Prop interface changes documented** — All 5 checklist components have `cardId` prop defined (see Phase 3)
+- [ ] **R5. Security review** — `enrichWithProgress` uses parameterized queries, not string interpolation
+- [ ] **R6. Rollback plan acknowledged** — Per-phase revert strategy confirmed with team
+- [ ] **R7. Test file existence** — Verify `frontend/src/features/checklists/use-checklists.test.ts` exists (or create it) before Phase 3.5
 
 ---
 
