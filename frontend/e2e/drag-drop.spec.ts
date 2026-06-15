@@ -17,7 +17,7 @@ monitoringTest.describe('Drag and Drop', () => {
   monitoringTest.beforeEach(async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
   });
@@ -219,7 +219,7 @@ monitoringTest.describe('Drag and Drop', () => {
 
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 

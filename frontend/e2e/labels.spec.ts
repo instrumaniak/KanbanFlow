@@ -78,7 +78,7 @@ test.describe('Labels E2E', () => {
     // Login via UI
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
@@ -197,7 +197,7 @@ test.describe('Labels E2E', () => {
     // Login via UI and navigate to board
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
@@ -269,7 +269,7 @@ test.describe('Labels E2E', () => {
 
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 

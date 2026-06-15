@@ -51,7 +51,7 @@ test.describe('Checklist Feature', () => {
     // Login via UI
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
