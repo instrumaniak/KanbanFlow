@@ -76,6 +76,8 @@ export function LoginForm() {
             <Input
               id="email"
               type="email"
+              name="email"
+              autoComplete="email"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -91,6 +93,8 @@ export function LoginForm() {
               <Input
                 ref={passwordRef}
                 id="password"
+                name="password"
+                autoComplete="current-password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
@@ -101,7 +105,10 @@ export function LoginForm() {
               <button
                 type="button"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                onClick={() => { setShowPassword(!showPassword); passwordRef.current?.focus(); }}
+                onClick={() => {
+                  setShowPassword(!showPassword);
+                  passwordRef.current?.focus();
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
