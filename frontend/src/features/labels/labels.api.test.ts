@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { LabelColor } from '../cards/cards.api';
+
 import {
   fetchLabels,
   createLabel,
@@ -79,7 +81,7 @@ describe('labels.api', () => {
         json: () => Promise.resolve({ message: ['Name is required', 'Color is invalid'] }),
       });
 
-      await expect(createLabel({ name: '', color: '' as any })).rejects.toThrow('Name is required, Color is invalid');
+      await expect(createLabel({ name: '', color: '' as unknown as LabelColor })).rejects.toThrow('Name is required, Color is invalid');
     });
   });
 

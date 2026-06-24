@@ -66,7 +66,7 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
     if (cardDetail && !isDirtyRef.current && !pendingSaveRef.current) {
       setDescription(cardDetail.description ?? '');
     }
-  }, [cardDetail?.description, cardDetail?.id]);
+  }, [cardDetail, cardDetail?.description, cardDetail?.id]);
 
   const safeSetIsSavingTitle = useCallback((value: boolean) => {
     if (isMountedRef.current) setIsSavingTitle(value);

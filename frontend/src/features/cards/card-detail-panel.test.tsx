@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CardDetailPanel } from './card-detail-panel';
+import type { Card } from './cards.api';
 
 const mockMutate = vi.fn();
 const mockMutateObj = {
@@ -14,7 +15,7 @@ const mockMutateObj = {
 const mockToast = vi.fn();
 
 const mockUseCardState = vi.hoisted(() => ({
-  data: undefined as any,
+  data: undefined as Card | undefined,
   isLoading: false,
   isError: false,
   refetch: vi.fn(),

@@ -40,7 +40,7 @@ export function useUpdateChecklist() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data, cardId }: { id: number; data: UpdateChecklistData; cardId: number }) =>
+    mutationFn: ({ id, data }: { id: number; data: UpdateChecklistData; cardId: number }) =>
       updateChecklist(id, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['card', variables.cardId] });
@@ -56,7 +56,7 @@ export function useDeleteChecklist() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, cardId }: { id: number; cardId: number }) => deleteChecklist(id),
+    mutationFn: ({ id }: { id: number; cardId: number }) => deleteChecklist(id),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['card', variables.cardId] });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
@@ -74,7 +74,6 @@ export function useCreateChecklistItem() {
     mutationFn: ({
       checklistId,
       data,
-      cardId,
     }: {
       checklistId: number;
       data: CreateChecklistItemData;
@@ -97,7 +96,6 @@ export function useUpdateChecklistItem() {
     mutationFn: ({
       itemId,
       data,
-      cardId,
     }: {
       itemId: number;
       data: UpdateChecklistItemData;
@@ -140,7 +138,7 @@ export function useDeleteChecklistItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ itemId, cardId }: { itemId: number; cardId: number }) => deleteChecklistItem(itemId),
+    mutationFn: ({ itemId }: { itemId: number; cardId: number }) => deleteChecklistItem(itemId),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['card', variables.cardId] });
       queryClient.invalidateQueries({ queryKey: ['columns'] });

@@ -6,7 +6,6 @@ const TEST_PASSWORD = 'Test1234!';
 test.describe('Archived Boards', () => {
   let board1Id: number;
   let board1Name: string;
-  let board2Id: number;
   let board2Name: string;
 
   test.beforeAll(async ({ request }) => {
@@ -32,11 +31,10 @@ test.describe('Archived Boards', () => {
     board1Id = (await board1Res.json()).data.id;
 
     board2Name = `Archived Test Board 2 ${Date.now()}`;
-    const board2Res = await request.post('http://localhost:3000/api/boards', {
+    await request.post('http://localhost:3000/api/boards', {
       data: { name: board2Name },
       headers: { Cookie: cookies },
     });
-    board2Id = (await board2Res.json()).data.id;
   });
 
   test('archives, restores, and permanently deletes boards', async ({ page, request }) => {
