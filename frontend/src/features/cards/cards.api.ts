@@ -94,7 +94,7 @@ export interface UpdateCardData {
   column_id?: number;
   position?: number;
   description?: string;
-  due_date?: string;
+  due_date?: string | null;
 }
 
 export async function updateCard(id: number, data: UpdateCardData): Promise<ApiResponse<Card>> {
