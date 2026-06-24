@@ -71,6 +71,7 @@ describe('ColumnsService', () => {
     findOne: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
+    query: jest.fn(),
     createQueryBuilder: jest.fn(),
     manager: mockCardManager,
   };
@@ -122,6 +123,78 @@ describe('ColumnsService', () => {
         where: { board_id: 1 },
         relations: ['cards', 'cards.cardLabels', 'cards.cardLabels.label'],
         order: { position: 'ASC' },
+      });
+    });
+
+    it('should attach checklist_progress to cards via batch aggregation', async () => {
+      const mockBoard = { id: 1, user_id: 1 };
+      const mockColumns = [
+        {
+          id: 1,
+          name: 'To Do',
+          position: 0,
+          board_id: 1,
+          cards: [{ id: 1, title: 'Card 1', column_id: 1, position: 0 }],
+        },
+      ];
+
+      mockBoardRepository.findOne.mockResolvedValue(mockBoard);
+      mockColumnRepository.find.mockResolvedValue(mockColumns);
+      mockCardRepository.query.mockResolvedValueOnce([{ card_id: 1, total: 3, completed: 1 }]);
+
+      const result = await service.findAllByBoardId(1, 1);
+
+      expect(result[0].cards[0]).toHaveProperty('checklist_progress');
+      expect(result[0].cards[0].checklist_progress).toEqual({
+        completed: 1,
+        total: 3,
+        percent: 33,
+      });
+    });
+
+    it('should handle cards with zero checklists gracefully', async () => {
+      const mockBoard = { id: 1, user_id: 1 };
+      const mockColumns = [
+        {
+          id: 1,
+          name: 'To Do',
+          position: 0,
+          board_id: 1,
+          cards: [{ id: 1, title: 'Card 1', column_id: 1, position: 0 }],
+        },
+      ];
+
+      mockBoardRepository.findOne.mockResolvedValue(mockBoard);
+      mockColumnRepository.find.mockResolvedValue(mockColumns);
+      mockCardRepository.query.mockResolvedValueOnce([]);
+
+      const result = await service.findAllByBoardId(1, 1);
+
+      expect(result[0].cards[0].checklist_progress).toBeUndefined();
+    });
+
+    it('should handle cards with empty checklists (no items)', async () => {
+      const mockBoard = { id: 1, user_id: 1 };
+      const mockColumns = [
+        {
+          id: 1,
+          name: 'To Do',
+          position: 0,
+          board_id: 1,
+          cards: [{ id: 1, title: 'Card 1', column_id: 1, position: 0 }],
+        },
+      ];
+
+      mockBoardRepository.findOne.mockResolvedValue(mockBoard);
+      mockColumnRepository.find.mockResolvedValue(mockColumns);
+      mockCardRepository.query.mockResolvedValueOnce([{ card_id: 1, total: 0, completed: 0 }]);
+
+      const result = await service.findAllByBoardId(1, 1);
+
+      expect(result[0].cards[0].checklist_progress).toEqual({
+        completed: 0,
+        total: 0,
+        percent: 0,
       });
     });
 

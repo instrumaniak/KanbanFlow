@@ -11,6 +11,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { BoardColumn } from '../../columns/entities/column.entity';
 import { CardLabel } from './card-label.entity';
+import { Checklist } from '../../checklists/entities/checklist.entity';
 
 @Entity('cards')
 export class Card {
@@ -52,4 +53,9 @@ export class Card {
 
   @OneToMany(() => CardLabel, (cardLabel) => cardLabel.card)
   cardLabels!: CardLabel[];
+
+  @OneToMany(() => Checklist, (checklist) => checklist.card)
+  checklists!: Checklist[];
+
+  checklist_progress?: { completed: number; total: number; percent: number };
 }

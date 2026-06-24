@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
-import { useUpdateCard, type Card as CardType } from './use-cards';
+import { useUpdateCard, useCard, type Card as CardType } from './use-cards';
 import { LabelPicker } from '../labels/label-picker';
+import { DueDatePicker } from './due-date-picker';
+import { ChecklistSection } from '../checklists';
 
 const MarkdownPreview = lazy(() =>
   import('./markdown-preview').then((m) => ({ default: m.MarkdownPreview }))
@@ -16,7 +18,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+
 import { useToast } from '@/components/ui/use-toast';
 
 interface CardDetailPanelProps {
@@ -27,7 +31,7 @@ interface CardDetailPanelProps {
 
 export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelProps) {
   const [title, setTitle] = useState(card.title);
-  const [description, setDescription] = useState(card.description ?? '');
+  const [description, setDescription] = useState('');
   const [isSavingTitle, setIsSavingTitle] = useState(false);
   const [isSavingDescription, setIsSavingDescription] = useState(false);
   const [descriptionMode, setDescriptionMode] = useState<'edit' | 'preview'>('edit');
@@ -38,6 +42,8 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
   const titleInputRef = useRef<HTMLInputElement>(null);
   const updateCard = useUpdateCard();
   const { toast } = useToast();
+  const { data: cardDetail, isLoading, isError, refetch } = useCard(open ? card.id : 0);
+  const displayCard = cardDetail ?? card;
 
   useEffect(() => {
     latestCardRef.current = card;
@@ -53,9 +59,14 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
   useEffect(() => {
     if (!isDirtyRef.current && !pendingSaveRef.current) {
       setTitle(card.title);
-      setDescription(card.description ?? '');
     }
-  }, [card.title, card.description, card.id]);
+  }, [card.title, card.id]);
+
+  useEffect(() => {
+    if (cardDetail && !isDirtyRef.current && !pendingSaveRef.current) {
+      setDescription(cardDetail.description ?? '');
+    }
+  }, [cardDetail, cardDetail?.description, cardDetail?.id]);
 
   const safeSetIsSavingTitle = useCallback((value: boolean) => {
     if (isMountedRef.current) setIsSavingTitle(value);
@@ -139,13 +150,31 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
     [],
   );
 
-  const formattedDueDate = card.due_date
-    ? new Date(card.due_date).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : null;
+  const [isSavingDueDate, setIsSavingDueDate] = useState(false);
+
+  const handleDueDateChange = useCallback(
+    (dueDate: string | null) => {
+      const currentCard = latestCardRef.current;
+      setIsSavingDueDate(true);
+      updateCard.mutate(
+        { id: currentCard.id, data: { due_date: dueDate } },
+        {
+          onSettled: () => {
+            if (isMountedRef.current) setIsSavingDueDate(false);
+          },
+          onError: (error) => {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            toast({
+              title: 'Failed to save due date',
+              description: `Please try again. Error: ${message}`,
+              type: 'destructive',
+            });
+          },
+        },
+      );
+    },
+    [updateCard, toast],
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={true}>
@@ -160,6 +189,25 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
         }}
       >
         <ScrollArea className="h-full">
+          {isLoading ? (
+            <div className="p-6 space-y-6">
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-6 w-1/2" />
+              <Skeleton className="h-6 w-1/3" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          ) : isError ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              <p>Failed to load card details.</p>
+              <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-2">
+                Retry
+              </Button>
+            </div>
+          ) : (
           <div className="p-6 space-y-6">
             <SheetHeader className="space-y-4 text-left">
               <div className="space-y-2">
@@ -187,9 +235,9 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
                   <span className="text-xs text-muted-foreground">Saving...</span>
                 )}
               </div>
-              <SheetTitle className="sr-only">Card details: {card.title}</SheetTitle>
+              <SheetTitle className="sr-only">Card details: {displayCard.title}</SheetTitle>
               <SheetDescription className="sr-only">
-                Detailed view and editing options for the card "{card.title}"
+                Detailed view and editing options for the card "{displayCard.title}"
               </SheetDescription>
             </SheetHeader>
 
@@ -244,29 +292,31 @@ export function CardDetailPanel({ card, open, onOpenChange }: CardDetailPanelPro
 
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Labels</h3>
-              <LabelPicker card={card} />
+              <LabelPicker card={displayCard} />
             </div>
 
             <Separator />
 
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Due Date</h3>
-              {formattedDueDate ? (
-                <Badge variant="secondary">{formattedDueDate}</Badge>
-              ) : (
-                <p className="text-muted-foreground text-sm">No due date</p>
+              <DueDatePicker
+                dueDate={displayCard.due_date}
+                onDateChange={handleDueDateChange}
+                disabled={isSavingDueDate}
+              />
+              {isSavingDueDate && (
+                <span className="text-xs text-muted-foreground">Saving...</span>
               )}
             </div>
 
             <Separator />
 
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Checklist</h3>
-              <p className="text-muted-foreground text-sm">
-                Checklists will be available in a future update.
-              </p>
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Checklists</h3>
+              <ChecklistSection cardId={displayCard.id} checklists={displayCard.checklists ?? []} />
             </div>
           </div>
+          )}
         </ScrollArea>
       </SheetContent>
     </Sheet>

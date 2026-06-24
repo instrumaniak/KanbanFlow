@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -48,7 +49,7 @@ export class LabelsService {
   async create(userId: number, dto: CreateLabelDto): Promise<Label> {
     const trimmedName = dto.name.trim();
     if (!trimmedName) {
-      throw new ConflictException('Label name cannot be empty');
+      throw new BadRequestException('Label name cannot be empty');
     }
 
     const existing = await this.labelsRepository.findOne({
@@ -77,7 +78,7 @@ export class LabelsService {
     if (dto.name !== undefined) {
       const trimmedName = dto.name.trim();
       if (!trimmedName) {
-        throw new ConflictException('Label name cannot be empty');
+        throw new BadRequestException('Label name cannot be empty');
       }
 
       const existing = await this.labelsRepository.findOne({
@@ -92,6 +93,10 @@ export class LabelsService {
       }
 
       label.name = trimmedName;
+    }
+
+    if (dto.color !== undefined) {
+      label.color = dto.color;
     }
 
     return this.labelsRepository.save(label);

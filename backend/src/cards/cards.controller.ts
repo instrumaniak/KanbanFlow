@@ -18,41 +18,15 @@ import { SessionGuard } from '../auth/guards/session.guard';
 import { CardsService } from './cards.service';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
-import { Card } from './entities/card.entity';
+import {
+  CardResponse,
+  CardDetailResponse,
+  toCardResponse,
+  toCardDetailResponse,
+} from './dto/card-response.dto';
 
 interface SessionData {
   userId: number;
-}
-
-interface CardResponse {
-  id: number;
-  title: string;
-  column_id: number;
-  position: number;
-  description: string | null;
-  due_date: string | null;
-  created_at: string;
-  updated_at: string;
-  labels: { id: number; name: string; color: string }[];
-}
-
-function toCardResponse(card: Card): CardResponse {
-  return {
-    id: card.id,
-    title: card.title,
-    column_id: card.column_id,
-    position: card.position,
-    description: card.description,
-    due_date: card.due_date ? card.due_date.toISOString() : null,
-    created_at: card.created_at.toISOString(),
-    updated_at: card.updated_at.toISOString(),
-    labels:
-      card.cardLabels?.map((cl) => ({
-        id: cl.label.id,
-        name: cl.label.name,
-        color: cl.label.color,
-      })) || [],
-  };
 }
 
 @Controller('api')
@@ -106,9 +80,9 @@ export class CardsController {
   async findOne(
     @Session() session: SessionData,
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<{ data: CardResponse }> {
+  ): Promise<{ data: CardDetailResponse }> {
     const card = await this.cardsService.findById(id, session.userId);
-    return { data: toCardResponse(card) };
+    return { data: toCardDetailResponse(card) };
   }
 
   @Post('cards/:id/labels')

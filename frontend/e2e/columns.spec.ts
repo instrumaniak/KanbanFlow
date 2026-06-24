@@ -16,7 +16,7 @@ test.describe('Column CRUD', () => {
   test('creates a new column', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
@@ -50,7 +50,7 @@ test.describe('Column CRUD', () => {
   test('shows column count badge', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
@@ -81,7 +81,7 @@ test.describe('Column CRUD', () => {
   test('shows Add a card button in column', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
@@ -112,7 +112,7 @@ test.describe('Column CRUD', () => {
 
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 

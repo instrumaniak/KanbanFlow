@@ -53,7 +53,7 @@ export class CardsService {
 
     return this.cardRepository.find({
       where: { column_id: columnId },
-      relations: ['cardLabels', 'cardLabels.label'],
+      relations: ['cardLabels', 'cardLabels.label', 'checklists', 'checklists.items'],
       order: { position: 'ASC' },
     });
   }
@@ -195,11 +195,27 @@ export class CardsService {
   }
 
   async findById(id: number, userId: number): Promise<Card> {
-    const card = await this.findCardById(id, userId);
-    return this.cardRepository.findOne({
-      where: { id: card.id },
-      relations: ['cardLabels', 'cardLabels.label'],
-    }) as Promise<Card>;
+    const card = await this.cardRepository.findOne({
+      where: { id },
+      relations: [
+        'column',
+        'column.board',
+        'cardLabels',
+        'cardLabels.label',
+        'checklists',
+        'checklists.items',
+      ],
+    });
+
+    if (!card) {
+      throw new NotFoundException('Card not found');
+    }
+
+    if (card.column.board.user_id !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return card;
   }
 
   async assignLabel(cardId: number, labelId: number, userId: number): Promise<Card> {

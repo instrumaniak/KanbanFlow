@@ -41,7 +41,7 @@ describe('LoginForm', () => {
     render(<LoginForm />, { wrapper: createWrapper() });
 
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
@@ -56,7 +56,7 @@ describe('LoginForm', () => {
     render(<LoginForm />, { wrapper: createWrapper() });
 
     const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByLabelText(/^password$/i);
 
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'Password123' } });
@@ -80,7 +80,7 @@ describe('LoginForm', () => {
     render(<LoginForm />, { wrapper: createWrapper() });
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'invalid' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'Password123' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'Password123' } });
     fireEvent.submit(screen.getByRole('form'));
 
     await waitFor(() => {
@@ -106,5 +106,30 @@ describe('LoginForm', () => {
 
     expect(screen.getByText(/don't have an account/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /register/i })).toBeInTheDocument();
+  });
+
+  it('renders password visibility toggle button', () => {
+    render(<LoginForm />, { wrapper: createWrapper() });
+
+    expect(screen.getByRole('button', { name: /show password/i })).toBeInTheDocument();
+  });
+
+  it('toggles password input type when clicking the visibility toggle', () => {
+    render(<LoginForm />, { wrapper: createWrapper() });
+
+    const passwordInput = screen.getByLabelText(/^password$/i);
+    const toggleButton = screen.getByRole('button', { name: /show password/i });
+
+    expect(passwordInput).toHaveAttribute('type', 'password');
+
+    fireEvent.click(toggleButton);
+
+    expect(passwordInput).toHaveAttribute('type', 'text');
+    expect(screen.getByRole('button', { name: /hide password/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /hide password/i }));
+
+    expect(passwordInput).toHaveAttribute('type', 'password');
+    expect(screen.getByRole('button', { name: /show password/i })).toBeInTheDocument();
   });
 });

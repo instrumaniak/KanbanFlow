@@ -6,6 +6,8 @@ import { Card } from '../cards/entities/card.entity';
 import { CardLabel } from '../cards/entities/card-label.entity';
 import { Label } from '../labels/entities/label.entity';
 import { Session } from '../sessions/entities/session.entity';
+import { Checklist } from '../checklists/entities/checklist.entity';
+import { ChecklistItem } from '../checklists/entities/checklist-item.entity';
 
 import { CreateUsersProjects1700000000000 } from '../migrations/1700000000000-CreateUsersProjects';
 import { CreateBoardsColumns1745862000000 } from '../migrations/1745862000000-CreateBoardsColumns';
@@ -14,13 +16,25 @@ import { CreateCards1778000000000 } from '../migrations/1778000000000-CreateCard
 import { AddSessionsTable1778100000000 } from '../migrations/1778100000000-AddSessionsTable';
 import { AddDescriptionAndDueDateToCards1778200000000 } from '../migrations/1778200000000-AddDescriptionAndDueDateToCards';
 import { CreateLabelsAndCardLabelsTables1778300000000 } from '../migrations/1778300000000-CreateLabelsAndCardLabelsTables';
+import { CreateChecklistsAndChecklistItems1779000000000 } from '../migrations/1779000000000-CreateChecklistsAndChecklistItems';
 
 /**
  * Explicit registry of TypeORM entities.
  * Webpack cannot bundle dynamic glob patterns, so every entity
  * MUST be imported and registered here manually.
  */
-export const entities = [User, Project, Board, BoardColumn, Card, CardLabel, Label, Session];
+export const entities = [
+  User,
+  Project,
+  Board,
+  BoardColumn,
+  Card,
+  CardLabel,
+  Label,
+  Session,
+  Checklist,
+  ChecklistItem,
+];
 
 /**
  * Explicit registry of TypeORM migrations.
@@ -35,4 +49,5 @@ export const migrations = [
   AddSessionsTable1778100000000,
   AddDescriptionAndDueDateToCards1778200000000,
   CreateLabelsAndCardLabelsTables1778300000000,
+  CreateChecklistsAndChecklistItems1779000000000,
 ];

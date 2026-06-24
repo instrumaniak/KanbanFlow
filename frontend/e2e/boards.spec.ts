@@ -16,7 +16,7 @@ test.describe('Boards CRUD', () => {
   test('shows My Boards heading when navigating to root', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
@@ -30,7 +30,7 @@ test.describe('Boards CRUD', () => {
   test('shows Create Board button for logged in user', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
@@ -46,7 +46,7 @@ test.describe('Boards CRUD', () => {
   test('creates a board via Create Board button', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
@@ -76,7 +76,7 @@ test.describe('Boards CRUD', () => {
   test('cancels board creation', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
@@ -128,7 +128,7 @@ test.describe('Board Archiving', () => {
   test('archives a board from board card', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
@@ -157,7 +157,7 @@ test.describe('Board Archiving', () => {
   test('views archived boards', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
@@ -178,7 +178,7 @@ test.describe('Board Archiving', () => {
   test('restores an archived board', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 
@@ -214,7 +214,7 @@ test.describe('Board Archiving', () => {
 
     await page.goto('/login');
     await page.getByLabel('Email').fill(TEST_EMAIL);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForURL('/');
 

@@ -9,10 +9,11 @@ export interface Label {
 export interface Card {
   id: number;
   title: string;
-  description: string | null;
   column_id: number;
   position: number;
+  due_date: string | null;
   labels?: Label[];
+  checklist_progress?: { completed: number; total: number; percent: number };
   created_at: string;
   updated_at: string;
 }

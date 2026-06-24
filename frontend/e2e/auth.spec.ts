@@ -78,7 +78,7 @@ test.describe('Auth flows', () => {
 
       await expect(page.getByRole('heading', { name: 'KanbanFlow' })).toBeVisible();
       await expect(page.getByLabel('Email')).toBeVisible();
-      await expect(page.getByLabel('Password')).toBeVisible();
+      await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
     });
 
@@ -95,7 +95,7 @@ test.describe('Auth flows', () => {
       await page.goto('/login');
 
       await page.getByLabel('Email').fill('nonexistent@example.com');
-      await page.getByLabel('Password').fill('WrongPass123!');
+      await page.getByLabel('Password', { exact: true }).fill('WrongPass123!');
       await page.getByRole('button', { name: 'Sign In' }).click();
 
       // Should stay on /login
@@ -106,7 +106,7 @@ test.describe('Auth flows', () => {
       await page.goto('/login');
 
       await page.getByLabel('Email').fill(TEST_EMAIL);
-      await page.getByLabel('Password').fill(TEST_PASSWORD);
+      await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
       await page.getByRole('button', { name: 'Sign In' }).click();
 
       await page.waitForURL((url) => url.pathname !== '/login', { timeout: 10000 });
@@ -127,7 +127,7 @@ test.describe('Auth flows', () => {
       // Login first
       await page.goto('/login');
       await page.getByLabel('Email').fill(TEST_EMAIL);
-      await page.getByLabel('Password').fill(TEST_PASSWORD);
+      await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
       await page.getByRole('button', { name: 'Sign In' }).click();
 
       await page.waitForURL((url) => url.pathname !== '/login', { timeout: 10000 });

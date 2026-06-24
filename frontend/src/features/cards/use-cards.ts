@@ -4,6 +4,7 @@ import {
   updateCard,
   deleteCard,
   fetchCards,
+  fetchCard,
   assignLabelToCard,
   removeLabelFromCard,
   type CreateCardData,
@@ -13,6 +14,7 @@ import {
 
 const cardKeys = {
   byColumn: (columnId: number) => ['cards', columnId] as const,
+  byId: (cardId: number) => ['card', cardId] as const,
   all: () => ['cards'] as const,
 };
 
@@ -21,6 +23,14 @@ export function useCards(columnId: number) {
     queryKey: cardKeys.byColumn(columnId),
     queryFn: () => fetchCards(columnId).then((res) => res.data),
     enabled: !!columnId,
+  });
+}
+
+export function useCard(id: number) {
+  return useQuery({
+    queryKey: cardKeys.byId(id),
+    queryFn: () => fetchCard(id).then((res) => res.data),
+    enabled: !!id,
   });
 }
 
@@ -40,8 +50,8 @@ export function useUpdateCard() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateCardData }) =>
       updateCard(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: cardKeys.all() });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: cardKeys.byId(variables.id) });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
   });
@@ -99,8 +109,8 @@ export function useMoveCard() {
         });
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+    onSettled: (_data, _err, variables) => {
+      queryClient.invalidateQueries({ queryKey: cardKeys.byId(variables.id) });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
   });
@@ -150,8 +160,8 @@ export function useReorderCard() {
         queryClient.setQueryData(['cards', context.sourceColumnId], context.previousCards);
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+    onSettled: (_data, _err, variables) => {
+      queryClient.invalidateQueries({ queryKey: cardKeys.byId(variables.id) });
     },
   });
 }
@@ -186,7 +196,6 @@ export function useDeleteCard() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
   });
@@ -197,8 +206,8 @@ export function useAssignCardLabel() {
   return useMutation({
     mutationFn: ({ cardId, labelId }: { cardId: number; labelId: number }) =>
       assignLabelToCard(cardId, labelId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: cardKeys.byId(variables.cardId) });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
   });
@@ -209,8 +218,8 @@ export function useRemoveCardLabel() {
   return useMutation({
     mutationFn: ({ cardId, labelId }: { cardId: number; labelId: number }) =>
       removeLabelFromCard(cardId, labelId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: cardKeys.byId(variables.cardId) });
       queryClient.invalidateQueries({ queryKey: ['columns'] });
     },
   });
