@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, ChevronDown, Moon, Sun, Menu } from 'lucide-react';
+import { LogOut, ChevronDown, Moon, Sun, Menu, FileText } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme';
 import { Sidebar } from './sidebar';
 import { Breadcrumbs } from './breadcrumbs';
@@ -137,6 +137,13 @@ export function AppLayout({ projectsData }: { projectsData?: ListResponse<Projec
         </div>
 
         <div className="flex items-center gap-1">
+          <Link
+            to="/notes"
+            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <FileText className="h-4 w-4" />
+            Notes
+          </Link>
           <Button variant="ghost" size="icon-sm" onClick={toggleTheme} aria-label="Toggle theme">
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>

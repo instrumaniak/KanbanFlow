@@ -24,6 +24,9 @@ const ArchivedBoards = lazy(() =>
 const BoardView = lazy(() =>
   import('./features/boards/board-view/board-view').then((m) => ({ default: m.BoardView }))
 );
+const NotesPage = lazy(() =>
+  import('./features/notes/note-list').then((m) => ({ default: m.NoteList }))
+);
 
 function ForgotPasswordPage() {
   return (
@@ -77,6 +80,7 @@ function App() {
                 <Route path="/" element={<BoardList />} />
                 <Route path="/archived-boards" element={<ArchivedBoards />} />
                 <Route path="/projects" element={<ProjectList />} />
+                <Route path="/notes" element={<NotesPage />} />
                 <Route
                   path="/board/:boardId"
                   element={<BoardView />}
