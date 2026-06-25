@@ -141,7 +141,7 @@ export function BoardNotesSidebar({ boardId, collapsed, onToggle }: BoardNotesSi
       )}
 
       <Sheet open={!!editingNote} onOpenChange={(open) => { if (!open) setEditingNote(null); }}>
-        <SheetContent side="right" className="w-[500px] sm:max-w-[500px]">
+        <SheetContent side="right" className="w-[400px] sm:w-[540px] sm:max-w-[540px]">
           <SheetHeader>
             <SheetTitle>Edit Note</SheetTitle>
           </SheetHeader>
@@ -157,7 +157,7 @@ export function BoardNotesSidebar({ boardId, collapsed, onToggle }: BoardNotesSi
       </Sheet>
 
       <Sheet open={isCreating} onOpenChange={(open) => { if (!open) setIsCreating(false); }}>
-        <SheetContent side="right" className="w-[500px] sm:max-w-[500px]">
+        <SheetContent side="right" className="w-[400px] sm:w-[540px] sm:max-w-[540px]">
           <SheetHeader>
             <SheetTitle>New Note</SheetTitle>
           </SheetHeader>

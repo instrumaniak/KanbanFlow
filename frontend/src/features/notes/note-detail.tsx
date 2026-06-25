@@ -50,7 +50,7 @@ export function NoteDetail({ note, onBack, onEdit, onDelete }: NoteDetailProps) 
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-red-600">
+              <Button variant="destructive" size="sm" onClick={onDelete}>
                 <Trash2 className="h-4 w-4 mr-1" />
                 Delete
               </Button>
@@ -64,7 +64,7 @@ export function NoteDetail({ note, onBack, onEdit, onDelete }: NoteDetailProps) 
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700">
+                <AlertDialogAction onClick={onDelete} variant="destructive">
                   Delete
                 </AlertDialogAction>
               </AlertDialogFooter>

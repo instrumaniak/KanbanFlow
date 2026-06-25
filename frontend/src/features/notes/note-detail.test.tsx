@@ -85,7 +85,7 @@ describe('NoteDetail', () => {
     fireEvent.click(screen.getByText('Delete'));
 
     expect(screen.getByText('Delete note?')).toBeInTheDocument();
-    const confirmDelete = screen.getByText('Delete', { selector: '.bg-red-600' });
+    const confirmDelete = screen.getByText('Delete', { selector: '[data-slot="alert-dialog-action"]' });
     fireEvent.click(confirmDelete);
     expect(onDelete).toHaveBeenCalled();
   });

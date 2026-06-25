@@ -41,6 +41,22 @@ vi.mock('./markdown-renderer', () => ({
   MarkdownRenderer: ({ content }: { content: string }) => <div data-testid="markdown-renderer">{content}</div>,
 }));
 
+vi.mock('@/features/boards/use-boards', () => ({
+  useBoards: () => ({ data: undefined }),
+}));
+
+vi.mock('@/features/projects/use-projects', () => ({
+  useProjects: () => ({ data: undefined }),
+}));
+
+vi.mock('@/features/columns/use-columns', () => ({
+  useColumns: () => ({ data: undefined }),
+}));
+
+vi.mock('@/features/cards/use-cards', () => ({
+  useCards: () => ({ data: undefined }),
+}));
+
 vi.mock('@/features/tags/tag-picker', () => ({
   TagPicker: ({ selectedTagIds, onTagsChange }: { selectedTagIds: number[]; onTagsChange: (ids: number[]) => void }) => (
     <div data-testid="tag-picker">

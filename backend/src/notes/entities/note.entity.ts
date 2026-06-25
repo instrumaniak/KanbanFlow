@@ -11,6 +11,8 @@ import {
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Board } from '../../boards/entities/board.entity';
+import { Project } from '../../projects/entities/project.entity';
+import { Card } from '../../cards/entities/card.entity';
 import { Tag } from '../../tags/entities/tag.entity';
 
 @Entity('notes')
@@ -46,6 +48,14 @@ export class Note {
   @ManyToOne(() => Board, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'board_id' })
   board!: Board | null;
+
+  @ManyToOne(() => Project, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'project_id' })
+  project!: Project | null;
+
+  @ManyToOne(() => Card, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'card_id' })
+  card!: Card | null;
 
   @ManyToMany(() => Tag, (tag) => tag.notes)
   @JoinTable({

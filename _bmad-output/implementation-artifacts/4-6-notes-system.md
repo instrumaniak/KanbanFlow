@@ -70,6 +70,16 @@ So that I can plan, brainstorm, and document alongside my task tracking.
     **Then** the note is permanently deleted
     **And** a toast notification appears with "Undo" button (5 seconds)
 
+12. **Given** I want to link a note to a project or card
+    **When** I select a project or card from the link dropdown
+    **Then** the note is associated with that project/card
+    **And** the note shows the appropriate type badge ("Project" or "Card") in the notes list
+
+13. **Given** I am editing a note
+    **When** I stop typing for 2 seconds
+    **Then** the note is automatically saved
+    **And** a subtle indicator shows "Saved" or "Saving..." status
+
 ## Tasks / Subtasks
 
 - [ ] Backend: Create `notes` module structure
@@ -165,10 +175,17 @@ So that I can plan, brainstorm, and document alongside my task tracking.
   - [ ] Change delete flow: AlertDialog confirm → defer API call 5s → toast with Undo button
   - [ ] On Undo click → dismiss toast → clear timeout → note stays
   - [ ] On timeout → execute API delete → invalidate queries
-- [ ] Frontend: Link dropdown in NoteEditor (AC3)
+- [ ] Frontend: Link dropdown in NoteEditor (AC3, AC12)
   - [ ] Add board/project/card selector to NoteEditor
   - [ ] Fetch boards, projects, cards for the current user
   - [ ] On save, send appropriate link field (board_id/project_id/card_id)
+  - [ ] Show type-specific badge ("Board", "Project", "Card") based on selection
+- [ ] Frontend: Auto-save behavior (AC13)
+  - [ ] Implement debounced save (2 seconds after typing stops)
+  - [ ] Show "Saving..." indicator during save
+  - [ ] Show "Saved" indicator on successful save
+  - [ ] Show error toast if save fails
+  - [ ] Disable manual save button while auto-saving
 
 ## Dev Notes
 
@@ -180,12 +197,13 @@ So that I can plan, brainstorm, and document alongside my task tracking.
   - `TagsModule`: `@Module({ imports: [TypeOrmModule.forFeature([Tag])], controllers: [TagsController], providers: [TagsService], exports: [TagsService] })`
 - **Registration:** Import `NotesModule` and `TagsModule` in `app.module.ts`
 - **Entity Relationships:**
-  - Note → Board: `@ManyToOne` with `onDelete: 'CASCADE'`, nullable FK
-  - Note → Project: `@ManyToOne` with `onDelete: 'CASCADE'`, nullable FK
-  - Note → Card: `@ManyToOne` with `onDelete: 'CASCADE'`, nullable FK
-  - Note ↔ Tag: `@ManyToMany` with `note_tags` join table
-  - Note → User: `@ManyToOne` with `onDelete: 'CASCADE'`
-  - Board → Notes: `@OneToMany` with `cascade: true`
+  - Note → Board: `@ManyToOne(() => Board)` with `onDelete: 'CASCADE'`, nullable FK, `@JoinColumn({ name: 'board_id' })`
+  - Note → Project: `@ManyToOne(() => Project)` with `onDelete: 'CASCADE'`, nullable FK, `@JoinColumn({ name: 'project_id' })`
+  - Note → Card: `@ManyToOne(() => Card)` with `onDelete: 'CASCADE'`, nullable FK, `@JoinColumn({ name: 'card_id' })`
+  - Note ↔ Tag: `@ManyToMany(() => Tag)` with `@JoinTable({ name: 'note_tags' })`
+  - Note → User: `@ManyToOne(() => User)` with `onDelete: 'CASCADE'`, `@JoinColumn({ name: 'user_id' })`
+  - Board → Notes: `@OneToMany(() => Note, (note) => note.board)` with `cascade: true`
+  - **Important:** All three FK relations (Board, Project, Card) MUST have `@ManyToOne` decorators for TypeORM to properly load related entities
 - **Feature-based Frontend:** Create `features/notes/` and `features/tags/` following existing patterns
 - **React Query:** Use mutations with optimistic updates for note operations
 
@@ -203,6 +221,7 @@ npm install --save-dev @types/dompurify
 - `dompurify` — XSS sanitization on rendered HTML
 - `mermaid` — Diagram rendering (flowcharts, sequence diagrams, etc.)
 - Markdown rendering stack: `react-markdown` (already installed ^10.1.0) + `remark-gfm` + `rehype-raw` + `rehype-sanitize` (already installed ^6.0.0) + `rehype-highlight`
+- **Security note:** Apply DOMPurify to final HTML output only, NOT to raw markdown input. This prevents stripping valid markdown syntax while still preventing XSS.
 
 ### Migration Strategy
 
@@ -352,8 +371,8 @@ interface NoteEditorProps {
 
 **Markdown Editor:**
 - `react-markdown` with plugins: `remark-gfm`, `rehype-raw`, `rehype-highlight`, `rehype-sanitize`
-- Mermaid rendering: Custom component detecting ````mermaid` code blocks, rendering with `mermaid.run()`
-- XSS sanitization: DOMPurify applied to rendered HTML
+- Mermaid rendering: Custom component detecting ````mermaid` code blocks, rendering with `mermaid.render(id, code)` for programmatic one-off rendering (not `mermaid.run()` which is for batch DOM processing)
+- XSS sanitization: DOMPurify applied to final HTML output only (not raw markdown input)
 - Edit mode: Plain textarea with monospace font
 - Preview mode: Rendered HTML with proper typography
 
@@ -459,19 +478,21 @@ import DOMPurify from 'dompurify';
 ### Mermaid Rendering Component
 
 Create a `MermaidDiagram` component that:
-1. Uses a `useEffect` to call `mermaid.run()` after mount
-2. Assigns a unique `id` to the diagram container
+1. Uses `mermaid.render(id, code)` for programmatic rendering (returns `{ svg }`)
+2. Uses React's `useId()` hook for stable diagram IDs across re-renders
 3. Cleans up on unmount (removes SVG, resets mermaid state)
 4. Shows a loading placeholder while rendering
 5. Shows an error state if diagram fails to render
+6. Sets `mermaid.initialize({ startOnLoad: false })` on mount
 
 ```typescript
 // frontend/src/features/notes/mermaid-diagram.tsx
 interface MermaidDiagramProps {
   code: string;
 }
-// Pattern: mermaid.run({ nodes: [document.getElementById(id)] })
-// Cleanup: mermaid.parseError handler, container.innerHTML = ''
+// Pattern: const { svg } = await mermaid.render(id, code)
+// Use useId() for stable React IDs, not Date.now()
+// Cleanup: container.innerHTML = '' in useEffect cleanup
 ```
 
 ### Testing Patterns
@@ -490,6 +511,13 @@ interface MermaidDiagramProps {
 - `mermaid-diagram.test.tsx` — renders diagram, shows error on failure, cleanup on unmount
 - Vitest + @testing-library/react + userEvent
 - QueryClient wrapper with `retry: false`
+- **Auto-save tests:**
+  - `note-editor.test.tsx`: Test debounce behavior (2s delay before save)
+  - `note-editor.test.tsx`: Test save indicator states (idle → saving → saved)
+  - `note-editor.test.tsx`: Test error handling on save failure
+- **Link selector tests:**
+  - `note-link-selector.test.tsx`: Test board/project/card dropdown options
+  - `note-link-selector.test.tsx`: Test type badge updates based on selection
 
 **E2E tests** (`frontend/e2e/notes.spec.ts`):
 - Follow existing patterns (e.g., `due-dates.spec.ts`):
@@ -497,6 +525,14 @@ interface MermaidDiagramProps {
   - Login via API, setup test data
   - UI login → navigate → interact → assert → reload → verify persistence
   - Use `monitoringTest` from `test-utils.ts`
+- **Auto-save E2E:**
+  - Type in editor → wait 3s → reload → verify content persisted
+  - Verify "Saving..." indicator appears during save
+  - Verify "Saved" indicator appears after save completes
+- **Project/card linking E2E:**
+  - Create note → link to project → verify "Project" badge in list
+  - Create note → link to card → verify "Card" badge in list
+  - Verify linked notes appear in project/card detail views (if applicable)
 
 ### Accessibility
 
@@ -521,6 +557,11 @@ interface MermaidDiagramProps {
 - **XSS in markdown:** DOMPurify strips all dangerous HTML, scripts, event handlers
 - **Large markdown content:** ScrollArea for long content, no rendering limit
 - **Sidebar visibility:** Hidden on non-board pages, auto-visible when board has linked notes
+- **Auto-save failure:** Show error toast, keep unsaved changes in editor, allow manual retry
+- **Concurrent edits:** Last-write-wins for MVP. Future: Add optimistic locking or conflict detection
+- **Title uniqueness:** Allow duplicate titles. Consider auto-appending " (N)" for UX clarity
+- **Tag count limit:** No hard limit, but consider warning at 10+ tags for UX
+- **Content size:** MySQL `text` type supports 64KB. Add frontend warning at 50KB+ for very large notes
 
 ## References
 

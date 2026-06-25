@@ -35,6 +35,8 @@ describe('NotesService', () => {
     card_id: null,
     user_id: mockUserId,
     board: { id: 1, user_id: mockUserId },
+    project: null,
+    card: null,
     tags: [mockTag],
     created_at: mockDate,
     updated_at: mockDate,
@@ -49,10 +51,12 @@ describe('NotesService', () => {
     card_id: null,
     user_id: mockUserId,
     board: null,
+    project: { id: 1, user_id: mockUserId },
+    card: null,
     tags: [],
     created_at: mockDate,
     updated_at: mockDate,
-  } as Note;
+  } as unknown as Note;
 
   const mockNoteWithCard = {
     id: 3,
@@ -63,10 +67,12 @@ describe('NotesService', () => {
     card_id: 1,
     user_id: mockUserId,
     board: null,
+    project: null,
+    card: { id: 1, column_id: 1, column: { board: { user_id: mockUserId } } },
     tags: [],
     created_at: mockDate,
     updated_at: mockDate,
-  } as Note;
+  } as unknown as Note;
 
   const mockNoteDirect = {
     id: 4,
@@ -77,6 +83,8 @@ describe('NotesService', () => {
     card_id: null,
     user_id: mockUserId,
     board: null,
+    project: null,
+    card: null,
     tags: [],
     created_at: mockDate,
     updated_at: mockDate,

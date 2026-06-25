@@ -3,7 +3,6 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import rehypeHighlight from 'rehype-highlight';
-import DOMPurify from 'dompurify';
 import { MermaidDiagram } from './mermaid-diagram';
 
 interface MarkdownRendererProps {
@@ -11,8 +10,6 @@ interface MarkdownRendererProps {
 }
 
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
-  const sanitized = DOMPurify.sanitize(content);
-
   return (
     <Markdown
       remarkPlugins={[remarkGfm]}
@@ -27,7 +24,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
         },
       }}
     >
-      {sanitized}
+      {content}
     </Markdown>
   );
 }

@@ -145,7 +145,7 @@ describe('NoteList', () => {
     renderWithProviders(<NoteList />);
     fireEvent.click(screen.getByTestId('delete-1'));
 
-    const confirmDelete = screen.getByText('Delete', { selector: '.bg-red-600' });
+    const confirmDelete = screen.getByText('Delete', { selector: '[data-slot="alert-dialog-action"]' });
     fireEvent.click(confirmDelete);
 
     vi.advanceTimersByTime(5000);

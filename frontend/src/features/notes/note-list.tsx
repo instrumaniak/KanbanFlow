@@ -7,8 +7,9 @@ import { NoteEditor } from './note-editor';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/empty-state';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Search, FileText, Plus } from 'lucide-react';
+import { FileText, Plus, Search } from 'lucide-react';
 import type { Note } from './notes.api';
 import { useDeleteNote } from './use-notes';
 import { useToast } from '@/components/ui/use-toast';
@@ -54,17 +55,8 @@ export function NoteList() {
     tagId: tagFilter,
   };
 
-  const clearTagFilter = () => {
-    setTagFilter(undefined);
-  };
-
   const handleTagClick = (tagId: number) => {
     setTagFilter((prev) => (prev === tagId ? undefined : tagId));
-  };
-
-  const handleTypeFilter = (type: string) => {
-    setTypeFilter(type);
-    clearTagFilter();
   };
 
 
@@ -123,7 +115,7 @@ export function NoteList() {
 
   if (editingNote) {
     return (
-      <div className="p-4">
+      <div className="p-6">
         <NoteEditor
           note={editingNote}
           onSave={() => {
@@ -137,14 +129,14 @@ export function NoteList() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 pb-2 space-y-3">
+      <div className="p-6 pb-2 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Notes</h2>
+          <h2 className="text-2xl font-bold">Notes</h2>
           <CreateNoteDialog
             open={showCreateDialog}
             onOpenChange={setShowCreateDialog}
           >
-            <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white">
+            <Button size="sm">
               <Plus className="h-4 w-4 mr-1" />
               New Note
             </Button>
@@ -175,24 +167,15 @@ export function NoteList() {
           ))}
         </div>
       </div>
-      <ScrollArea className="flex-1 px-4 pb-4">
+      <ScrollArea className="flex-1 px-6 pb-6">
         {isLoading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="rounded-lg border border-border p-3 space-y-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-3 w-1/2" />
-              </div>
-            ))}
-          </div>
+          <LoadingSkeleton count={4} />
         ) : notes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <FileText className="h-10 w-10 text-muted-foreground mb-3" />
-            <p className="text-sm text-muted-foreground">
-              No notes yet. Create your first note to start documenting.
-            </p>
-          </div>
+          <EmptyState
+            icon={<FileText className="h-6 w-6 text-muted-foreground" />}
+            headline="No notes yet"
+            description="Create your first note to start documenting."
+          />
         ) : (
           <div className="space-y-2">
             {notes.map((note) => (
@@ -221,7 +204,7 @@ export function NoteList() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction onClick={handleDelete} variant="destructive">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

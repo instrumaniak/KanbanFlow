@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
-import { Bold, Italic, Heading, Code, List, Eye, EyeOff } from 'lucide-react';
+import { Bold, Italic, Heading, Code, List, Eye, EyeOff, Save } from 'lucide-react';
 import { MarkdownRenderer } from './markdown-renderer';
 
 interface NoteEditorProps {
@@ -16,9 +16,19 @@ interface NoteEditorProps {
   onCancel: () => void;
   onDelete?: () => void;
   defaultBoardId?: number;
+  defaultProjectId?: number;
+  defaultCardId?: number;
 }
 
-export function NoteEditor({ note, onSave, onCancel, onDelete, defaultBoardId }: NoteEditorProps) {
+export function NoteEditor({
+  note,
+  onSave,
+  onCancel,
+  onDelete,
+  defaultBoardId,
+  defaultProjectId,
+  defaultCardId,
+}: NoteEditorProps) {
   const [title, setTitle] = useState(note?.title ?? '');
   const [content, setContent] = useState(note?.content ?? '');
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>(
@@ -27,8 +37,15 @@ export function NoteEditor({ note, onSave, onCancel, onDelete, defaultBoardId }:
   const [linkBoardId, setLinkBoardId] = useState<number | undefined>(
     defaultBoardId ?? note?.board_id ?? undefined,
   );
+  const [linkProjectId, setLinkProjectId] = useState<number | undefined>(
+    defaultProjectId ?? note?.project_id ?? undefined,
+  );
+  const [linkCardId, setLinkCardId] = useState<number | undefined>(
+    defaultCardId ?? note?.card_id ?? undefined,
+  );
   const [preview, setPreview] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>();
   const createMutation = useCreateNote();
   const updateMutation = useUpdateNote();
@@ -60,6 +77,7 @@ export function NoteEditor({ note, onSave, onCancel, onDelete, defaultBoardId }:
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       if (!title.trim()) return;
+      setAutoSaving(true);
       updateMutation.mutate(
         {
           id: note.id,
@@ -67,10 +85,15 @@ export function NoteEditor({ note, onSave, onCancel, onDelete, defaultBoardId }:
             title: title.trim(),
             content,
             tagIds: selectedTagIds,
-            ...(linkBoardId ? { board_id: linkBoardId } : {}),
+            board_id: linkBoardId ?? null,
+            project_id: linkProjectId ?? null,
+            card_id: linkCardId ?? null,
           },
         },
         {
+          onSettled: () => {
+            setAutoSaving(false);
+          },
           onError: () => {
             toast({ title: 'Failed to auto-save', type: 'destructive' });
           },
@@ -78,14 +101,25 @@ export function NoteEditor({ note, onSave, onCancel, onDelete, defaultBoardId }:
       );
       setDirty(false);
     }, 2000);
-  }, [dirty, note, title, content, selectedTagIds, linkBoardId, updateMutation, toast]);
+  }, [
+    dirty,
+    note,
+    title,
+    content,
+    selectedTagIds,
+    linkBoardId,
+    linkProjectId,
+    linkCardId,
+    updateMutation,
+    toast,
+  ]);
 
   useEffect(() => {
     if (note) {
       autoSave();
     }
     return () => clearTimeout(autoSaveTimer.current);
-  }, [title, content, selectedTagIds, note, autoSave]);
+  }, [title, content, selectedTagIds, linkBoardId, linkProjectId, linkCardId, note, autoSave]);
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -107,10 +141,10 @@ export function NoteEditor({ note, onSave, onCancel, onDelete, defaultBoardId }:
       title: title.trim(),
       content,
       tagIds: selectedTagIds,
+      board_id: linkBoardId ?? null,
+      project_id: linkProjectId ?? null,
+      card_id: linkCardId ?? null,
     };
-    if (linkBoardId) {
-      commonData.board_id = linkBoardId;
-    }
 
     if (note) {
       updateMutation.mutate(
@@ -155,6 +189,12 @@ export function NoteEditor({ note, onSave, onCancel, onDelete, defaultBoardId }:
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">{note ? 'Edit Note' : 'New Note'}</h3>
         <div className="flex items-center gap-2">
+          {autoSaving && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Save className="h-3 w-3 animate-pulse" />
+              Saving...
+            </span>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -211,8 +251,18 @@ export function NoteEditor({ note, onSave, onCancel, onDelete, defaultBoardId }:
 
       <NoteLinkSelector
         linkBoardId={linkBoardId}
+        linkProjectId={linkProjectId}
+        linkCardId={linkCardId}
         onLinkBoard={(id) => {
           setLinkBoardId(id);
+          setDirty(true);
+        }}
+        onLinkProject={(id) => {
+          setLinkProjectId(id);
+          setDirty(true);
+        }}
+        onLinkCard={(id) => {
+          setLinkCardId(id);
           setDirty(true);
         }}
       />
@@ -233,7 +283,6 @@ export function NoteEditor({ note, onSave, onCancel, onDelete, defaultBoardId }:
         </Button>
         <Button
           size="sm"
-          className="bg-teal-600 hover:bg-teal-700 text-white"
           onClick={handleSave}
           disabled={createMutation.isPending || updateMutation.isPending}
         >

@@ -69,7 +69,7 @@ export function NoteCard({ note, onClick, onEdit, onDelete, onTagClick }: NoteCa
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="text-red-600"
+              className="text-destructive"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
