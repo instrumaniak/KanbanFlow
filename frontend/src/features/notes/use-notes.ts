@@ -50,6 +50,7 @@ export function useCreateNote() {
     mutationFn: (data: CreateNoteData) => createNote(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: noteKeys.all() });
+      queryClient.invalidateQueries({ queryKey: ['notes', 'board'] });
     },
     onError: (error: Error) => {
       console.error('Failed to create note:', error.message);

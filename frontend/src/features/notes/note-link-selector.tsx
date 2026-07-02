@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useBoards } from '@/features/boards/use-boards';
 import { useProjects } from '@/features/projects/use-projects';
 import { useColumns } from '@/features/columns/use-columns';
-import { useCards } from '@/features/cards/use-cards';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -33,15 +32,14 @@ export function NoteLinkSelector({
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<LinkType>('board');
 
-  const { data: boardsData } = useBoards();
-  const { data: projectsData } = useProjects();
-  const { data: columnsData } = useColumns(linkBoardId ?? 0);
-  const { data: cardsData } = useCards(columnsData?.[0]?.id ?? 0);
+  const { data: boardsData, isLoading: boardsLoading } = useBoards();
+  const { data: projectsData, isLoading: projectsLoading } = useProjects();
+  const { data: columnsData, isLoading: columnsLoading } = useColumns(linkBoardId ?? 0);
 
   const boards = boardsData?.data ?? [];
   const projects = projectsData?.data ?? [];
   const columns = columnsData ?? [];
-  const cards = cardsData ?? [];
+  const cards = useMemo(() => columns.flatMap((col) => col.cards ?? []), [columns]);
 
   const selectedBoard = boards.find((b) => b.id === linkBoardId);
   const selectedProject = projects.find((p) => p.id === linkProjectId);
@@ -147,7 +145,9 @@ export function NoteLinkSelector({
             />
             <ScrollArea className="max-h-48">
               {activeTab === 'board' && (
-                filteredBoards.length > 0 ? (
+                boardsLoading ? (
+                  <p className="text-sm text-muted-foreground px-2 py-4 text-center">Loading...</p>
+                ) : filteredBoards.length > 0 ? (
                   <div className="space-y-0.5">
                     {filteredBoards.map((board) => (
                       <button
@@ -173,7 +173,9 @@ export function NoteLinkSelector({
                 )
               )}
               {activeTab === 'project' && (
-                filteredProjects.length > 0 ? (
+                projectsLoading ? (
+                  <p className="text-sm text-muted-foreground px-2 py-4 text-center">Loading...</p>
+                ) : filteredProjects.length > 0 ? (
                   <div className="space-y-0.5">
                     {filteredProjects.map((project) => (
                       <button
@@ -198,7 +200,9 @@ export function NoteLinkSelector({
                 )
               )}
               {activeTab === 'card' && (
-                filteredCards.length > 0 ? (
+                columnsLoading ? (
+                  <p className="text-sm text-muted-foreground px-2 py-4 text-center">Loading...</p>
+                ) : filteredCards.length > 0 ? (
                   <div className="space-y-0.5">
                     {filteredCards.map((card) => (
                       <button

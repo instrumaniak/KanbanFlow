@@ -50,7 +50,7 @@ export function NoteDetail({ note, onBack, onEdit, onDelete }: NoteDetailProps) 
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm" onClick={onDelete}>
+              <Button variant="destructive" size="sm">
                 <Trash2 className="h-4 w-4 mr-1" />
                 Delete
               </Button>

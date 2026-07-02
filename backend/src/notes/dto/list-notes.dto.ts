@@ -31,4 +31,16 @@ export class ListNotesDto {
   @IsNumber()
   @Type(() => Number)
   boardId?: number;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  page?: number;
+
+  @ApiPropertyOptional({ example: 50 })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  limit?: number;
 }

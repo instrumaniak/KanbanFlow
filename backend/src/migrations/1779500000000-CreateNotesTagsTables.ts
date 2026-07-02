@@ -37,6 +37,9 @@ export class CreateNotesTagsTables1779500000000 implements MigrationInterface {
     await queryRunner.query(`CREATE INDEX \`IDX_notes_board_id\` ON \`notes\`(\`board_id\`)`);
     await queryRunner.query(`CREATE INDEX \`IDX_notes_user_id\` ON \`notes\`(\`user_id\`)`);
     await queryRunner.query(`CREATE INDEX \`IDX_tags_user_id\` ON \`tags\`(\`user_id\`)`);
+    await queryRunner.query(`CREATE INDEX \`IDX_notes_project_id\` ON \`notes\`(\`project_id\`)`);
+    await queryRunner.query(`CREATE INDEX \`IDX_notes_card_id\` ON \`notes\`(\`card_id\`)`);
+    await queryRunner.query(`CREATE INDEX \`IDX_note_tags_tag_id\` ON \`note_tags\`(\`tag_id\`)`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
@@ -50,6 +53,9 @@ export class CreateNotesTagsTables1779500000000 implements MigrationInterface {
     await queryRunner.query(`DROP INDEX \`IDX_tags_user_id\` ON \`tags\``);
     await queryRunner.query(`DROP INDEX \`IDX_notes_user_id\` ON \`notes\``);
     await queryRunner.query(`DROP INDEX \`IDX_notes_board_id\` ON \`notes\``);
+    await queryRunner.query(`DROP INDEX \`IDX_note_tags_tag_id\` ON \`note_tags\``);
+    await queryRunner.query(`DROP INDEX \`IDX_notes_card_id\` ON \`notes\``);
+    await queryRunner.query(`DROP INDEX \`IDX_notes_project_id\` ON \`notes\``);
     await queryRunner.query(`DROP TABLE \`note_tags\``);
     await queryRunner.query(`DROP TABLE \`tags\``);
     await queryRunner.query(`DROP TABLE \`notes\``);

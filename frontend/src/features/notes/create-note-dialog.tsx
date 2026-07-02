@@ -12,9 +12,12 @@ interface CreateNoteDialogProps {
   children: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  defaultBoardId?: number;
+  defaultProjectId?: number;
+  defaultCardId?: number;
 }
 
-export function CreateNoteDialog({ children, open, onOpenChange }: CreateNoteDialogProps) {
+export function CreateNoteDialog({ children, open, onOpenChange, defaultBoardId, defaultProjectId, defaultCardId }: CreateNoteDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = open !== undefined;
   const isOpen = isControlled ? open : internalOpen;
@@ -32,6 +35,9 @@ export function CreateNoteDialog({ children, open, onOpenChange }: CreateNoteDia
         <NoteEditor
           onSave={() => setIsOpen(false)}
           onCancel={() => setIsOpen(false)}
+          defaultBoardId={defaultBoardId}
+          defaultProjectId={defaultProjectId}
+          defaultCardId={defaultCardId}
         />
       </DialogContent>
     </Dialog>

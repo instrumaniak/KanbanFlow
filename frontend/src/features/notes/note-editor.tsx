@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Note } from './notes.api';
+import type { Note, CreateNoteData } from './notes.api';
 import { useCreateNote, useUpdateNote } from './use-notes';
 import { TagPicker } from '@/features/tags/tag-picker';
 import { NoteLinkSelector } from './note-link-selector';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
-import { Bold, Italic, Heading, Code, List, Eye, EyeOff, Save } from 'lucide-react';
+import { Bold, Italic, Heading, Code, List, Eye, EyeOff, Save, Workflow } from 'lucide-react';
 import { MarkdownRenderer } from './markdown-renderer';
 
 interface NoteEditorProps {
@@ -46,7 +46,8 @@ export function NoteEditor({
   const [preview, setPreview] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const [showSaved, setShowSaved] = useState(false);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const createMutation = useCreateNote();
   const updateMutation = useUpdateNote();
   const { toast } = useToast();
@@ -73,7 +74,7 @@ export function NoteEditor({
   }, [content]);
 
   const autoSave = useCallback(() => {
-    if (!dirty || !note) return;
+    if (!dirty || !note || updateMutation.isPending) return;
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       if (!title.trim()) return;
@@ -93,6 +94,10 @@ export function NoteEditor({
         {
           onSettled: () => {
             setAutoSaving(false);
+          },
+          onSuccess: () => {
+            setShowSaved(true);
+            setTimeout(() => setShowSaved(false), 2000);
           },
           onError: () => {
             toast({ title: 'Failed to auto-save', type: 'destructive' });
@@ -119,7 +124,7 @@ export function NoteEditor({
       autoSave();
     }
     return () => clearTimeout(autoSaveTimer.current);
-  }, [title, content, selectedTagIds, linkBoardId, linkProjectId, linkCardId, note, autoSave]);
+  }, [title, content, note, autoSave]);
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -136,8 +141,9 @@ export function NoteEditor({
       toast({ title: 'Title is required', type: 'destructive' });
       return;
     }
+    clearTimeout(autoSaveTimer.current);
 
-    const commonData: Record<string, unknown> = {
+    const commonData: CreateNoteData = {
       title: title.trim(),
       content,
       tagIds: selectedTagIds,
@@ -180,6 +186,10 @@ export function NoteEditor({
       handleSave();
     }
     if (e.key === 'Escape') {
+      if (dirty) {
+        const confirmed = confirm('Unsaved changes will be lost.');
+        if (!confirmed) return;
+      }
       onCancel();
     }
   };
@@ -193,6 +203,12 @@ export function NoteEditor({
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Save className="h-3 w-3 animate-pulse" />
               Saving...
+            </span>
+          )}
+          {showSaved && (
+            <span className="flex items-center gap-1 text-xs text-green-500">
+              <Save className="h-3 w-3" />
+              Saved
             </span>
           )}
           <Button
@@ -228,8 +244,9 @@ export function NoteEditor({
             <ToolbarButton icon={<Bold className="h-3.5 w-3.5" />} label="Bold" onClick={() => insertMarkdown('**', '**')} />
             <ToolbarButton icon={<Italic className="h-3.5 w-3.5" />} label="Italic" onClick={() => insertMarkdown('_', '_')} />
             <ToolbarButton icon={<Heading className="h-3.5 w-3.5" />} label="Heading" onClick={() => insertMarkdown('### ', '')} />
-            <ToolbarButton icon={<Code className="h-3.5 w-3.5" />} label="Code" onClick={() => insertMarkdown('`', '`')} />
+            <ToolbarButton icon={<Code className="h-3.5 w-3.5" />} label="Code" onClick={() => insertMarkdown('```\n', '\n```')} />
             <ToolbarButton icon={<List className="h-3.5 w-3.5" />} label="List" onClick={() => insertMarkdown('- ', '')} />
+            <ToolbarButton icon={<Workflow className="h-3.5 w-3.5" />} label="Mermaid" onClick={() => insertMarkdown('```mermaid\n', '\n```')} />
           </div>
           <textarea
             ref={textareaRef}

@@ -138,7 +138,7 @@ export function TagPicker({ selectedTagIds, onTagsChange }: TagPickerProps) {
                       disabled={!newTagName.trim() || createMutation.isPending}
                     >
                       <Plus className="h-3 w-3 mr-1" />
-                      Create "{newTagName.trim() || 'tag'}"
+                      Create tag
                     </Button>
                   </div>
                 )}

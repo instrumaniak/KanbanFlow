@@ -38,14 +38,13 @@ export function NoteList() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const deleteMutation = useDeleteNote();
   const { toast } = useToast();
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>();
-  const deleteTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const debounceSearch = useCallback((value: string) => {
     clearTimeout(searchTimerRef.current);
     searchTimerRef.current = setTimeout(() => {
       setDebouncedSearch(value);
-      setTagFilter(undefined);
     }, 300);
   }, []);
 

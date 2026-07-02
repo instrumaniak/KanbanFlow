@@ -11,6 +11,7 @@ export class CreateNoteDto {
   @ApiProperty({ example: '# Markdown content' })
   @IsNotEmpty()
   @IsString()
+  @MaxLength(65535)
   content!: string;
 
   @ApiPropertyOptional({ example: 1 })

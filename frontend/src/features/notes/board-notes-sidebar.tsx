@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { FileText, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -25,9 +25,13 @@ export function BoardNotesSidebar({ boardId, collapsed, onToggle }: BoardNotesSi
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-  const deleteTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const notes = notesData?.data ?? [];
+
+  useEffect(() => {
+    return () => clearTimeout(deleteTimerRef.current);
+  }, []);
 
   const handleCreate = () => {
     setIsCreating(false);

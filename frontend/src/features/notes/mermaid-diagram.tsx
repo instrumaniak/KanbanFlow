@@ -1,5 +1,6 @@
 import { useEffect, useRef, useId } from 'react';
 import mermaid from 'mermaid';
+import DOMPurify from 'dompurify';
 
 interface MermaidDiagramProps {
   code: string;
@@ -7,19 +8,23 @@ interface MermaidDiagramProps {
 
 export function MermaidDiagram({ code }: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const initializedRef = useRef(false);
   const id = useId();
+
+  if (!initializedRef.current) {
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    initializedRef.current = true;
+  }
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    mermaid.initialize({ startOnLoad: false, theme: 'default' });
-
     const renderDiagram = async () => {
       if (!container) return;
       try {
         const { svg } = await mermaid.render(id, code);
-        container.innerHTML = svg;
+        container.innerHTML = DOMPurify.sanitize(svg);
       } catch {
         container.innerHTML = '<pre class="text-red-500 text-sm">Failed to render diagram</pre>';
       }

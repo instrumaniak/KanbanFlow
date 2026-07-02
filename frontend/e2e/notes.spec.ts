@@ -41,10 +41,9 @@ test.describe('Notes Feature', () => {
     await page.waitForTimeout(300);
 
     await page.getByRole('button', { name: 'New Note' }).click();
-    await page.waitForTimeout(500);
 
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByPlaceholder('Note title...')).toBeVisible();
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByPlaceholder('Note title...')).toBeVisible({ timeout: 5000 });
 
     const noteTitle = `Board Note ${Date.now()}`;
     await page.getByPlaceholder('Note title...').fill(noteTitle);
@@ -98,11 +97,10 @@ test.describe('Notes Feature', () => {
     await page.waitForTimeout(1000);
 
     await page.getByRole('button', { name: 'New Note' }).click();
-    await page.waitForTimeout(500);
 
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('Create Note')).toBeVisible();
-    await expect(page.getByPlaceholder('Note title...')).toBeVisible();
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Create Note')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByPlaceholder('Note title...')).toBeVisible({ timeout: 5000 });
 
     const noteTitle = `Standalone Note ${Date.now()}`;
     await page.getByPlaceholder('Note title...').fill(noteTitle);
@@ -178,9 +176,8 @@ test.describe('Notes Feature', () => {
     await expect(page.locator('code').first()).toHaveText('code');
 
     await page.getByRole('button', { name: 'Edit' }).click();
-    await page.waitForTimeout(500);
 
-    await expect(page.getByPlaceholder('Note title...')).toBeVisible();
+    await expect(page.getByPlaceholder('Note title...')).toBeVisible({ timeout: 5000 });
 
     const updatedTitle = `Updated Title ${Date.now()}`;
     await page.getByPlaceholder('Note title...').clear();
@@ -244,23 +241,21 @@ test.describe('Notes Feature', () => {
     await page.waitForTimeout(1000);
 
     await page.getByText(noteTitle).first().click();
-    await page.waitForTimeout(500);
+
+    await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible({ timeout: 5000 });
 
     await page.getByRole('button', { name: 'Delete' }).click();
-    await page.waitForTimeout(500);
+    await expect(page.getByRole('heading', { name: 'Delete note?' })).toBeVisible({ timeout: 5000 });
 
-    await expect(page.getByRole('heading', { name: 'Delete note?' })).toBeVisible();
     await page.getByRole('button', { name: 'Delete' }).click();
-    await page.waitForTimeout(500);
+    await expect(page.getByRole('heading', { name: 'Delete note?' })).toBeVisible({ timeout: 5000 });
 
-    await expect(page.getByRole('heading', { name: 'Delete note?' })).toBeVisible();
     const deleteResponse = page.waitForResponse(
       (resp) => resp.url().includes('/api/notes/') && resp.request().method() === 'DELETE',
     );
     await page.getByRole('button', { name: 'Delete' }).click();
     const deleteResp = await deleteResponse;
     expect(deleteResp.status()).toBe(200);
-    await page.waitForTimeout(500);
 
     await expect(page.getByText(noteTitle).first()).not.toBeVisible({ timeout: 5000 });
 
@@ -304,9 +299,8 @@ test.describe('Notes Feature', () => {
     await page.waitForTimeout(1000);
 
     await page.getByRole('button', { name: 'New Note' }).click();
-    await page.waitForTimeout(500);
 
-    await expect(page.getByPlaceholder('Note title...')).toBeVisible();
+    await expect(page.getByPlaceholder('Note title...')).toBeVisible({ timeout: 5000 });
 
     const noteTitle = `Tagged Note ${Date.now()}`;
     await page.getByPlaceholder('Note title...').fill(noteTitle);
@@ -752,16 +746,16 @@ test.describe('Notes Feature', () => {
     await page.waitForTimeout(1000);
 
     await page.getByText(noteTitle).first().click();
-    await page.waitForTimeout(500);
+
+    await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible({ timeout: 5000 });
 
     await page.getByRole('button', { name: 'Delete' }).click();
-    await page.waitForTimeout(500);
-    await expect(page.getByRole('heading', { name: 'Delete note?' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Delete note?' })).toBeVisible({ timeout: 5000 });
+
     await page.getByRole('button', { name: 'Delete' }).click();
-    await page.waitForTimeout(500);
-    await expect(page.getByRole('heading', { name: 'Delete note?' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Delete note?' })).toBeVisible({ timeout: 5000 });
+
     await page.getByRole('button', { name: 'Delete' }).click();
-    await page.waitForTimeout(1000);
 
     const undoButton = page.getByRole('button', { name: 'Undo' });
     await expect(undoButton).toBeVisible({ timeout: 5000 });
@@ -817,13 +811,13 @@ test.describe('Notes Feature', () => {
     await page.waitForTimeout(1000);
 
     await page.getByText(noteTitle).first().click();
-    await page.waitForTimeout(500);
+
+    await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible({ timeout: 5000 });
 
     await page.getByRole('button', { name: 'Edit' }).click();
-    await page.waitForTimeout(500);
 
+    await expect(page.getByText('None')).toBeVisible({ timeout: 5000 });
     await page.getByText('None').click();
-    await page.waitForTimeout(300);
 
     const boardOption = page.locator('button').filter({ hasText: new RegExp(`LinkDropdownBoard ${ts}`) });
     await expect(boardOption).toBeVisible({ timeout: 5000 });

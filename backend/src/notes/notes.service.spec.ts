@@ -121,6 +121,8 @@ describe('NotesService', () => {
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
     getMany: jest.fn(),
   };
 
@@ -146,6 +148,7 @@ describe('NotesService', () => {
   describe('create', () => {
     it('should create a note with tags', async () => {
       mockTagRepository.findBy.mockResolvedValue([mockTag]);
+      mockBoardRepository.findOne.mockResolvedValue(mockBoard);
       mockNoteRepository.create.mockReturnValue(mockNoteWithBoard);
       mockNoteRepository.save.mockResolvedValue(mockNoteWithBoard);
 
@@ -398,24 +401,20 @@ describe('NotesService', () => {
 
   describe('update', () => {
     it('should update scalar fields', async () => {
-      mockNoteRepository.findOne
-        .mockResolvedValueOnce(mockNoteWithBoard)
-        .mockResolvedValueOnce({ ...mockNoteWithBoard, title: 'Updated' });
-      mockNoteRepository.update.mockResolvedValue({ affected: 1 });
+      mockNoteRepository.findOne.mockResolvedValue(mockNoteWithBoard);
+      mockNoteRepository.save.mockResolvedValue({ ...mockNoteWithBoard, title: 'Updated' });
 
       const result = await service.update(1, mockUserId, { title: 'Updated' });
 
       expect(result.title).toBe('Updated');
-      expect(mockNoteRepository.update).toHaveBeenCalledWith(1, { title: 'Updated' });
+      expect(mockNoteRepository.save).toHaveBeenCalledWith(expect.objectContaining({ title: 'Updated' }));
     });
 
     it('should update tags', async () => {
       const updatedTag = { id: 2, name: 'urgent', color: 'red', user_id: mockUserId } as Tag;
       mockTagRepository.findBy.mockResolvedValue([updatedTag]);
-      mockNoteRepository.findOne
-        .mockResolvedValueOnce(mockNoteWithBoard)
-        .mockResolvedValueOnce({ ...mockNoteWithBoard, tags: [mockTag] })
-        .mockResolvedValueOnce({ ...mockNoteWithBoard, tags: [updatedTag] });
+      mockNoteRepository.findOne.mockResolvedValue(mockNoteWithBoard);
+      mockNoteRepository.save.mockResolvedValue({ ...mockNoteWithBoard, tags: [updatedTag] });
 
       const result = await service.update(1, mockUserId, { tagIds: [2] });
 
@@ -425,10 +424,8 @@ describe('NotesService', () => {
 
     it('should clear tags when tagIds is empty array', async () => {
       mockTagRepository.findBy.mockResolvedValue([]);
-      mockNoteRepository.findOne
-        .mockResolvedValueOnce(mockNoteWithBoard)
-        .mockResolvedValueOnce({ ...mockNoteWithBoard, tags: [mockTag] })
-        .mockResolvedValueOnce({ ...mockNoteWithBoard, tags: [] });
+      mockNoteRepository.findOne.mockResolvedValue(mockNoteWithBoard);
+      mockNoteRepository.save.mockResolvedValue({ ...mockNoteWithBoard, tags: [] });
 
       const result = await service.update(1, mockUserId, { tagIds: [] });
 

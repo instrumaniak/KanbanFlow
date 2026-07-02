@@ -37,6 +37,10 @@ vi.mock('@/components/ui/use-toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
+vi.mock('react-router-dom', () => ({
+  useBlocker: () => ({ state: 'idle' as const, proceed: vi.fn(), reset: vi.fn() }),
+}));
+
 vi.mock('./markdown-renderer', () => ({
   MarkdownRenderer: ({ content }: { content: string }) => <div data-testid="markdown-renderer">{content}</div>,
 }));

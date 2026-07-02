@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { TagsService } from './tags.service';
 import { Tag } from './entities/tag.entity';
 
@@ -42,6 +42,7 @@ describe('TagsService', () => {
 
   describe('create', () => {
     it('should create a tag with default color', async () => {
+      mockTagRepository.findOne.mockResolvedValue(null);
       mockTagRepository.create.mockReturnValue({ ...mockTag, color: 'teal' });
       mockTagRepository.save.mockResolvedValue({ ...mockTag, color: 'teal' });
 
@@ -59,6 +60,7 @@ describe('TagsService', () => {
     });
 
     it('should create a tag with provided color', async () => {
+      mockTagRepository.findOne.mockResolvedValue(null);
       const tagWithColor = { ...mockTag, color: 'red' };
       mockTagRepository.create.mockReturnValue(tagWithColor);
       mockTagRepository.save.mockResolvedValue(tagWithColor);
@@ -71,6 +73,13 @@ describe('TagsService', () => {
         color: 'red',
         user_id: mockUserId,
       });
+    });
+
+    it('should throw ConflictException if tag with same name exists', async () => {
+      mockTagRepository.findOne.mockResolvedValue(mockTag);
+
+      await expect(service.create(mockUserId, { name: 'important' })).rejects.toThrow(ConflictException);
+      expect(mockTagRepository.create).not.toHaveBeenCalled();
     });
   });
 

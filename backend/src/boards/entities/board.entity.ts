@@ -59,6 +59,6 @@ export class Board {
   @OneToMany(() => BoardColumn, (column) => column.board)
   columns!: BoardColumn[];
 
-  @OneToMany(() => Note, (note) => note.board)
+  @OneToMany(() => Note, (note) => note.board, { cascade: true })
   notes!: Note[];
 }

@@ -36,6 +36,25 @@ export class NotesService {
       }
     }
 
+    if (dto.board_id !== undefined && dto.board_id !== null) {
+      const board = await this.boardRepository.findOne({ where: { id: dto.board_id } });
+      if (!board) throw new NotFoundException('Board not found');
+      if (board.user_id !== userId) throw new ForbiddenException('Access denied');
+    }
+    if (dto.project_id !== undefined && dto.project_id !== null) {
+      const project = await this.projectRepository.findOne({ where: { id: dto.project_id } });
+      if (!project) throw new NotFoundException('Project not found');
+      if (project.user_id !== userId) throw new ForbiddenException('Access denied');
+    }
+    if (dto.card_id !== undefined && dto.card_id !== null) {
+      const card = await this.cardRepository.findOne({
+        where: { id: dto.card_id },
+        relations: ['column', 'column.board'],
+      });
+      if (!card?.column?.board) throw new NotFoundException('Card board not found');
+      if (card.column.board.user_id !== userId) throw new ForbiddenException('Access denied');
+    }
+
     const note = this.noteRepository.create({
       title: dto.title,
       content: dto.content,
@@ -86,11 +105,11 @@ export class NotesService {
 
     qb.orderBy('note.updated_at', 'DESC');
 
-    return qb.getMany();
-  }
+    const page = query.page ?? 1;
+    const limit = Math.min(query.limit ?? 50, 100);
+    qb.take(limit).skip((page - 1) * limit);
 
-  async findById(id: number, userId: number): Promise<Note> {
-    return this.findNoteById(id, userId);
+    return qb.getMany();
   }
 
   async findByBoardId(boardId: number, userId: number): Promise<Note[]> {
@@ -110,57 +129,41 @@ export class NotesService {
   }
 
   async update(id: number, userId: number, dto: UpdateNoteDto): Promise<Note> {
-    await this.findNoteById(id, userId);
+    const note = await this.findById(id, userId);
 
-    const updateData: Partial<Note> = {};
-    if (dto.title !== undefined) updateData.title = dto.title;
-    if (dto.content !== undefined) updateData.content = dto.content;
-    if (dto.board_id !== undefined) updateData.board_id = dto.board_id;
-    if (dto.project_id !== undefined) updateData.project_id = dto.project_id;
-    if (dto.card_id !== undefined) updateData.card_id = dto.card_id;
-
-    if (Object.keys(updateData).length > 0) {
-      await this.noteRepository.update(id, updateData);
-    }
+    if (dto.title !== undefined) note.title = dto.title;
+    if (dto.content !== undefined) note.content = dto.content;
+    if (dto.board_id !== undefined) note.board_id = dto.board_id;
+    if (dto.project_id !== undefined) note.project_id = dto.project_id;
+    if (dto.card_id !== undefined) note.card_id = dto.card_id;
 
     if (dto.tagIds !== undefined) {
       let tags: Tag[] = [];
       if (dto.tagIds.length > 0) {
-        tags = await this.tagRepository.findBy({ id: In(dto.tagIds) });
+        const uniqueTagIds = [...new Set(dto.tagIds)];
+        tags = await this.tagRepository.findBy({ id: In(uniqueTagIds) });
+        if (tags.length !== uniqueTagIds.length) {
+          throw new NotFoundException('Some tags not found');
+        }
         for (const tag of tags) {
           if (tag.user_id !== userId) {
             throw new ForbiddenException(`Tag ${tag.id} does not belong to user`);
           }
         }
       }
-      const noteToUpdate = await this.noteRepository.findOne({
-        where: { id },
-        relations: ['tags'],
-      });
-      if (noteToUpdate) {
-        noteToUpdate.tags = tags;
-        await this.noteRepository.save(noteToUpdate);
-      }
+      note.tags = tags;
     }
 
-    const updated = await this.noteRepository.findOne({
-      where: { id },
-      relations: ['tags'],
-    });
-
-    if (!updated) {
-      throw new NotFoundException('Note not found after update');
-    }
-
-    return updated;
+    const saved = await this.noteRepository.save(note);
+    return saved;
   }
 
   async remove(id: number, userId: number): Promise<void> {
-    const note = await this.findNoteById(id, userId);
+    const note = await this.findById(id, userId);
     await this.noteRepository.remove(note);
   }
 
-  private async findNoteById(id: number, userId: number): Promise<Note> {
+  async findById(id: number, userId: number): Promise<Note> {
     const note = await this.noteRepository.findOne({
       where: { id },
       relations: ['board', 'tags'],
@@ -170,8 +173,14 @@ export class NotesService {
       throw new NotFoundException('Note not found');
     }
 
-    if (note.board_id && note.board) {
-      if (note.board.user_id !== userId) {
+    if (note.board_id) {
+      const board = note.board
+        ? note.board
+        : await this.boardRepository.findOne({ where: { id: note.board_id } });
+      if (!board) {
+        throw new NotFoundException('Linked board not found');
+      }
+      if (board.user_id !== userId) {
         throw new ForbiddenException('Access denied');
       }
     } else if (note.project_id) {
@@ -186,7 +195,10 @@ export class NotesService {
         where: { id: note.card_id },
         relations: ['column', 'column.board'],
       });
-      if (!card || card.column.board.user_id !== userId) {
+      if (!card?.column?.board) {
+        throw new NotFoundException('Card board not found');
+      }
+      if (card.column.board.user_id !== userId) {
         throw new ForbiddenException('Access denied');
       }
     } else {
