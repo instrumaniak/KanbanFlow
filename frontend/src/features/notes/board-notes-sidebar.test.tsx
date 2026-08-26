@@ -52,9 +52,15 @@ vi.mock('./use-notes', () => ({
   useDeleteNote: () => mockUseDeleteNote(),
 }));
 
-vi.mock('./note-card', () => ({
-  NoteCard: ({ note, onClick }: { note: { id: number; title: string }; onClick: () => void }) => (
-    <div data-testid={`board-note-card-${note.id}`} onClick={onClick}>
+vi.mock('./board-notes-sidebar-item', () => ({
+  BoardNotesSidebarItem: ({
+    note,
+    onClick,
+  }: {
+    note: { id: number; title: string };
+    onClick: () => void;
+  }) => (
+    <div role="article" aria-label={`Note: ${note.title}`} onClick={onClick}>
       {note.title}
     </div>
   ),
@@ -107,8 +113,9 @@ describe('BoardNotesSidebar', () => {
   });
 
   it('renders new note button', () => {
-    renderWithProviders(<BoardNotesSidebar boardId={1} collapsed={false} onToggle={onToggle} />);
-    expect(screen.getByText('New Note')).toBeInTheDocument();
+    const { container } = renderWithProviders(<BoardNotesSidebar boardId={1} collapsed={false} onToggle={onToggle} />);
+    const plusButton = container.querySelector('button .lucide-plus')?.closest('button');
+    expect(plusButton).toBeInTheDocument();
   });
 
   it('calls onToggle when toggle button clicked', () => {
@@ -130,13 +137,14 @@ describe('BoardNotesSidebar', () => {
 
   it('opens editor sheet when note card clicked', () => {
     renderWithProviders(<BoardNotesSidebar boardId={1} collapsed={false} onToggle={onToggle} />);
-    fireEvent.click(screen.getByTestId('board-note-card-1'));
+    fireEvent.click(screen.getByRole('article', { name: 'Note: Board Note 1' }));
     expect(screen.getByTestId('note-editor')).toBeInTheDocument();
   });
 
   it('opens create sheet when new note clicked', () => {
-    renderWithProviders(<BoardNotesSidebar boardId={1} collapsed={false} onToggle={onToggle} />);
-    fireEvent.click(screen.getByText('New Note'));
+    const { container } = renderWithProviders(<BoardNotesSidebar boardId={1} collapsed={false} onToggle={onToggle} />);
+    const plusButton = container.querySelector('button .lucide-plus')?.closest('button') as HTMLElement;
+    fireEvent.click(plusButton);
     const editors = screen.getAllByTestId('note-editor');
     expect(editors.length).toBe(1);
   });
@@ -154,7 +162,7 @@ describe('BoardNotesSidebar', () => {
     };
     mockUseBoardNotes.mockReturnValue({ data: { data: [mockNote] }, isLoading: false });
     renderWithProviders(<BoardNotesSidebar boardId={1} collapsed={false} onToggle={onToggle} />);
-    const card = screen.getByTestId('board-note-card-1');
+    const card = screen.getByRole('article', { name: 'Note: Board Note 1' });
     fireEvent.click(card);
     expect(screen.getByTestId('note-editor')).toBeInTheDocument();
   });
