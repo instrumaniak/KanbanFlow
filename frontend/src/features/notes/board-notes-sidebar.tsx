@@ -3,11 +3,20 @@ import { FileText, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { NoteCard } from './note-card';
 import { NoteEditor } from './note-editor';
+import { BoardNotesSidebarItem } from './board-notes-sidebar-item';
 import { useBoardNotes, useDeleteNote } from './use-notes';
 import type { Note } from './notes.api';
 
@@ -75,8 +84,10 @@ export function BoardNotesSidebar({ boardId, collapsed, onToggle }: BoardNotesSi
       >
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Notes</span>
+            <Button variant="ghost" size="sm" onClick={() => setIsCreating(true)}>
+              <Plus className="mr-1 h-4 w-4" />
+            </Button>
           </div>
           <Button
             variant="ghost"
@@ -106,7 +117,7 @@ export function BoardNotesSidebar({ boardId, collapsed, onToggle }: BoardNotesSi
               {notes.map((note) => (
                 <div key={note.id} className="group relative">
                   <div className="relative">
-                    <NoteCard
+                    <BoardNotesSidebarItem
                       note={note}
                       onClick={() => setEditingNote(note)}
                       onEdit={() => setEditingNote(note)}
@@ -118,18 +129,6 @@ export function BoardNotesSidebar({ boardId, collapsed, onToggle }: BoardNotesSi
             </div>
           )}
         </ScrollArea>
-
-        <div className="border-t border-border p-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start text-muted-foreground"
-            onClick={() => setIsCreating(true)}
-          >
-            <Plus className="mr-1 h-4 w-4" />
-            New Note
-          </Button>
-        </div>
       </aside>
 
       {collapsed && (
@@ -144,26 +143,39 @@ export function BoardNotesSidebar({ boardId, collapsed, onToggle }: BoardNotesSi
         </Button>
       )}
 
-      <Sheet open={!!editingNote} onOpenChange={(open) => { if (!open) setEditingNote(null); }}>
-        <SheetContent side="right" className="w-[400px] sm:w-[540px] sm:max-w-[540px]">
+      <Sheet
+        open={!!editingNote}
+        onOpenChange={(open) => {
+          if (!open) setEditingNote(null);
+        }}
+      >
+        <SheetContent side="right" className="w-[400px] sm:w-[540px] sm:max-w-[540px] p-4">
           <SheetHeader>
-            <SheetTitle>Edit Note</SheetTitle>
+            <SheetTitle></SheetTitle>
           </SheetHeader>
           {editingNote && (
             <NoteEditor
               note={editingNote}
               onSave={handleUpdate}
               onCancel={() => setEditingNote(null)}
-              onDelete={() => { setDeleteConfirmId(editingNote.id); setEditingNote(null); }}
+              onDelete={() => {
+                setDeleteConfirmId(editingNote.id);
+                setEditingNote(null);
+              }}
             />
           )}
         </SheetContent>
       </Sheet>
 
-      <Sheet open={isCreating} onOpenChange={(open) => { if (!open) setIsCreating(false); }}>
-        <SheetContent side="right" className="w-[400px] sm:w-[540px] sm:max-w-[540px]">
+      <Sheet
+        open={isCreating}
+        onOpenChange={(open) => {
+          if (!open) setIsCreating(false);
+        }}
+      >
+        <SheetContent side="right" className="w-[400px] sm:w-[540px] sm:max-w-[540px] p-4">
           <SheetHeader>
-            <SheetTitle>New Note</SheetTitle>
+            <SheetTitle></SheetTitle>
           </SheetHeader>
           <NoteEditor
             defaultBoardId={boardId}
@@ -173,7 +185,12 @@ export function BoardNotesSidebar({ boardId, collapsed, onToggle }: BoardNotesSi
         </SheetContent>
       </Sheet>
 
-      <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}>
+      <AlertDialog
+        open={deleteConfirmId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmId(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Note</AlertDialogTitle>

@@ -53,25 +53,28 @@ export function NoteEditor({
   const { toast } = useToast();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const insertMarkdown = useCallback((before: string, after = '') => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = content.substring(start, end);
-    const newContent =
-      content.substring(0, start) + before + selected + after + content.substring(end);
-    setContent(newContent);
-    setDirty(true);
-    setTimeout(() => {
-      textarea.focus();
-      const cursorPos = start + before.length;
-      textarea.setSelectionRange(
-        selected ? cursorPos + selected.length : cursorPos,
-        selected ? cursorPos + selected.length : cursorPos,
-      );
-    }, 0);
-  }, [content]);
+  const insertMarkdown = useCallback(
+    (before: string, after = '') => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selected = content.substring(start, end);
+      const newContent =
+        content.substring(0, start) + before + selected + after + content.substring(end);
+      setContent(newContent);
+      setDirty(true);
+      setTimeout(() => {
+        textarea.focus();
+        const cursorPos = start + before.length;
+        textarea.setSelectionRange(
+          selected ? cursorPos + selected.length : cursorPos,
+          selected ? cursorPos + selected.length : cursorPos,
+        );
+      }, 0);
+    },
+    [content],
+  );
 
   const autoSave = useCallback(() => {
     if (!dirty || !note || updateMutation.isPending) return;
@@ -162,7 +165,11 @@ export function NoteEditor({
             onSave();
           },
           onError: (error) => {
-            toast({ title: 'Failed to save note', description: error.message, type: 'destructive' });
+            toast({
+              title: 'Failed to save note',
+              description: error.message,
+              type: 'destructive',
+            });
           },
         },
       );
@@ -174,7 +181,11 @@ export function NoteEditor({
           onSave();
         },
         onError: (error) => {
-          toast({ title: 'Failed to create note', description: error.message, type: 'destructive' });
+          toast({
+            title: 'Failed to create note',
+            description: error.message,
+            type: 'destructive',
+          });
         },
       });
     }
@@ -211,19 +222,14 @@ export function NoteEditor({
               Saved
             </span>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPreview(!preview)}
-          >
-            {preview ? <EyeOff className="h-3.5 w-3.5 mr-1" /> : <Eye className="h-3.5 w-3.5 mr-1" />}
+          <Button className="mr-8" variant="ghost" size="sm" onClick={() => setPreview(!preview)}>
+            {preview ? (
+              <EyeOff className="h-3.5 w-3.5 mr-1" />
+            ) : (
+              <Eye className="h-3.5 w-3.5 mr-1" />
+            )}
             {preview ? 'Edit' : 'Preview'}
           </Button>
-          {note && onDelete && (
-            <Button variant="destructive" size="sm" onClick={onDelete}>
-              Delete
-            </Button>
-          )}
         </div>
       </div>
 
@@ -241,12 +247,36 @@ export function NoteEditor({
       {!preview ? (
         <div className="space-y-2">
           <div className="flex items-center gap-1 sticky top-0 bg-background z-10 pb-1 border-b">
-            <ToolbarButton icon={<Bold className="h-3.5 w-3.5" />} label="Bold" onClick={() => insertMarkdown('**', '**')} />
-            <ToolbarButton icon={<Italic className="h-3.5 w-3.5" />} label="Italic" onClick={() => insertMarkdown('_', '_')} />
-            <ToolbarButton icon={<Heading className="h-3.5 w-3.5" />} label="Heading" onClick={() => insertMarkdown('### ', '')} />
-            <ToolbarButton icon={<Code className="h-3.5 w-3.5" />} label="Code" onClick={() => insertMarkdown('```\n', '\n```')} />
-            <ToolbarButton icon={<List className="h-3.5 w-3.5" />} label="List" onClick={() => insertMarkdown('- ', '')} />
-            <ToolbarButton icon={<Workflow className="h-3.5 w-3.5" />} label="Mermaid" onClick={() => insertMarkdown('```mermaid\n', '\n```')} />
+            <ToolbarButton
+              icon={<Bold className="h-3.5 w-3.5" />}
+              label="Bold"
+              onClick={() => insertMarkdown('**', '**')}
+            />
+            <ToolbarButton
+              icon={<Italic className="h-3.5 w-3.5" />}
+              label="Italic"
+              onClick={() => insertMarkdown('_', '_')}
+            />
+            <ToolbarButton
+              icon={<Heading className="h-3.5 w-3.5" />}
+              label="Heading"
+              onClick={() => insertMarkdown('### ', '')}
+            />
+            <ToolbarButton
+              icon={<Code className="h-3.5 w-3.5" />}
+              label="Code"
+              onClick={() => insertMarkdown('```\n', '\n```')}
+            />
+            <ToolbarButton
+              icon={<List className="h-3.5 w-3.5" />}
+              label="List"
+              onClick={() => insertMarkdown('- ', '')}
+            />
+            <ToolbarButton
+              icon={<Workflow className="h-3.5 w-3.5" />}
+              label="Mermaid"
+              onClick={() => insertMarkdown('```mermaid\n', '\n```')}
+            />
           </div>
           <textarea
             ref={textareaRef}
@@ -288,16 +318,19 @@ export function NoteEditor({
 
       <div>
         <label className="text-sm font-medium mb-1 block">Tags</label>
-        <TagPicker
-          selectedTagIds={selectedTagIds}
-          onTagsChange={setSelectedTagIds}
-        />
+        <TagPicker selectedTagIds={selectedTagIds} onTagsChange={setSelectedTagIds} />
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-2 border-t">
         <Button variant="outline" size="sm" onClick={onCancel}>
           Cancel
         </Button>
+
+        {note && onDelete && (
+          <Button variant="destructive" size="sm" onClick={onDelete}>
+            Delete
+          </Button>
+        )}
         <Button
           size="sm"
           onClick={handleSave}
@@ -310,15 +343,17 @@ export function NoteEditor({
   );
 }
 
-function ToolbarButton({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+function ToolbarButton({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-7 w-7 p-0"
-      onClick={onClick}
-      title={label}
-    >
+    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onClick} title={label}>
       {icon}
       <span className="sr-only">{label}</span>
     </Button>

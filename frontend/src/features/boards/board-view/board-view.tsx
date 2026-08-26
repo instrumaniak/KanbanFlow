@@ -1,4 +1,3 @@
-import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,14 +7,11 @@ import { Column } from '../../columns/column';
 import { AddColumnButton } from '../../columns/add-column-button';
 import { useToast } from '@/components/ui/use-toast';
 import { DragDropContext } from '../../cards/drag-drop-context';
-import { BoardNotesSidebar } from '../../notes/board-notes-sidebar';
 
 export function BoardView() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
   const id = boardId ? parseInt(boardId, 10) : 0;
-  const [notesCollapsed, setNotesCollapsed] = useState(true);
-  const toggleNotes = useCallback(() => setNotesCollapsed((v) => !v), []);
 
   const { data: boardResponse, isLoading: boardLoading } = useBoard(id);
   const { data: columns, isLoading: columnsLoading } = useColumns(id);
@@ -64,11 +60,6 @@ export function BoardView() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        <BoardNotesSidebar
-          boardId={id}
-          collapsed={notesCollapsed}
-          onToggle={toggleNotes}
-        />
         <div className="flex-1 overflow-x-auto">
           <DragDropContext boardId={id}>
             <div className="flex h-full gap-6 p-6 pb-6">
