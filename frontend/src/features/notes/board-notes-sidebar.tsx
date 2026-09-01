@@ -82,7 +82,7 @@ export function BoardNotesSidebar({ boardId, collapsed, onToggle }: BoardNotesSi
           collapsed ? 'w-0 border-r-0' : 'w-[280px]',
         )}
       >
-        <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <div className="flex items-center justify-between  px-3 py-2">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Notes</span>
             <Button variant="ghost" size="sm" onClick={() => setIsCreating(true)}>
@@ -137,9 +137,9 @@ export function BoardNotesSidebar({ boardId, collapsed, onToggle }: BoardNotesSi
           size="icon-sm"
           onClick={onToggle}
           aria-label="Show notes sidebar"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background border border-border rounded-r-md rounded-l-none h-10"
+          className="absolute left-0 top-1/2"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </Button>
       )}
 

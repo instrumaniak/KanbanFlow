@@ -16,23 +16,29 @@ interface BoardNotesSidebarItemProps {
   onTagClick?: (tagId: number) => void;
 }
 
+const NOTE_ITEM_MAX_LENGTH = 28;
+
 export function BoardNotesSidebarItem({
   note,
   onClick,
   onEdit,
   onDelete,
 }: BoardNotesSidebarItemProps) {
+  const hasLongTitle = note.title?.length > NOTE_ITEM_MAX_LENGTH;
   return (
     <div
       role="article"
       aria-label={`Note: ${note.title}`}
-      className="group border-b border-border p-2 transition-shadow hover:bg-accent/50 cursor-pointer"
+      className="group p-2 transition-shadow hover:bg-accent/50 cursor-pointer"
       onClick={onClick}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex items-center gap-2">
           <FileText className="h-4 w-4 text-muted-foreground" />
-          <h3 className="font-medium text-sm truncate">{note.title}</h3>
+          <h3 className="font-medium text-sm truncate">
+            {note.title?.substring(0, NOTE_ITEM_MAX_LENGTH)}
+            {hasLongTitle && '..'}
+          </h3>
         </div>
 
         <DropdownMenu>
